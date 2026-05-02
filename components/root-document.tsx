@@ -1,4 +1,9 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Noto_Sans_SC,
+  Noto_Sans_Tamil,
+} from "next/font/google";
 import type { Locale } from "@/lib/i18n/config";
 import type { Theme } from "@/lib/theme";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -11,6 +16,18 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const notoSansSc = Noto_Sans_SC({
+  preload: false,
+  variable: "--font-noto-sans-sc",
+  weight: ["400", "500", "600", "700"],
+});
+
+const notoSansTamil = Noto_Sans_Tamil({
+  preload: false,
+  variable: "--font-noto-sans-tamil",
+  weight: ["400", "500", "600", "700"],
 });
 
 type RootDocumentProps = Readonly<{
@@ -29,7 +46,7 @@ export function RootDocument({
   return (
     <html
       lang={lang}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased${isServerDark ? " dark" : ""}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSansSc.variable} ${notoSansTamil.variable} h-full antialiased${isServerDark ? " dark" : ""}`}
       style={{ colorScheme: isServerDark ? "dark" : "light" }}
       suppressHydrationWarning
     >

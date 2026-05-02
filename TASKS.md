@@ -14,7 +14,7 @@ Recommended direction: finish the shared foundation first, then build the public
 - [x] Add translation dictionary structure and helpers with English as the default locale.
 - [x] Set up theme support for light/dark mode.
 - [x] Build public layout shell with responsive top navigation, language switcher, and theme toggle.
-- [ ] Revisit Mandarin Chinese and Tamil font fallbacks during locale implementation.
+- [x] Revisit Mandarin Chinese and Tamil font fallbacks during locale implementation.
 - [ ] Configure Supabase server/client helpers without exposing secrets.
 - [ ] Configure Drizzle ORM and baseline schema/migration structure.
 - [ ] Confirm final admin role enum and auth-linked admin user table.
@@ -27,6 +27,8 @@ Recommended direction: finish the shared foundation first, then build the public
 - [ ] Build events/stories page at `/[locale]/events`.
 - [ ] Build event detail page at `/[locale]/events/[slug]`.
 - [ ] Build contact page at `/[locale]/contact`.
+- [ ] Add localized public `not-found.tsx` handling for missing pages/resources.
+- [ ] Add route-level error boundaries for public and admin surfaces.
 - [ ] Add newsletter subscription form on Contact page.
 - [ ] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [ ] Add `sitemap.xml` and `robots.txt`.
