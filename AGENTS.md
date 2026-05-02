@@ -43,7 +43,7 @@ npm run lint
 npm run build
 ```
 
-Validation before handoff should usually include:
+Do not run validation automatically after implementation unless the user asks for it or the change is high-risk. When validation is requested, prefer:
 
 ```bash
 npm run lint
