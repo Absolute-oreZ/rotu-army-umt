@@ -10,9 +10,9 @@ Recommended direction: finish the shared foundation first, then build the public
 - [x] Selected Resend as the planned email provider for intake/newsletter email sending.
 - [x] Verified current project structure, installed dependencies, and relevant local Next.js 16 documentation notes.
 - [x] Chose Geist Sans and Geist Mono as the primary app fonts and aligned Tailwind CSS font tokens.
-- [ ] Set up foundational locale routing for `en`, `ms`, `zh`, and `ta`.
-- [ ] Add translation dictionary structure and helpers with English as the default locale.
-- [ ] Set up theme support for light/dark mode.
+- [x] Set up foundational locale routing for `en`, `ms`, `zh`, and `ta`.
+- [x] Add translation dictionary structure and helpers with English as the default locale.
+- [x] Set up theme support for light/dark mode.
 - [ ] Build public layout shell with responsive top navigation, language switcher, and theme toggle.
 - [ ] Revisit Mandarin Chinese and Tamil font fallbacks during locale implementation.
 - [ ] Configure Supabase server/client helpers without exposing secrets.
