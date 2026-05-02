@@ -9,7 +9,9 @@ import {
   useState,
 } from "react";
 import {
+  themeCookieMaxAge,
   themeStorageKey,
+  isTheme,
   type ResolvedTheme,
   type Theme,
 } from "@/lib/theme";
@@ -45,48 +47,62 @@ function applyTheme(theme: Theme) {
 }
 
 function getStoredTheme(): Theme {
-  const storedTheme = window.localStorage.getItem(themeStorageKey);
+  const storedTheme = window.localStorage.getItem(themeStorageKey) ?? undefined;
 
-  if (
-    storedTheme === "light" ||
-    storedTheme === "dark" ||
-    storedTheme === "system"
-  ) {
+  if (isTheme(storedTheme)) {
     return storedTheme;
+  }
+
+  const cookieTheme = document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith(`${themeStorageKey}=`))
+    ?.split("=")[1];
+
+  if (isTheme(cookieTheme)) {
+    return cookieTheme;
   }
 
   return "system";
 }
 
+function persistTheme(theme: Theme) {
+  window.localStorage.setItem(themeStorageKey, theme);
+  document.cookie = `${themeStorageKey}=${theme}; Max-Age=${themeCookieMaxAge}; Path=/; SameSite=Lax`;
+}
+
 export function ThemeProvider({
   children,
+  initialTheme = "system",
 }: Readonly<{
   children: React.ReactNode;
+  initialTheme?: Theme;
 }>) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") {
-      return "system";
-    }
-
-    return getStoredTheme();
-  });
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    if (typeof window === "undefined") {
-      return "light";
-    }
-
-    return resolveTheme(getStoredTheme());
-  });
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(
+    initialTheme === "dark" ? "dark" : "light",
+  );
 
   const setTheme = useCallback((nextTheme: Theme) => {
-    window.localStorage.setItem(themeStorageKey, nextTheme);
+    persistTheme(nextTheme);
     applyTheme(nextTheme);
     setThemeState(nextTheme);
     setResolvedTheme(resolveTheme(nextTheme));
   }, []);
 
   useEffect(() => {
+    const storedTheme = getStoredTheme();
+
+    if (storedTheme !== theme) {
+      setThemeState(storedTheme);
+      setResolvedTheme(resolveTheme(storedTheme));
+      persistTheme(storedTheme);
+      applyTheme(storedTheme);
+      return;
+    }
+
+    persistTheme(theme);
     applyTheme(theme);
+    setResolvedTheme(resolveTheme(theme));
   }, [theme]);
 
   useEffect(() => {

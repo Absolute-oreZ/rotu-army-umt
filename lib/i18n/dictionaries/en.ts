@@ -15,6 +15,11 @@ export type Dictionary = {
     theme: string;
     light: string;
     dark: string;
+    menu: string;
+    closeMenu: string;
+    switchToLight: string;
+    switchToDark: string;
+    primaryNavigation: string;
   };
   home: {
     eyebrow: string;
@@ -25,10 +30,10 @@ export type Dictionary = {
 
 const en: Dictionary = {
   metadata: {
-    siteName: "ROTU Army UMT",
-    title: "ROTU Army UMT",
+    siteName: "ROTU ARMY UMT",
+    title: "ROTU ARMY UMT",
     description:
-      "Official web experience for ROTU Army UMT, PALAPES Darat Universiti Malaysia Terengganu.",
+      "Official web experience for ROTU ARMY UMT, PALAPES Darat Universiti Malaysia Terengganu.",
   },
   navigation: {
     about: "About Us",
@@ -41,6 +46,11 @@ const en: Dictionary = {
     theme: "Theme",
     light: "Light",
     dark: "Dark",
+    menu: "Menu",
+    closeMenu: "Close menu",
+    switchToLight: "Switch to light theme",
+    switchToDark: "Switch to dark theme",
+    primaryNavigation: "Primary navigation",
   },
   home: {
     eyebrow: "PALAPES Darat UMT",

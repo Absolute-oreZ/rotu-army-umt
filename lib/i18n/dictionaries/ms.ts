@@ -2,10 +2,10 @@ import type { Dictionary } from "./en";
 
 const ms: Dictionary = {
   metadata: {
-    siteName: "ROTU Army UMT",
-    title: "ROTU Army UMT",
+    siteName: "ROTU ARMY UMT",
+    title: "ROTU ARMY UMT",
     description:
-      "Pengalaman web rasmi untuk ROTU Army UMT, PALAPES Darat Universiti Malaysia Terengganu.",
+      "Pengalaman web rasmi untuk ROTU ARMY UMT, PALAPES Darat Universiti Malaysia Terengganu.",
   },
   navigation: {
     about: "Tentang Kami",
@@ -18,6 +18,11 @@ const ms: Dictionary = {
     theme: "Tema",
     light: "Cerah",
     dark: "Gelap",
+    menu: "Menu",
+    closeMenu: "Tutup menu",
+    switchToLight: "Tukar kepada tema cerah",
+    switchToDark: "Tukar kepada tema gelap",
+    primaryNavigation: "Navigasi utama",
   },
   home: {
     eyebrow: "PALAPES Darat UMT",

@@ -13,7 +13,7 @@ Recommended direction: finish the shared foundation first, then build the public
 - [x] Set up foundational locale routing for `en`, `ms`, `zh`, and `ta`.
 - [x] Add translation dictionary structure and helpers with English as the default locale.
 - [x] Set up theme support for light/dark mode.
-- [ ] Build public layout shell with responsive top navigation, language switcher, and theme toggle.
+- [x] Build public layout shell with responsive top navigation, language switcher, and theme toggle.
 - [ ] Revisit Mandarin Chinese and Tamil font fallbacks during locale implementation.
 - [ ] Configure Supabase server/client helpers without exposing secrets.
 - [ ] Configure Drizzle ORM and baseline schema/migration structure.
