@@ -25,8 +25,6 @@ Do not fabricate ROTU-specific facts, historical data, people, ranks, program de
 - React `19.2.4`
 - TypeScript `^5`
 - Tailwind CSS `^4`
-- shadcn-style UI system
-- Radix UI
 - lucide-react
 - Supabase Auth, PostgreSQL, and Storage
 - Drizzle ORM for schema, queries, and migrations
@@ -389,7 +387,7 @@ Conventions:
 - Use Server Actions or route handlers for mutations.
 - Do not access the database directly from client components.
 - Keep modules small and scalable.
-- Use shadcn-style components where appropriate before creating new primitives.
+- Build UI primitives by hand in `components/ui/` when shared controls are useful.
 
 ---
 
