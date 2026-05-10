@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
@@ -89,7 +90,7 @@ export function ThemeProvider({
     setResolvedTheme(resolveTheme(nextTheme));
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const storedTheme = getStoredTheme();
 
     if (storedTheme !== theme) {

@@ -15,12 +15,12 @@ Recommended direction: finish the shared foundation first, then build the public
 - [x] Set up theme support for light/dark mode.
 - [x] Build public layout shell with responsive top navigation, language switcher, and theme toggle.
 - [x] Revisit Mandarin Chinese and Tamil font fallbacks during locale implementation.
-- [ ] Configure Supabase server/client helpers without exposing secrets.
-- [ ] Configure Drizzle ORM and baseline schema/migration structure.
-- [ ] Confirm final admin role enum and auth-linked admin user table.
-- [ ] Model admin users and roles separately from public member/cadet records.
-- [ ] Implement server-enforced RBAC helpers and role-aware admin redirects.
-- [ ] Build initial Google-only admin login with Supabase Auth.
+- [x] Configure Supabase server/client helpers without exposing secrets.
+- [x] Configure Drizzle ORM and baseline schema/migration structure.
+- [x] Confirm final admin role enum and auth-linked admin user table.
+- [x] Model admin users and roles separately from public member/cadet records.
+- [x] Implement server-enforced RBAC helpers and role-aware admin redirects.
+- [x] Build initial Google-only admin login with Supabase Auth.
 - [ ] Build landing page at `/[locale]/`.
 - [ ] Build intakes list page at `/[locale]/intakes`.
 - [ ] Build intake detail page at `/[locale]/intakes/[slug]`.
@@ -32,9 +32,9 @@ Recommended direction: finish the shared foundation first, then build the public
 - [ ] Add newsletter subscription form on Contact page.
 - [ ] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [ ] Add `sitemap.xml` and `robots.txt`.
-- [ ] Draft Drizzle schema for intakes, members, cadets, programs/events, newsletters, and academic results.
-- [ ] Use translation tables for managed localized content.
-- [ ] Store Supabase Storage paths/keys for managed files and images.
+- [x] Draft Drizzle schema for intakes, members, cadets, programs/events, newsletters, and academic results.
+- [x] Use translation tables for managed localized content.
+- [x] Store Supabase Storage paths/keys for managed files and images.
 - [ ] Build admin layout shell with responsive left sidebar navigation.
 - [ ] Build Secretary-owned admin invitations/user management.
 - [ ] Build Officer and Instructor bento dashboard.
