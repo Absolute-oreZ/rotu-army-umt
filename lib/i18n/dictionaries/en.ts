@@ -22,9 +22,37 @@ export type Dictionary = {
     primaryNavigation: string;
   };
   home: {
-    eyebrow: string;
     title: string;
     intro: string;
+    primaryCta: string;
+    secondaryCta: string;
+    heroImageAlt: string;
+    statsTitle: string;
+    statsIntro: string;
+    intakeCountLabel: string;
+    officerCountLabel: string;
+    instructorCountLabel: string;
+    cadetCountLabel: string;
+    faqTitle: string;
+    faqIntro: string;
+    faqEmpty: string;
+    seeAlsoTitle: string;
+    seeAlsoIntro: string;
+    seeAlsoEmpty: string;
+    seeAlsoExplore: string;
+    testimonials: {
+      title: string;
+      intro: string;
+    };
+    joinTheRanks: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      steps: {
+        title: string;
+        description: string;
+      }[];
+    };
   };
 };
 
@@ -53,10 +81,52 @@ const en: Dictionary = {
     primaryNavigation: "Primary navigation",
   },
   home: {
-    eyebrow: "PALAPES Darat UMT",
     title: "ROTU Army UMT",
     intro:
       "A disciplined university training community built around leadership, service, resilience, and field experience.",
+    primaryCta: "Explore intakes",
+    secondaryCta: "Contact us",
+    heroImageAlt: "ROTU Army UMT visual placeholder",
+    statsTitle: "Strength at a glance",
+    statsIntro: "Live figures from current ROTU Army UMT records.",
+    intakeCountLabel: "Intakes",
+    officerCountLabel: "Officers",
+    instructorCountLabel: "Instructors",
+    cadetCountLabel: "Cadets",
+    faqTitle: "Frequently asked questions",
+    faqIntro: "Key answers for students considering ROTU/PALAPES.",
+    faqEmpty: "FAQ content is not available yet.",
+    seeAlsoTitle: "See also",
+    seeAlsoIntro: "Related Malaysian Armed Forces references.",
+    seeAlsoEmpty: "See-also links are not available yet.",
+    seeAlsoExplore: "Explore more",
+    testimonials: {
+      title: "Voices of Experience",
+      intro: "Hear from the cadets and officers who have walked the path.",
+    },
+    joinTheRanks: {
+      eyebrow: "Simple Process",
+      title: "Join the Ranks",
+      intro: "Your journey to leadership and discipline starts here. Follow these steps to become a part of ROTU Army UMT.",
+      steps: [
+        {
+          title: "Online Application",
+          description: "Submit your biodata and initial documents through our official portal.",
+        },
+        {
+          title: "Document Review",
+          description: "Our administration verifies your academic and personal records.",
+        },
+        {
+          title: "Physical Assessment",
+          description: "Undergo BMI checks and physical fitness tests to ensure readiness.",
+        },
+        {
+          title: "Final Selection",
+          description: "Complete the final interview and finalize your enrollment.",
+        },
+      ],
+    },
   },
 };
 

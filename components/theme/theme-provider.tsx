@@ -78,9 +78,12 @@ export function ThemeProvider({
   children: React.ReactNode;
   initialTheme?: Theme;
 }>) {
-  const [theme, setThemeState] = useState<Theme>(initialTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(
-    initialTheme === "dark" ? "dark" : "light",
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return initialTheme;
+    return getStoredTheme();
+  });
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
+    resolveTheme(typeof window === "undefined" ? initialTheme : getStoredTheme()),
   );
 
   const setTheme = useCallback((nextTheme: Theme) => {
@@ -91,19 +94,8 @@ export function ThemeProvider({
   }, []);
 
   useLayoutEffect(() => {
-    const storedTheme = getStoredTheme();
-
-    if (storedTheme !== theme) {
-      setThemeState(storedTheme);
-      setResolvedTheme(resolveTheme(storedTheme));
-      persistTheme(storedTheme);
-      applyTheme(storedTheme);
-      return;
-    }
-
     persistTheme(theme);
     applyTheme(theme);
-    setResolvedTheme(resolveTheme(theme));
   }, [theme]);
 
   useEffect(() => {

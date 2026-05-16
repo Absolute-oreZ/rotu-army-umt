@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   numeric,
@@ -32,6 +33,12 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "UNSUBSCRIBED",
 ]);
 
+export const publicationStatusEnum = pgEnum("publication_status", [
+  "DRAFT",
+  "PUBLISHED",
+  "ARCHIVED",
+]);
+
 export const genderEnum = pgEnum("gender", ["MALE", "FEMALE"]);
 
 export const memberRoleEnum = pgEnum("member_role", [
@@ -41,41 +48,35 @@ export const memberRoleEnum = pgEnum("member_role", [
 ]);
 
 export const memberRankEnum = pgEnum("member_rank", [
+  "MAJOR",
+  "CAPTAIN",
+  "LIEUTENANT",
+  "SECOND_LIEUTENANT",
+  "WARRANT_OFFICER",
+  "SERGEANT",
+  "KOPERAL",
+  "LANS_KOPERAL",
+  "SENIOR_UNDER_OFFICER",
+  "JUNIOR_UNDER_OFFICER",
+  "SERGEANT_CADET",
+  "KOPERAL_CADET",
   "PK",
   "PKW",
-  "KPL_CADET",
-  "SJN_CADET",
-  "KPL",
-  "SJN",
 ]);
 
-export const studyProgramEnum = pgEnum("study_program", [
-  "EKONOMI (SUMBER ALAM)",
-  "KAUNSELING",
-  "MATEMATIK KEWANGAN",
-  "NANOFIZIK",
-  "PENGURUSAN MARITIM",
-  "PENGURUSAN OPERASI MARITIM",
-  "PENGURUSAN PEMASARAN",
-  "PENGURUSAN (PENGAJIAN POLISI)",
-  "PERAKAUNAN",
-  "PERKHIDMATAN MAKANAN DAN PEMAKANAN",
-  "SAINS (ANALITIK DATA)",
-  "SAINS (SAINS BIOLOGI)",
-  "SAINS (BIOLOGI MARIN)",
-  "SAINS GUNAAN (ELEKTRONIK DAN INSTRUMENTASI)",
-  "SAINS GUNAAN (PEMULIHARAAN DAN PENGURUSAN BIODIVERSITI)",
-  "SAINS GUNAAN (TEKNOLOGI MARITIM)",
-  "SAINS KIMIA",
-  "SAINS (KIMIA ANALISIS DAN PERSEKITARAN)",
-  "SAINS KOMPUTER (INFORMATIK MARITIM)",
-  "SAINS KOMPUTER (KEJURUTERAAN PERISIAN)",
-  "SAINS KOMPUTER (KOMPUTERAN MUDAH ALIH)",
-  "SAINS MAKANAN (TEKNOLOGI MAKANAN)",
-  "SAINS MARIN",
-  "SAINS (MATEMATIK GUNAAN)",
-  "SAINS (SAINS NAUTIKAL DAN PENGANGKUTAN MARITIM)",
-  "TEKNOLOGI (ALAM SEKITAR)",
+export const religionEnum = pgEnum("religion", [
+  "ISLAM",
+  "CHRISTIAN",
+  "HINDU",
+  "BUDDHIST",
+  "OTHER",
+]);
+
+export const raceEnum = pgEnum("race", [
+  "MALAY",
+  "CHINESE",
+  "INDIAN",
+  "OTHER",
 ]);
 
 const timestamps = {
@@ -109,8 +110,7 @@ export const intakes = pgTable(
     intakeNo: varchar("intake_no", { length: 60 }).notNull(),
     displayName: varchar("display_name", { length: 120 }).notNull(),
     slug: varchar("slug", { length: 140 }).notNull(),
-    isReadyForPublic: boolean("is_ready_for_public").default(false).notNull(),
-    isDeleted: boolean("is_deleted").default(false).notNull(),
+    status: publicationStatusEnum("status").default("DRAFT").notNull(),
     startYear: integer("start_year").notNull(),
     color: varchar("color", { length: 80 }).notNull(),
     tagLine: text("tag_line"),
@@ -136,7 +136,6 @@ export const intakeTranslations = pgTable(
       .notNull()
       .references(() => intakes.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
-    title: varchar("title", { length: 180 }).notNull(),
     summary: text("summary"),
     seoTitle: varchar("seo_title", { length: 180 }),
     seoDescription: text("seo_description"),
@@ -157,17 +156,32 @@ export const intakePatchExplanations = pgTable(
     intakeId: integer("intake_id")
       .notNull()
       .references(() => intakes.id, { onDelete: "cascade" }),
-    locale: localeEnum("locale").notNull(),
     key: intakeExplanationKeyEnum("key").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("intake_patch_explanations_intake_key_idx").on(
+      table.intakeId,
+      table.key,
+    ),
+  ],
+);
+
+export const intakePatchExplanationTranslations = pgTable(
+  "intake_patch_explanation_translations",
+  {
+    id: serial("id").primaryKey(),
+    patchExplanationId: integer("patch_explanation_id")
+      .notNull()
+      .references(() => intakePatchExplanations.id, { onDelete: "cascade" }),
+    locale: localeEnum("locale").notNull(),
     value: text("value").notNull(),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("intake_patch_explanations_intake_locale_key_idx").on(
-      table.intakeId,
-      table.locale,
-      table.key,
-    ),
+    uniqueIndex(
+      "intake_patch_explanation_translations_patch_explanation_locale_idx",
+    ).on(table.patchExplanationId, table.locale),
   ],
 );
 
@@ -193,6 +207,7 @@ export const academicYears = pgTable(
       .references(() => intakes.id, { onDelete: "cascade" }),
     yearNumber: integer("year_number").notNull(),
     calendarYear: integer("calendar_year").notNull(),
+    ...timestamps,
   },
   (table) => [
     uniqueIndex("academic_years_intake_year_number_idx").on(
@@ -210,6 +225,7 @@ export const sessions = pgTable(
       .notNull()
       .references(() => academicYears.id, { onDelete: "cascade" }),
     sessionNumber: integer("session_number").notNull(),
+    ...timestamps,
   },
   (table) => [
     uniqueIndex("sessions_academic_year_session_number_idx").on(
@@ -228,6 +244,7 @@ export const exams = pgTable(
       .references(() => sessions.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 160 }).notNull(),
     examDate: timestamp("exam_date", { withTimezone: true }),
+    ...timestamps,
   },
   (table) => [index("exams_session_id_idx").on(table.sessionId)],
 );
@@ -243,8 +260,8 @@ export const members = pgTable(
     displayName: varchar("display_name", { length: 120 }).notNull(),
     gender: genderEnum("gender").notNull(),
     role: memberRoleEnum("role").notNull(),
-    religion: varchar("religion", { length: 80 }).notNull(),
-    race: varchar("race", { length: 80 }).notNull(),
+    religion: religionEnum("religion").notNull(),
+    race: raceEnum("race").notNull(),
     address: text("address").notNull(),
     redBgPhotoPath: text("red_bg_photo_path"),
     blueBgPhotoPath: text("blue_bg_photo_path"),
@@ -257,15 +274,33 @@ export const members = pgTable(
   ],
 );
 
+export const studyPrograms = pgTable(
+  "study_programs",
+  {
+    id: serial("id").primaryKey(),
+    slug: varchar("slug", { length: 220 }).notNull(),
+    name: varchar("name", { length: 220 }).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("study_programs_slug_idx").on(table.slug),
+    uniqueIndex("study_programs_name_idx").on(table.name),
+    index("study_programs_is_active_idx").on(table.isActive),
+  ],
+);
+
 export const cadetInfos = pgTable(
   "cadet_infos",
   {
     id: serial("id").primaryKey(),
-    matrictNo: varchar("matrict_no", { length: 80 }).notNull(),
+    matricNo: varchar("matric_no", { length: 80 }).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     quote: text("quote"),
     displayPhotoPath: text("display_photo_path"),
-    studyProgram: studyProgramEnum("study_program").notNull(),
+    studyProgramId: integer("study_program_id")
+      .notNull()
+      .references(() => studyPrograms.id),
     intakeId: integer("intake_id")
       .notNull()
       .references(() => intakes.id),
@@ -275,10 +310,10 @@ export const cadetInfos = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("cadet_infos_matrict_no_idx").on(table.matrictNo),
+    uniqueIndex("cadet_infos_matric_no_idx").on(table.matricNo),
     uniqueIndex("cadet_infos_member_id_idx").on(table.memberId),
     index("cadet_infos_intake_id_idx").on(table.intakeId),
-    index("cadet_infos_study_program_idx").on(table.studyProgram),
+    index("cadet_infos_study_program_id_idx").on(table.studyProgramId),
   ],
 );
 
@@ -289,17 +324,17 @@ export const academicExamResults = pgTable(
     examId: integer("exam_id")
       .notNull()
       .references(() => exams.id, { onDelete: "cascade" }),
-    memberId: integer("member_id")
+    cadetInfoId: integer("cadet_info_id")
       .notNull()
-      .references(() => members.id),
+      .references(() => cadetInfos.id, { onDelete: "cascade" }),
     score: numeric("score", { precision: 5, scale: 2 }),
     grade: varchar("grade", { length: 20 }),
-    cadetInfoId: integer("cadet_info_id").references(() => cadetInfos.id),
+    ...timestamps,
   },
   (table) => [
-    uniqueIndex("academic_exam_results_exam_member_idx").on(
+    uniqueIndex("academic_exam_results_exam_cadet_idx").on(
       table.examId,
-      table.memberId,
+      table.cadetInfoId,
     ),
     index("academic_exam_results_cadet_info_id_idx").on(table.cadetInfoId),
   ],
@@ -344,7 +379,7 @@ export const programs = pgTable(
     coverPhotoWidth: integer("cover_photo_width"),
     coverPhotoHeight: integer("cover_photo_height"),
     videoUrl: text("video_url"),
-    isPublished: boolean("is_published").default(false).notNull(),
+    status: publicationStatusEnum("status").default("DRAFT").notNull(),
     ...timestamps,
   },
   (table) => [
@@ -381,6 +416,7 @@ export const programTags = pgTable(
   {
     id: serial("id").primaryKey(),
     slug: varchar("slug", { length: 100 }).notNull(),
+    ...timestamps,
   },
   (table) => [uniqueIndex("program_tags_slug_idx").on(table.slug)],
 );
@@ -394,6 +430,7 @@ export const programTagTranslations = pgTable(
       .references(() => programTags.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
     name: varchar("name", { length: 100 }).notNull(),
+    ...timestamps,
   },
   (table) => [
     uniqueIndex("program_tag_translations_tag_locale_idx").on(
@@ -430,4 +467,119 @@ export const programDisplayPhotos = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("program_display_photos_program_id_idx").on(table.programId)],
+);
+
+export const webappContents = pgTable(
+  "webapp_contents",
+  {
+    id: serial("id").primaryKey(),
+    singletonKey: boolean("singleton_key").default(true).notNull(),
+    heroImageUrl: text("hero_image_url"),
+    officialEmail: varchar("official_email", { length: 320 }),
+    facebookUrl: text("facebook_url"),
+    instagramUrl: text("instagram_url"),
+    youtubeUrl: text("youtube_url"),
+    tiktokUrl: text("tiktok_url"),
+    xUrl: text("x_url"),
+    updatedByAdminUserId: uuid("updated_by_admin_user_id").references(
+      () => adminUsers.id,
+    ),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("webapp_contents_singleton_key_idx").on(table.singletonKey),
+    check("webapp_contents_singleton_key_check", sql`${table.singletonKey} = true`),
+  ],
+);
+
+export const frequentlyAskedQuestions = pgTable(
+  "frequently_asked_questions",
+  {
+    id: serial("id").primaryKey(),
+    webappContentId: integer("webapp_content_id")
+      .notNull()
+      .references(() => webappContents.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    status: publicationStatusEnum("status").default("PUBLISHED").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("frequently_asked_questions_webapp_content_id_idx").on(
+      table.webappContentId,
+    ),
+    index("frequently_asked_questions_sort_order_idx").on(table.sortOrder),
+  ],
+);
+
+export const frequentlyAskedQuestionTranslations = pgTable(
+  "frequently_asked_question_translations",
+  {
+    id: serial("id").primaryKey(),
+    faqId: integer("faq_id")
+      .notNull()
+      .references(() => frequentlyAskedQuestions.id, { onDelete: "cascade" }),
+    locale: localeEnum("locale").notNull(),
+    question: text("question").notNull(),
+    answer: text("answer").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("frequently_asked_question_translations_faq_locale_idx").on(
+      table.faqId,
+      table.locale,
+    ),
+  ],
+);
+
+export const seeMoreLinks = pgTable(
+  "see_more_links",
+  {
+    id: serial("id").primaryKey(),
+    webappContentId: integer("webapp_content_id")
+      .notNull()
+      .references(() => webappContents.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 180 }).notNull(),
+    link: text("link").notNull(),
+    imageUrl: text("image_url"),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    status: publicationStatusEnum("status").default("PUBLISHED").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("see_more_links_webapp_content_id_idx").on(table.webappContentId),
+    index("see_more_links_sort_order_idx").on(table.sortOrder),
+  ],
+);
+
+export const testimonials = pgTable(
+  "testimonials",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    status: publicationStatusEnum("status").default("PUBLISHED").notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    ...timestamps,
+  },
+  (table) => [index("testimonials_sort_order_idx").on(table.sortOrder)],
+);
+
+export const testimonialTranslations = pgTable(
+  "testimonial_translations",
+  {
+    id: serial("id").primaryKey(),
+    testimonialId: integer("testimonial_id")
+      .notNull()
+      .references(() => testimonials.id, { onDelete: "cascade" }),
+    locale: localeEnum("locale").notNull(),
+    content: text("content").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("testimonial_translations_testimonial_locale_idx").on(
+      table.testimonialId,
+      table.locale,
+    ),
+  ],
 );

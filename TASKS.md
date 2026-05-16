@@ -4,6 +4,8 @@ Living implementation tracker for the ROTU Army UMT web application.
 
 Recommended direction: finish the shared foundation first, then build the public website before the full admin dashboard. The public site validates routing, i18n, theme, SEO, visual identity, and real content structure quickly. Admin should still get an early auth/RBAC/data skeleton so public content can later become admin-managed without a rewrite.
 
+Updated implementation direction: public pages should be built against reusable Drizzle-backed content access where appropriate, with placeholder/empty states only when no published content exists. This keeps the public site useful now while allowing Multimedia and other admin roles to control content later without rewriting the page surfaces.
+
 - [x] Initialized project collaboration instructions in `AGENTS.md`.
 - [x] Added project decisions for Supabase, Google-only admin login, RBAC, i18n, public routes, admin modules, newsletter, and seasonal intake flow.
 - [x] Clarified that Secretary normally owns admin invitations/user management, while Officer and Instructor can also access it through full permissions.
@@ -21,7 +23,8 @@ Recommended direction: finish the shared foundation first, then build the public
 - [x] Model admin users and roles separately from public member/cadet records.
 - [x] Implement server-enforced RBAC helpers and role-aware admin redirects.
 - [x] Build initial Google-only admin login with Supabase Auth.
-- [ ] Build landing page at `/[locale]/`.
+- [x] Add public content data access layer for published intakes and stories.
+- [x] Build landing page at `/[locale]/`.
 - [ ] Build intakes list page at `/[locale]/intakes`.
 - [ ] Build intake detail page at `/[locale]/intakes/[slug]`.
 - [ ] Build events/stories page at `/[locale]/events`.
@@ -50,3 +53,4 @@ Recommended direction: finish the shared foundation first, then build the public
 - [ ] Create intake physical assessment email template.
 - [ ] Create newsletter confirmation email template.
 - [ ] Create unsubscribe flow and email handling.
+- [ ] Develop Retrieval-Augmented Generation (RAG).
