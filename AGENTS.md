@@ -475,6 +475,8 @@ Admin pages must use the left sidebar described in the Admin Dashboard section.
 - Do not commit build artifacts.
 - Do not run destructive git commands unless explicitly requested.
 - Preserve user changes in the working tree.
+- When finishing a task, ask the user whether to commit.
+- When committing, use Conventional Commit style prefixes such as `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `test:`, and `perf:`.
 
 ---
 
