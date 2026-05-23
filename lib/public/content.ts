@@ -4,7 +4,6 @@ import { db } from "@/db";
 import {
   cadetInfos,
   intakes,
-  intakeTranslations,
   members,
   frequentlyAskedQuestions,
   frequentlyAskedQuestionTranslations,
@@ -14,14 +13,17 @@ import {
   webappContents,
   testimonials,
   testimonialTranslations,
+  intakeTranslations,
 } from "@/db/schema";
 import type { Locale } from "@/lib/i18n/config";
 import { DEFAULT_FAQ_ENTRIES, DEFAULT_SEE_MORE_LINKS } from "@/lib/data";
 
-export type PublicIntakeSummary = {
+export type PublicIntake = {
+  intakeNo: string;
   displayName: string;
   slug: string;
-  startYear: number;
+  patchPhotoPath: string | null;
+  coverPhotoPath: string | null;
   summary: string | null;
 };
 
@@ -104,14 +106,16 @@ const FALLBACK_FAQS: Record<Locale, HomePageContent["faqs"]> = {
   })),
 };
 
-export async function getPublishedIntakeSummaries(
+export async function getPublishedIntakeList(
   locale: Locale,
-): Promise<PublicIntakeSummary[]> {
+): Promise<PublicIntake[]> {
   return db
     .select({
+      intakeNo: intakes.intakeNo,
       displayName: intakes.displayName,
       slug: intakes.slug,
-      startYear: intakes.startYear,
+      patchPhotoPath: intakes.patchPhotoPath,
+      coverPhotoPath: intakes.coverPhotoPath,
       summary: intakeTranslations.summary,
     })
     .from(intakes)
@@ -122,13 +126,8 @@ export async function getPublishedIntakeSummaries(
         eq(intakeTranslations.locale, locale),
       ),
     )
-    .where(
-      and(
-        eq(intakes.status, "PUBLISHED"),
-      ),
-    )
+    .where(eq(intakes.status, "PUBLISHED"))
     .orderBy(desc(intakes.startYear))
-    .limit(3);
 }
 
 export async function getPublishedProgramSummaries(

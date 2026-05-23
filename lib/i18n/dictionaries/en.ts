@@ -54,6 +54,19 @@ export type Dictionary = {
       }[];
     };
   };
+  intakesPage: {
+    title: string;
+    description: string;
+    eyebrow: string;
+    intro: string;
+    intakeNoLabel: string;
+    summaryFallback: string;
+    taglineFallback: string;
+    viewDetails: string;
+    cardImageAlt: string;
+    emptyTitle: string;
+    emptyDescription: string;
+  };
 };
 
 const en: Dictionary = {
@@ -127,6 +140,22 @@ const en: Dictionary = {
         },
       ],
     },
+  },
+  intakesPage: {
+    title: "Our Intakes",
+    description:
+      "Explore ROTU Army UMT intakes, each with its own identity, training character, and intake story.",
+    eyebrow: "Intake Directory",
+    intro:
+      "Each intake reflects a distinct training cycle. Explore the currently published intakes and continue to individual details.",
+    intakeNoLabel: "Intake",
+    summaryFallback: "Detailed summary for this intake will be published soon.",
+    taglineFallback: "Training cycle information in progress.",
+    viewDetails: "View details",
+    cardImageAlt: "Intake visual",
+    emptyTitle: "No published intakes yet",
+    emptyDescription:
+      "Published intake records will appear here once they are made available by the team.",
   },
 };
 

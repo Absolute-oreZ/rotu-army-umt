@@ -72,6 +72,22 @@ const ms: Dictionary = {
       ],
     },
   },
+  intakesPage: {
+    title: "Ambilan Kami",
+    description:
+      "Terokai ambilan ROTU Army UMT yang mempunyai identiti, karakter latihan, dan kisah tersendiri.",
+    eyebrow: "Direktori Ambilan",
+    intro:
+      "Setiap ambilan mewakili kitaran latihan yang berbeza. Lihat ambilan yang diterbitkan dan teruskan ke butiran setiap ambilan.",
+    intakeNoLabel: "Ambilan",
+    summaryFallback: "Ringkasan terperinci ambilan ini akan diterbitkan tidak lama lagi.",
+    taglineFallback: "Maklumat kitaran latihan sedang dikemas kini.",
+    viewDetails: "Lihat butiran",
+    cardImageAlt: "Visual ambilan",
+    emptyTitle: "Belum ada ambilan diterbitkan",
+    emptyDescription:
+      "Rekod ambilan yang telah diterbitkan akan dipaparkan di sini apabila disediakan oleh pasukan.",
+  },
 };
 
 export default ms;

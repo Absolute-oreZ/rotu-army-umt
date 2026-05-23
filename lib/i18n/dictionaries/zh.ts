@@ -70,6 +70,21 @@ const zh: Dictionary = {
       ],
     },
   },
+  intakesPage: {
+    title: "我们的入队批次",
+    description:
+      "探索 ROTU Army UMT 各批次入队信息，了解每个批次的训练特色与阶段重点。",
+    eyebrow: "批次总览",
+    intro:
+      "每个入队批次都代表不同的训练周期。浏览当前已发布的批次并进入详情页面。",
+    intakeNoLabel: "批次",
+    summaryFallback: "该批次的详细简介将稍后发布。",
+    taglineFallback: "训练周期信息整理中。",
+    viewDetails: "查看详情",
+    cardImageAlt: "入队批次视觉图",
+    emptyTitle: "暂无已发布批次",
+    emptyDescription: "团队发布后，入队批次记录将显示在此处。",
+  },
 };
 
 export default zh;
