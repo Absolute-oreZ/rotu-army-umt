@@ -115,8 +115,6 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
             pathname={pathname}
           />
           <ThemeToggle
-            isDark={isDark}
-            label={themeLabel}
             onToggle={() => setTheme(isDark ? "light" : "dark")}
           />
         </div>
@@ -167,8 +165,6 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
                 pathname={pathname}
               />
               <ThemeToggle
-                isDark={isDark}
-                label={themeLabel}
                 onToggle={() => setTheme(isDark ? "light" : "dark")}
               />
             </div>
@@ -214,12 +210,8 @@ function LanguageSwitcher({
 }
 
 function ThemeToggle({
-  isDark,
-  label,
   onToggle,
 }: {
-  isDark: boolean;
-  label: string;
   onToggle: () => void;
 }) {
   return (
@@ -227,11 +219,12 @@ function ThemeToggle({
       type="button"
       variant="outline"
       size="icon-lg"
-      aria-label={label}
-      title={label}
+      aria-label="Toggle theme"
+      title="Toggle theme"
       onClick={onToggle}
     >
-      {isDark ? <Sun /> : <Moon />}
+      <Sun className="hidden dark:block" />
+      <Moon className="block dark:hidden" />
     </Button>
   );
 }
