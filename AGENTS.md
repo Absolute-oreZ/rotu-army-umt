@@ -489,3 +489,20 @@ Admin pages must use the left sidebar described in the Admin Dashboard section.
 5. Keep public slugs SEO-first.
 6. Use real ROTU assets/content only when supplied.
 7. Ask before introducing complex architecture, workflow, or schema changes.
+
+---
+
+## Documentation
+
+- Keep architecture documentation in `docs/architecture.md`.
+- Keep requirements documentation in `docs/srs.md`.
+
+---
+
+## Agent Workflow Preferences
+
+- Do not write comments during code generation unless explicitly requested by the user.
+- For complex tasks:
+  1. Start in `/plan` mode with high reasoning to produce a high-level solution.
+  2. Switch to or use a medium model to implement the plan.
+  3. Use a low-reasoning, cost-effective model for translations and review of the changes made.
