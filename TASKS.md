@@ -27,15 +27,15 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Build landing page at `/[locale]/`.
 - [x] Build intakes list page at `/[locale]/intakes`.
 - [x] Build intake detail page at `/[locale]/intakes/[slug]`.
-- [ ] Build events/stories page at `/[locale]/events`.
-- [ ] Build event detail page at `/[locale]/events/[slug]`.
+- [ ] Build stories page at `/[locale]/stories`.
+- [ ] Build event detail page at `/[locale]/stories/[slug]`.
 - [ ] Build contact page at `/[locale]/contact`.
 - [ ] Add localized public `not-found.tsx` handling for missing pages/resources.
 - [ ] Add route-level error boundaries for public and admin surfaces.
 - [ ] Add newsletter subscription form on Contact page.
 - [ ] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [ ] Add `sitemap.xml` and `robots.txt`.
-- [x] Draft Drizzle schema for intakes, members, cadets, programs/events, newsletters, and academic results.
+- [x] Draft Drizzle schema for intakes, members, cadets, stories, newsletters, and academic results.
 - [x] Use translation tables for managed localized content.
 - [x] Store Supabase Storage paths/keys for managed files and images.
 - [ ] Build admin layout shell with responsive left sidebar navigation.
@@ -43,7 +43,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [ ] Build Officer and Instructor bento dashboard.
 - [ ] Build Secretary modules: Rank Holders, Intakes, Cadets.
 - [ ] Build Treasurer modules: Collections, Expenses.
-- [ ] Build Multimedia modules: Portfolio, Events/stories, Newsletters.
+- [ ] Build Multimedia modules: Portfolio, stories, Newsletters.
 - [ ] Build Sports modules: Activities, Collaborations.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.
 - [ ] Build Academic modules: Results, Timetables.

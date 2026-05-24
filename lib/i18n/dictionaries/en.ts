@@ -7,7 +7,7 @@ export type Dictionary = {
   navigation: {
     about: string;
     intakes: string;
-    events: string;
+    stories: string;
     contact: string;
   };
   common: {
@@ -57,13 +57,17 @@ export type Dictionary = {
   intakesPage: {
     title: string;
     description: string;
-    eyebrow: string;
-    intro: string;
     intakeNoLabel: string;
     summaryFallback: string;
     taglineFallback: string;
     viewDetails: string;
     cardImageAlt: string;
+    emptyTitle: string;
+    emptyDescription: string;
+  };
+  storiesPage: {
+    title: string;
+    description: string;
     emptyTitle: string;
     emptyDescription: string;
   };
@@ -101,7 +105,7 @@ const en: Dictionary = {
   navigation: {
     about: "About Us",
     intakes: "Our Intakes",
-    events: "Our Stories",
+    stories: "Our Stories",
     contact: "Contact Us",
   },
   common: {
@@ -165,8 +169,6 @@ const en: Dictionary = {
   intakesPage: {
     title: "Our Intakes",
     description: "Explore ROTU Army UMT intakes, each with its own identity, training character, and intake story.",
-    eyebrow: "Intake Directory",
-    intro: "Each intake reflects a distinct training cycle. Explore the currently published intakes and continue to individual details.",
     intakeNoLabel: "Intake",
     summaryFallback: "Detailed summary for this intake will be published soon.",
     taglineFallback: "Training cycle information in progress.",
@@ -174,6 +176,12 @@ const en: Dictionary = {
     cardImageAlt: "Intake visual",
     emptyTitle: "No published intakes yet",
     emptyDescription: "Published intake records will appear here once they are made available by the team.",
+  },
+  storiesPage: {
+    title: "Our Stories",
+    description: "Browse published ROTU Army UMT programs by year and explore each story.",
+    emptyTitle: "No published stories yet",
+    emptyDescription: "Published stories will appear here once programs are made available by the team.",
   },
   intakeDetailPage: {
     detailEyebrow: "Intake Detail",

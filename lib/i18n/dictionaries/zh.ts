@@ -9,7 +9,7 @@ const zh: Dictionary = {
   navigation: {
     about: "关于我们",
     intakes: "我们的入队批次",
-    events: "我们的故事",
+    stories: "我们的故事",
     contact: "联系我们",
   },
   common: {
@@ -73,8 +73,6 @@ const zh: Dictionary = {
   intakesPage: {
     title: "我们的入队批次",
     description: "探索 ROTU Army UMT 各批次入队信息，了解每个批次的训练特色与阶段重点。",
-    eyebrow: "批次总览",
-    intro: "每个入队批次都代表不同的训练周期。浏览当前已发布的批次并进入详情页面。",
     intakeNoLabel: "批次",
     summaryFallback: "该批次的详细简介将稍后发布。",
     taglineFallback: "训练周期信息整理中。",
@@ -82,6 +80,12 @@ const zh: Dictionary = {
     cardImageAlt: "入队批次视觉图",
     emptyTitle: "暂无已发布批次",
     emptyDescription: "团队发布后，入队批次记录将显示在此处。",
+  },
+  storiesPage: {
+    title: "我们的故事",
+    description: "按年份浏览已发布的 ROTU Army UMT 活动项目，并查看每个故事。",
+    emptyTitle: "暂无已发布故事",
+    emptyDescription: "团队发布后，故事将在此处显示。",
   },
   intakeDetailPage: {
     detailEyebrow: "入队详情",

@@ -4,6 +4,13 @@ export const DEFAULT_FACEBOOK_URL = "https://facebook.com/palapesumt.darat";
 export const DEFAULT_RED_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-red-bg.jpg";
 export const DEFAULT_BLUE_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-blue-bg.jpg";
 export const DEFAULT_CADET_DISPLAY_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-display.jpg";
+export const DEFAULT_PROGRAM_COVER_PHOTO = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-cover-photo.jpg";
+export const DEFAULT_PROGRAM_VIDEO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-video.mp4";
+export const DEFAULT_PROGRAM_DISPLAY_PHOTOS = [
+  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-photo-1.jpg",
+  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-photo-2.jpg",
+  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-photo-3.jpg",
+] as const;
 
 export const PROGRAM_TOTAL_YEARS = 3;
 export const SESSIONS_PER_YEAR = 2;
@@ -12,6 +19,35 @@ export const SESSION_START_MONTH_DAY: Record<number, { month: number; day: numbe
   1: { month: 10, day: 1, yearOffset: 0 },
   2: { month: 4,  day: 1, yearOffset: 1 },
 };
+
+export const LONG_EN_PROGRAM_SUMMARY = `
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl nec tincidunt luctus, nunc nisl aliquam nunc, vitae aliquam nisl nunc vitae nisl. Integer tincidunt, sapien sed facilisis efficitur, risus nibh viverra massa, sed suscipit sapien ipsum vel nisi. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec malesuada, lorem non pellentesque suscipit, risus risus consequat turpis, sed aliquet massa lorem vel erat.
+
+Suspendisse potenti. Praesent non est nec augue tristique tincidunt. Curabitur sed eros vitae velit tempus volutpat. Vivamus posuere velit sed orci tristique, non vulputate leo interdum. Integer posuere, nibh sit amet scelerisque malesuada, sapien lorem malesuada est, nec facilisis lorem elit sed massa. In hac habitasse platea dictumst. Etiam vulputate lorem sit amet augue tincidunt, nec tempus velit fermentum.
+
+Aliquam erat volutpat. Quisque tincidunt mauris vel turpis cursus, a feugiat lorem aliquet. Sed nec sapien eget lorem malesuada luctus. Mauris vulputate sem vel sapien accumsan, sed pulvinar mauris hendrerit. Cras vel neque vitae justo aliquet sodales. Proin vitae massa ac elit suscipit bibendum. Fusce malesuada nisi vel magna faucibus, sed dictum odio gravida.
+`;
+export const LONG_MS_PROGRAM_SUMMARY = `
+Program ini memberi penekanan kepada pembangunan kepimpinan, disiplin diri, ketahanan mental, dan semangat kerja berpasukan dalam kalangan kadet PALAPES. Sepanjang program berlangsung, peserta akan menjalani pelbagai aktiviti latihan termasuk latihan lapangan, kawad kaki, pengurusan organisasi, komunikasi taktikal, serta aktiviti lasak yang bertujuan meningkatkan keyakinan diri.
+
+Selain itu, program ini turut memupuk nilai tanggungjawab, integriti, dan kemampuan membuat keputusan dalam situasi mencabar. Para peserta didedahkan kepada pengalaman sebenar dalam pengendalian operasi berkumpulan dan pengurusan masa secara sistematik. Aktiviti yang dijalankan juga membantu meningkatkan kecergasan fizikal dan daya tahan emosi.
+
+Melalui penyertaan dalam program ini, kadet dapat membina hubungan yang lebih erat sesama ahli serta memperkukuhkan semangat patriotisme dan cintakan negara. Program ini juga menjadi platform penting dalam melahirkan bakal pemimpin muda yang berwibawa, berdisiplin, dan mampu menghadapi cabaran masa depan dengan lebih yakin dan profesional.
+`;
+export const LONG_ZH_PROGRAM_SUMMARY = `
+该活动旨在培养学员的领导能力、团队合作精神、纪律意识以及身体素质。参与者将在活动期间接受多种形式的训练，包括野外训练、体能挑战、战术活动以及团队协作任务。这些活动不仅能够增强学员的自信心，也能够提高他们在高压环境下解决问题的能力。
+
+此外，活动也强调责任感、沟通技巧以及组织管理能力的重要性。学员们将通过实际操作与团队合作学习如何有效地完成任务，并在过程中建立更深厚的友谊与集体精神。整个活动过程将帮助参与者培养坚韧不拔的精神以及积极向上的态度。
+
+通过参与该项目，学员能够获得宝贵的实践经验，同时进一步提升个人综合素质。该活动不仅是一次训练机会，更是培养未来青年领袖的重要平台。
+`;
+export const LONG_TA_PROGRAM_SUMMARY = `
+இந்த திட்டம் PALAPES கேடட்டுகளின் தலைமைத்திறன், ஒழுக்கம், உடல் வலிமை மற்றும் குழு ஒருங்கிணைப்பை மேம்படுத்தும் நோக்கில் உருவாக்கப்பட்டுள்ளது. இதில் பங்கேற்பாளர்கள் களப்பயிற்சி, உடற்பயிற்சி, ஒழுங்கு பயிற்சி மற்றும் பல்வேறு குழு நடவடிக்கைகளில் ஈடுபடுவர். இந்த அனுபவங்கள் அவர்களின் தன்னம்பிக்கையையும் மனவலிமையையும் அதிகரிக்கும்.
+
+மேலும், திட்டம் பொறுப்புணர்வு, ஒத்துழைப்பு மற்றும் சவாலான சூழ்நிலைகளில் முடிவெடுக்கும் திறனை வளர்க்க உதவுகிறது. செயல்முறை அடிப்படையிலான பயிற்சிகள் மூலம் பங்கேற்பாளர்கள் நேர மேலாண்மை மற்றும் குழு வழிநடத்தல் திறன்களை கற்றுக்கொள்வார்கள். இதன் மூலம் நாட்டுப்பற்று மற்றும் ஒற்றுமை உணர்வும் வலுப்பெறும்.
+
+இந்த திட்டம் எதிர்கால இளைஞர் தலைவர்களை உருவாக்கும் முக்கியமான தளமாக செயல்படுகிறது. இதில் கலந்து கொள்வதன் மூலம் மாணவர்கள் வாழ்க்கைத் திறன்கள், ஒழுக்கம் மற்றும் தலைமைத்திறனை நடைமுறை அனுபவத்துடன் வளர்த்துக்கொள்ள முடியும்.
+`;
 
 export const DEFAULT_CADET_QUOTES = [
   "Discipline builds destiny.",
@@ -713,3 +749,112 @@ export const DEFAULT_STUDY_PROGRAMS = [
   { slug: "sains-sains-nautikal-dan-pengangkutan-maritim", name: "SAINS (SAINS NAUTIKAL DAN PENGANGKUTAN MARITIM)" },
   { slug: "teknologi-alam-sekitar", name: "TEKNOLOGI (ALAM SEKITAR)" },
 ] as const;
+
+export const DEFAULT_PROGRAM_TAGS = [
+  "leadership",
+  "field-training",
+  "team-building",
+  "survival",
+  "discipline",
+  "marching",
+  "weapons-training",
+  "camp",
+  "fitness",
+  "community-service",
+  "navigation",
+  "strategy",
+] as const;
+
+export const DEFAULT_PROGRAMS = Array.from(
+  { length: 36 },
+  (_, index) => {
+    const baseYear = 2023;
+    const yearOffset = Math.floor(index / 12);
+    const month = (index % 12) + 1;
+    const year = baseYear + yearOffset;
+
+    const startDate = new Date(
+      Date.UTC(year, month - 1, 10, 8, 0, 0),
+    );
+
+    const endDate = new Date(
+      Date.UTC(year, month - 1, 12, 17, 0, 0),
+    );
+
+    const names = [
+      "Leadership Camp",
+      "Field Training Exercise",
+      "Combat Fitness Challenge",
+      "Survival Training",
+      "Cadet Leadership Workshop",
+      "Tactical Navigation Exercise",
+      "Discipline Enhancement Camp",
+      "Marching Competition",
+      "Community Service Mission",
+      "Military Skills Workshop",
+      "Strategic Planning Exercise",
+      "Annual Cadet Assembly",
+    ];
+
+    const name = `${names[index % names.length]} ${year}`;
+
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    return {
+      name,
+      slug,
+      startDate,
+      endDate,
+      location: [
+        "Kem Pengkalan Chepa",
+        "UMT Kuala Nerus",
+        "Kem Desa Pahlawan",
+        "Kem Sungai Udang",
+        "Kem Batu 10",
+      ][index % 5],
+      participantCount: 80 + (index % 40),
+      coverPhotoPath: DEFAULT_PROGRAM_COVER_PHOTO,
+      coverPhotoWidth: 1280,
+      coverPhotoHeight: 720,
+      videoUrl: DEFAULT_PROGRAM_VIDEO_URL,
+      displayPhotos: [...DEFAULT_PROGRAM_DISPLAY_PHOTOS],
+      tags: [
+        DEFAULT_PROGRAM_TAGS[index % DEFAULT_PROGRAM_TAGS.length],
+        DEFAULT_PROGRAM_TAGS[(index + 1) % DEFAULT_PROGRAM_TAGS.length],
+      ],
+      translations: {
+        en: {
+          title: name,
+          summary: LONG_EN_PROGRAM_SUMMARY,
+          body: LONG_EN_PROGRAM_SUMMARY.repeat(3),
+          seoTitle: `${name} | PALAPES UMT`,
+          seoDescription: `Learn more about ${name} organised by PALAPES UMT.`,
+        },
+        ms: {
+          title: name,
+          summary: LONG_MS_PROGRAM_SUMMARY,
+          body: LONG_MS_PROGRAM_SUMMARY.repeat(3),
+          seoTitle: `${name} | PALAPES UMT`,
+          seoDescription: `Ketahui lebih lanjut mengenai ${name} anjuran PALAPES UMT.`,
+        },
+        zh: {
+          title: name,
+          summary: LONG_ZH_PROGRAM_SUMMARY,
+          body: LONG_ZH_PROGRAM_SUMMARY.repeat(3),
+          seoTitle: `${name} | PALAPES UMT`,
+          seoDescription: `了解 PALAPES UMT 举办的 ${name}。`,
+        },
+        ta: {
+          title: name,
+          summary: LONG_TA_PROGRAM_SUMMARY,
+          body: LONG_TA_PROGRAM_SUMMARY.repeat(3),
+          seoTitle: `${name} | PALAPES UMT`,
+          seoDescription: `${name} பற்றிய தகவல்களை அறிக.`,
+        },
+      },
+    };
+  },
+);

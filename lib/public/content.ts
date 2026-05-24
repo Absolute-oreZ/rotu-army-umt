@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   cadetInfos,
@@ -88,13 +88,19 @@ export type PublicIntakeDetail = PublicIntake & {
   cadets: PublicIntakeCadet[];
 };
 
-export type PublicProgramSummary = {
-  endDate: Date;
-  location: string;
+export type PublicStoryProgram = {
+  id: number;
   slug: string;
-  startDate: Date;
-  summary: string | null;
+  startYear: number;
+  coverPhotoPath: string;
+  coverPhotoWidth: number | null;
+  coverPhotoHeight: number | null;
   title: string;
+};
+
+export type PublicStoriesByYear = {
+  years: number[];
+  byYear: Record<number, PublicStoryProgram[]>;
 };
 
 const FALLBACK_HERO_IMAGE = "/images/default-hero-image.jpg";
@@ -395,27 +401,85 @@ export async function getPublishedIntakeDetail(
   };
 }
 
-export async function getPublishedProgramSummaries(
+export async function getPublishedStoriesByYear(
   locale: Locale,
-): Promise<PublicProgramSummary[]> {
-  return db
+): Promise<PublicStoriesByYear> {
+  const programRows = await db
     .select({
-      endDate: programs.endDate,
-      location: programs.location,
+      id: programs.id,
+      name: programs.name,
       slug: programs.slug,
       startDate: programs.startDate,
-      summary: programTranslations.summary,
-      title: programTranslations.title,
+      coverPhotoPath: programs.coverPhotoPath,
+      coverPhotoWidth: programs.coverPhotoWidth,
+      coverPhotoHeight: programs.coverPhotoHeight,
     })
     .from(programs)
-    .innerJoin(
-      programTranslations,
+    .where(
       and(
-        eq(programTranslations.programId, programs.id),
-        eq(programTranslations.locale, locale),
+        eq(programs.status, "PUBLISHED"),
+        isNotNull(programs.coverPhotoPath),
       ),
     )
-    .where(eq(programs.status, "PUBLISHED"))
-    .orderBy(desc(programs.startDate))
-    .limit(3);
+    .orderBy(desc(programs.startDate));
+
+  if (programRows.length === 0) {
+    return { years: [], byYear: {} };
+  }
+
+  const translationRows = await db
+    .select({
+      programId: programTranslations.programId,
+      locale: programTranslations.locale,
+      title: programTranslations.title,
+    })
+    .from(programTranslations)
+    .where(
+      and(
+        inArray(
+          programTranslations.programId,
+          programRows.map((item) => item.id),
+        ),
+        inArray(programTranslations.locale, [locale, "en"]),
+      ),
+    );
+
+  const titleByProgramId = new Map<number, Partial<Record<Locale, string>>>();
+
+  for (const row of translationRows) {
+    const current = titleByProgramId.get(row.programId) ?? {};
+    titleByProgramId.set(row.programId, {
+      ...current,
+      [row.locale]: row.title,
+    });
+  }
+
+  const byYear = new Map<number, PublicStoryProgram[]>();
+
+  for (const row of programRows) {
+    const titleEntry = titleByProgramId.get(row.id);
+    const title = titleEntry?.[locale] ?? titleEntry?.en ?? row.name;
+    const startYear = row.startDate.getUTCFullYear();
+    const list = byYear.get(startYear) ?? [];
+
+    list.push({
+      id: row.id,
+      slug: row.slug,
+      startYear,
+      coverPhotoPath: row.coverPhotoPath ?? "/images/default-hero-image.jpg",
+      coverPhotoWidth: row.coverPhotoWidth,
+      coverPhotoHeight: row.coverPhotoHeight,
+      title,
+    });
+
+    byYear.set(startYear, list);
+  }
+
+  const years = Array.from(byYear.keys()).sort((a, b) => b - a);
+
+  return {
+    years,
+    byYear: Object.fromEntries(years.map((year) => [year, byYear.get(year) ?? []])),
+  };
 }
+

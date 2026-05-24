@@ -64,8 +64,8 @@ Current implemented routes:
 
 Target routes (planned in `TASKS.md`):
 - `/<locale>/intakes/[slug]`
-- `/<locale>/events`
-- `/<locale>/events/[slug]`
+- `/<locale>/stories`
+- `/<locale>/stories/[slug]`
 - `/<locale>/contact`
 
 ### 4.2 Admin Routes (Non-localized)
@@ -107,7 +107,7 @@ Primary schema domains in `db/schema.ts`:
   - `members`, `cadet_infos`, `study_programs`.
 - Newsletter:
   - `newsletter_subscribers` with status and token hash fields.
-- Programs/events and metadata:
+- stories and metadata:
   - `programs`, `program_translations`, `program_tags`, `program_tag_translations`, `programs_to_tags`, `program_display_photos`.
 - Homepage-managed content:
   - `webapp_contents`, `frequently_asked_questions`, `frequently_asked_question_translations`, `see_more_links`, `testimonials`, `testimonial_translations`.
@@ -135,7 +135,7 @@ Design patterns:
 - Hero image fallback.
 - Stats fallbacks.
 - FAQ fallback entries by locale.
-- “See also” fallback links.
+- ï¿½See alsoï¿½ fallback links.
 
 This supports early public page delivery while admin-managed content modules are still in progress.
 
@@ -155,7 +155,7 @@ This supports early public page delivery while admin-managed content modules are
 
 ## 11. Current Gaps vs Target Architecture
 Based on `TASKS.md`, pending major items include:
-- Public pages: intake detail, events list/detail, contact page.
+- Public pages: intake detail, stories list/detail, contact page.
 - Public SEO completeness: per-page canonical/hreflang, sitemap, robots.
 - Error handling: localized `not-found`, route-level error boundaries.
 - Newsletter submission and confirmation flow.
@@ -169,7 +169,7 @@ Based on `TASKS.md`, pending major items include:
 - Next.js version drift: framework-sensitive updates should be validated against local Next.js docs in `node_modules/next/dist/docs`.
 
 ## 13. Recommended Next Architectural Steps
-1. Complete public route surface (`intake detail`, `events`, `contact`) using existing content service pattern.
+1. Complete public route surface (`intake detail`, `stories`, `contact`) using existing content service pattern.
 2. Add shared SEO utilities for canonical + alternates to avoid repeated metadata logic.
 3. Introduce admin shell and module route scaffolding with `requireAdminModule` guard usage.
 4. Implement newsletter mutation endpoints with token hashing and status transitions.

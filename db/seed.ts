@@ -16,6 +16,8 @@ import {
   DEFAULT_CADETS_INFO,
   DEFAULT_STUDY_PROGRAMS,
   DEFAULT_TESTIMONIAL_ARMY_NOS,
+  DEFAULT_PROGRAMS,
+  DEFAULT_PROGRAM_TAGS,
 } from "../lib/data";
 import { computeAcademicSchedule } from "@/lib/utils";
 
@@ -73,10 +75,15 @@ async function seed() {
       see_more_links,
       webapp_contents,
       admin_users,
-      study_programs
+      study_programs,
+      program_display_photos,
+      programs_to_tags,
+      program_tag_translations,
+      program_tags,
+      program_translations,
+      programs
     RESTART IDENTITY CASCADE
   `;
-
 
   const studyProgramIds: number[] = [];
 
@@ -421,6 +428,124 @@ async function seed() {
           ${testimonial.translations[locale]}
         )
       `;
+    }
+  }
+
+  const tagIdMap = new Map<string, number>();
+
+  for (const tag of DEFAULT_PROGRAM_TAGS) {
+    const [tagRow] = await sql<[{ id: number }]>`
+    insert into program_tags (
+      slug
+    )
+    values (
+      ${tag}
+    )
+    returning id
+  `;
+
+    tagIdMap.set(tag, tagRow.id);
+
+    for (const locale of ["en", "ms", "zh", "ta"] as const) {
+      await sql`
+      insert into program_tag_translations (
+        tag_id,
+        locale,
+        name
+      )
+      values (
+        ${tagRow.id},
+        ${locale},
+        ${tag.replace(/-/g, " ")}
+      )
+    `;
+    }
+  }
+
+  for (const program of DEFAULT_PROGRAMS) {
+    const [programRow] = await sql<[{ id: number }]>`
+    insert into programs (
+      name,
+      slug,
+      start_date,
+      end_date,
+      location,
+      participant_count,
+      cover_photo_path,
+      cover_photo_width,
+      cover_photo_height,
+      video_url,
+      status
+    )
+    values (
+      ${program.name},
+      ${program.slug},
+      ${program.startDate.toISOString()},
+      ${program.endDate.toISOString()},
+      ${program.location},
+      ${program.participantCount},
+      ${program.coverPhotoPath},
+      ${program.coverPhotoWidth},
+      ${program.coverPhotoHeight},
+      ${program.videoUrl},
+      'PUBLISHED'
+    )
+    returning id
+  `;
+
+    for (const locale of ["en", "ms", "zh", "ta"] as const) {
+      const translation = program.translations[locale];
+
+      await sql`
+      insert into program_translations (
+        program_id,
+        locale,
+        title,
+        summary,
+        body,
+        seo_title,
+        seo_description
+      )
+      values (
+        ${programRow.id},
+        ${locale},
+        ${translation.title},
+        ${translation.summary},
+        ${translation.body},
+        ${translation.seoTitle},
+        ${translation.seoDescription}
+      )
+    `;
+    }
+
+    for (const photo of program.displayPhotos) {
+      await sql`
+      insert into program_display_photos (
+        program_id,
+        photo_path
+      )
+      values (
+        ${programRow.id},
+        ${photo}
+      )
+    `;
+    }
+
+    for (const tag of program.tags) {
+      const tagId = tagIdMap.get(tag);
+
+      if (!tagId) continue;
+
+      await sql`
+      insert into programs_to_tags (
+        program_id,
+        tag_id
+      )
+      values (
+        ${programRow.id},
+        ${tagId}
+      )
+    `;
     }
   }
 }

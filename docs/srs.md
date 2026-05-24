@@ -70,7 +70,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 
 #### 3.3.3 Planned Public Pages
 1. System shall provide intake detail page by slug.
-2. System shall provide events/stories list and detail pages by slug.
+2. System shall provide stories list and detail pages by slug.
 3. System shall provide contact page with newsletter entry point.
 
 ### 3.4 SEO and Discoverability
@@ -103,7 +103,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 1. System shall provide role-aware module access:
    - Secretary: rank holders, intakes, cadets, admin users.
    - Treasurer: collections, expenses.
-   - Multimedia: portfolio, events/stories, newsletters.
+   - Multimedia: portfolio, stories, newsletters.
    - Sports: activities, collaborations.
    - Welfare: health, accommodations, religion.
    - Academic: results, timetables.
@@ -129,7 +129,7 @@ System data model shall include at minimum:
 - Intakes and translations.
 - Intake patch explanations and translations.
 - Intake display photos.
-- Programs/events and translations.
+- Stories and translations.
 - Program tags and tag translations.
 - Members and cadet information.
 - Academic years, sessions, exams, results.
@@ -196,7 +196,7 @@ System data model shall include at minimum:
 - Public content data access layer.
 
 ### 7.2 Pending
-- Intake detail, events list/detail, contact page.
+- Intake detail, story list/detail, contact page.
 - Newsletter form and delivery flow.
 - Public SEO completeness, sitemap, robots.
 - Admin sidebar shell and role module pages.

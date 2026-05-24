@@ -127,12 +127,12 @@ Public routes live under the localized marketing surface.
 - Intake detail page
   - Route: `/[locale]/intakes/[slug]`
 
-- Events page
+- stories page
   - Navigation label: **Our Stories**
-  - Route: `/[locale]/events`
+  - Route: `/[locale]/stories`
 
 - Event detail page
-  - Route: `/[locale]/events/[slug]`
+  - Route: `/[locale]/stories/[slug]`
 
 - Contact page
   - Navigation label: **Contact Us**
@@ -143,7 +143,7 @@ Public routes live under the localized marketing surface.
 
 - Use slugs instead of IDs for all public content routes.
 - Slugs must be human-readable, lowercase, hyphen-separated, and SEO-oriented.
-- Example: `/en/events/field-training-camp-2025`
+- Example: `/en/stories/field-training-camp-2025`
 
 Every public page should use the Next.js Metadata API and include:
 
@@ -158,7 +158,7 @@ Use semantic HTML:
 
 - One `<h1>` per page.
 - Proper heading hierarchy.
-- Internal links between related intakes, events, stories, and application/contact paths.
+- Internal links between related intakes, stories, stories, and application/contact paths.
 
 Performance:
 
@@ -174,7 +174,7 @@ Some public content may start as static placeholders, but the system should be d
 
 Likely Multimedia-managed public content:
 
-- Events/stories
+- stories/stories
 - Portfolio/media highlights
 - Newsletters
 - Selected landing/contact page content
@@ -261,7 +261,7 @@ Each admin user has exactly one role.
 - Default: Portfolio.
 - Access:
   - Portfolio
-  - Events/stories
+  - stories/stories
   - Newsletters
   - Public content/media areas as approved
 
@@ -295,7 +295,7 @@ The global dashboard should include:
 - Quick access tiles.
 - Summary cards for modules such as:
   - Intakes
-  - Events/stories
+  - stories/stories
   - Cadets
   - Finance, if applicable
   - Activities overview

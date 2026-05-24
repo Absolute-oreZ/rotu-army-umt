@@ -9,7 +9,7 @@ const ms: Dictionary = {
   navigation: {
     about: "Tentang Kami",
     intakes: "Ambilan Kami",
-    events: "Cerita Kami",
+    stories: "Cerita Kami",
     contact: "Hubungi Kami",
   },
   common: {
@@ -73,8 +73,6 @@ const ms: Dictionary = {
   intakesPage: {
     title: "Ambilan Kami",
     description: "Terokai ambilan ROTU Army UMT yang mempunyai identiti, karakter latihan, dan kisah tersendiri.",
-    eyebrow: "Direktori Ambilan",
-    intro: "Setiap ambilan mewakili kitaran latihan yang berbeza. Lihat ambilan yang diterbitkan dan teruskan ke butiran setiap ambilan.",
     intakeNoLabel: "Ambilan",
     summaryFallback: "Ringkasan terperinci ambilan ini akan diterbitkan tidak lama lagi.",
     taglineFallback: "Maklumat kitaran latihan sedang dikemas kini.",
@@ -82,6 +80,12 @@ const ms: Dictionary = {
     cardImageAlt: "Visual ambilan",
     emptyTitle: "Belum ada ambilan diterbitkan",
     emptyDescription: "Rekod ambilan yang telah diterbitkan akan dipaparkan di sini apabila disediakan oleh pasukan.",
+  },
+  storiesPage: {
+    title: "Cerita Kami",
+    description: "Lihat program ROTU Army UMT yang diterbitkan mengikut tahun dan teroka setiap cerita.",
+    emptyTitle: "Belum ada cerita diterbitkan",
+    emptyDescription: "Cerita yang diterbitkan akan dipaparkan di sini apabila program disediakan oleh pasukan.",
   },
   intakeDetailPage: {
     detailEyebrow: "Butiran Ambilan",

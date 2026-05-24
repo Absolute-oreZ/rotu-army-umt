@@ -23,7 +23,7 @@ type PublicHeaderProps = {
 const navItems = [
   { key: "about", path: "" },
   { key: "intakes", path: "/intakes" },
-  { key: "events", path: "/events" },
+  { key: "stories", path: "/stories" },
   { key: "contact", path: "/contact" },
 ] as const;
 
