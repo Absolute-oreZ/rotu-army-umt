@@ -4,8 +4,7 @@ const ms: Dictionary = {
   metadata: {
     siteName: "ROTU ARMY UMT",
     title: "ROTU ARMY UMT",
-    description:
-      "Pengalaman web rasmi untuk ROTU ARMY UMT, PALAPES Darat Universiti Malaysia Terengganu.",
+    description: "Pengalaman web rasmi untuk ROTU ARMY UMT, PALAPES Darat Universiti Malaysia Terengganu.",
   },
   navigation: {
     about: "Tentang Kami",
@@ -26,8 +25,7 @@ const ms: Dictionary = {
   },
   home: {
     title: "ROTU Army UMT",
-    intro:
-      "Komuniti latihan universiti berdisiplin yang dibina atas kepimpinan, khidmat, ketahanan, dan pengalaman lapangan.",
+    intro: "Komuniti latihan universiti berdisiplin yang dibina atas kepimpinan, khidmat, ketahanan, dan pengalaman lapangan.",
     primaryCta: "Lihat ambilan",
     secondaryCta: "Hubungi kami",
     heroImageAlt: "Visual utama ROTU Army UMT",
@@ -74,19 +72,39 @@ const ms: Dictionary = {
   },
   intakesPage: {
     title: "Ambilan Kami",
-    description:
-      "Terokai ambilan ROTU Army UMT yang mempunyai identiti, karakter latihan, dan kisah tersendiri.",
+    description: "Terokai ambilan ROTU Army UMT yang mempunyai identiti, karakter latihan, dan kisah tersendiri.",
     eyebrow: "Direktori Ambilan",
-    intro:
-      "Setiap ambilan mewakili kitaran latihan yang berbeza. Lihat ambilan yang diterbitkan dan teruskan ke butiran setiap ambilan.",
+    intro: "Setiap ambilan mewakili kitaran latihan yang berbeza. Lihat ambilan yang diterbitkan dan teruskan ke butiran setiap ambilan.",
     intakeNoLabel: "Ambilan",
     summaryFallback: "Ringkasan terperinci ambilan ini akan diterbitkan tidak lama lagi.",
     taglineFallback: "Maklumat kitaran latihan sedang dikemas kini.",
     viewDetails: "Lihat butiran",
     cardImageAlt: "Visual ambilan",
     emptyTitle: "Belum ada ambilan diterbitkan",
-    emptyDescription:
-      "Rekod ambilan yang telah diterbitkan akan dipaparkan di sini apabila disediakan oleh pasukan.",
+    emptyDescription: "Rekod ambilan yang telah diterbitkan akan dipaparkan di sini apabila disediakan oleh pasukan.",
+  },
+  intakeDetailPage: {
+    detailEyebrow: "Butiran Ambilan",
+    startYearLabel: "Tahun mula",
+    galleryTitle: "Galeri ambilan",
+    galleryIntro: "Rekod visual yang berkaitan dengan ambilan ini.",
+    patchTitle: "Penerangan lencana",
+    patchIntro: "Makna di sebalik lencana dan simbol ambilan.",
+    cadetsTitle: "Kadet aktif",
+    cadetsIntro: "Kadet yang dikaitkan dengan ambilan ini.",
+    noGalleryPhotos: "Tiada foto galeri diterbitkan lagi.",
+    noPatchExplanations: "Penerangan lencana belum tersedia lagi.",
+    noCadets: "Tiada kadet diterbitkan lagi.",
+    quoteFallback: "Kata-kata belum tersedia lagi.",
+    uniformTitle: "Visual uniform",
+    uniformIntro: "Visual inner dan t-shirt yang berkaitan dengan ambilan ini.",
+    innerLabel: "Inner",
+    tshirtLabel: "T-shirt",
+    noUniformPhotos: "Visual uniform belum tersedia lagi.",
+    summaryTab: "Ringkasan",
+    patchTab: "Lencana",
+    uniformTab: "Inner & T-shirt",
+    patchLanguagesTitle: "Penerangan lencana",
   },
 };
 

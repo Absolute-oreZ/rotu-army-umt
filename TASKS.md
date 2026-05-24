@@ -26,7 +26,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Add public content data access layer for published intakes and stories.
 - [x] Build landing page at `/[locale]/`.
 - [x] Build intakes list page at `/[locale]/intakes`.
-- [ ] Build intake detail page at `/[locale]/intakes/[slug]`.
+- [x] Build intake detail page at `/[locale]/intakes/[slug]`.
 - [ ] Build events/stories page at `/[locale]/events`.
 - [ ] Build event detail page at `/[locale]/events/[slug]`.
 - [ ] Build contact page at `/[locale]/contact`.

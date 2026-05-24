@@ -47,9 +47,6 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const themeLabel = isDark
-    ? dictionary.common.switchToLight
-    : dictionary.common.switchToDark;
 
   const links = navItems.map((item) => {
     const href = localizedPath(locale, item.path);

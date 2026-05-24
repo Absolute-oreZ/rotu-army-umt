@@ -72,11 +72,9 @@ const zh: Dictionary = {
   },
   intakesPage: {
     title: "我们的入队批次",
-    description:
-      "探索 ROTU Army UMT 各批次入队信息，了解每个批次的训练特色与阶段重点。",
+    description: "探索 ROTU Army UMT 各批次入队信息，了解每个批次的训练特色与阶段重点。",
     eyebrow: "批次总览",
-    intro:
-      "每个入队批次都代表不同的训练周期。浏览当前已发布的批次并进入详情页面。",
+    intro: "每个入队批次都代表不同的训练周期。浏览当前已发布的批次并进入详情页面。",
     intakeNoLabel: "批次",
     summaryFallback: "该批次的详细简介将稍后发布。",
     taglineFallback: "训练周期信息整理中。",
@@ -84,6 +82,29 @@ const zh: Dictionary = {
     cardImageAlt: "入队批次视觉图",
     emptyTitle: "暂无已发布批次",
     emptyDescription: "团队发布后，入队批次记录将显示在此处。",
+  },
+  intakeDetailPage: {
+    detailEyebrow: "入队详情",
+    startYearLabel: "开始年份",
+    galleryTitle: "入队图库",
+    galleryIntro: "与该入队批次相关的视觉资料。",
+    patchTitle: "徽章说明",
+    patchIntro: "了解入队徽章与符号的含义。",
+    cadetsTitle: "学员",
+    cadetsIntro: "当前隶属于该入队批次的学员。",
+    noGalleryPhotos: "暂无已发布的图库照片。",
+    noPatchExplanations: "暂无徽章说明。",
+    noCadets: "暂无已发布的学员。",
+    quoteFallback: "暂无引用内容。",
+    uniformTitle: "服装视觉",
+    uniformIntro: "与该入队批次相关的内衬与T恤视觉资料。",
+    innerLabel: "内衬",
+    tshirtLabel: "T恤",
+    noUniformPhotos: "暂无服装视觉资料。",
+    summaryTab: "概览",
+    patchTab: "徽章",
+    uniformTab: "内衬与T恤",
+    patchLanguagesTitle: "徽章说明",
   },
 };
 

@@ -67,14 +67,36 @@ export type Dictionary = {
     emptyTitle: string;
     emptyDescription: string;
   };
+  intakeDetailPage: {
+    detailEyebrow: string;
+    startYearLabel: string;
+    galleryTitle: string;
+    galleryIntro: string;
+    patchTitle: string;
+    patchIntro: string;
+    cadetsTitle: string;
+    cadetsIntro: string;
+    noGalleryPhotos: string;
+    noPatchExplanations: string;
+    noCadets: string;
+    quoteFallback: string;
+    uniformTitle: string;
+    uniformIntro: string;
+    innerLabel: string;
+    tshirtLabel: string;
+    noUniformPhotos: string;
+    summaryTab: string;
+    patchTab: string;
+    uniformTab: string;
+    patchLanguagesTitle: string;
+  };
 };
 
 const en: Dictionary = {
   metadata: {
     siteName: "ROTU ARMY UMT",
     title: "ROTU ARMY UMT",
-    description:
-      "Official web experience for ROTU ARMY UMT, PALAPES Darat Universiti Malaysia Terengganu.",
+    description: "Official web experience for ROTU ARMY UMT, PALAPES Darat Universiti Malaysia Terengganu.",
   },
   navigation: {
     about: "About Us",
@@ -95,8 +117,7 @@ const en: Dictionary = {
   },
   home: {
     title: "ROTU Army UMT",
-    intro:
-      "A disciplined university training community built around leadership, service, resilience, and field experience.",
+    intro: "A disciplined university training community built around leadership, service, resilience, and field experience.",
     primaryCta: "Explore intakes",
     secondaryCta: "Contact us",
     heroImageAlt: "ROTU Army UMT visual placeholder",
@@ -143,19 +164,39 @@ const en: Dictionary = {
   },
   intakesPage: {
     title: "Our Intakes",
-    description:
-      "Explore ROTU Army UMT intakes, each with its own identity, training character, and intake story.",
+    description: "Explore ROTU Army UMT intakes, each with its own identity, training character, and intake story.",
     eyebrow: "Intake Directory",
-    intro:
-      "Each intake reflects a distinct training cycle. Explore the currently published intakes and continue to individual details.",
+    intro: "Each intake reflects a distinct training cycle. Explore the currently published intakes and continue to individual details.",
     intakeNoLabel: "Intake",
     summaryFallback: "Detailed summary for this intake will be published soon.",
     taglineFallback: "Training cycle information in progress.",
     viewDetails: "View details",
     cardImageAlt: "Intake visual",
     emptyTitle: "No published intakes yet",
-    emptyDescription:
-      "Published intake records will appear here once they are made available by the team.",
+    emptyDescription: "Published intake records will appear here once they are made available by the team.",
+  },
+  intakeDetailPage: {
+    detailEyebrow: "Intake Detail",
+    startYearLabel: "Start year",
+    galleryTitle: "Intake gallery",
+    galleryIntro: "Visual records associated with this intake.",
+    patchTitle: "Patch explanations",
+    patchIntro: "Meaning behind the intake patch and symbols.",
+    cadetsTitle: "Active cadets",
+    cadetsIntro: "Cadets currently linked to this intake.",
+    noGalleryPhotos: "No gallery photos have been published yet.",
+    noPatchExplanations: "Patch explanations are not available yet.",
+    noCadets: "No active cadets have been published yet.",
+    quoteFallback: "Quote not available yet.",
+    uniformTitle: "Uniform visuals",
+    uniformIntro: "Inner and tshirt visuals linked to this intake.",
+    innerLabel: "Inner",
+    tshirtLabel: "T-shirt",
+    noUniformPhotos: "Uniform visuals are not available yet.",
+    summaryTab: "Summary",
+    patchTab: "Patch",
+    uniformTab: "Inner & Tshirt",
+    patchLanguagesTitle: "Patch explanations",
   },
 };
 

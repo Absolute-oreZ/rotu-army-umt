@@ -4,8 +4,7 @@ const ta: Dictionary = {
   metadata: {
     siteName: "ROTU ARMY UMT",
     title: "ROTU ARMY UMT",
-    description:
-      "ROTU ARMY UMT மற்றும் Universiti Malaysia Terengganu PALAPES Darat க்கான அதிகாரப்பூர்வ இணைய அனுபவம்.",
+    description: "ROTU ARMY UMT மற்றும் Universiti Malaysia Terengganu PALAPES Darat க்கான அதிகாரப்பூர்வ இணைய அனுபவம்.",
   },
   navigation: {
     about: "எங்களை பற்றி",
@@ -26,8 +25,7 @@ const ta: Dictionary = {
   },
   home: {
     title: "ROTU Army UMT",
-    intro:
-      "தலைமைத்துவம், சேவை, மன உறுதி மற்றும் களப் பயிற்சியை மையமாகக் கொண்ட ஒழுங்கமைந்த பல்கலைக்கழக பயிற்சி சமூகம.",
+    intro: "தலைமைத்துவம், சேவை, மன உறுதி மற்றும் களப் பயிற்சியை மையமாகக் கொண்ட ஒழுங்கமைந்த பல்கலைக்கழக பயிற்சி சமூகம.",
     primaryCta: "சேர்க்கைகளை பார்க்கவும்",
     secondaryCta: "தொடர்பு கொள்ளுங்கள்",
     heroImageAlt: "ROTU Army UMT முதன்மை படம்",
@@ -74,19 +72,39 @@ const ta: Dictionary = {
   },
   intakesPage: {
     title: "எங்கள் சேர்க்கைகள்",
-    description:
-      "ROTU Army UMT சேர்க்கை அணிகளை ஆராய்ந்து, ஒவ்வொரு சேர்க்கையின் பயிற்சி அடையாளங்களையும் அறியுங்கள்.",
+    description: "ROTU Army UMT சேர்க்கை அணிகளை ஆராய்ந்து, ஒவ்வொரு சேர்க்கையின் பயிற்சி அடையாளங்களையும் அறியுங்கள்.",
     eyebrow: "சேர்க்கை பட்டியல்",
-    intro:
-      "ஒவ்வொரு சேர்க்கையும் தனித்த பயிற்சி சுற்றத்தை குறிக்கிறது. தற்போது வெளியிடப்பட்ட சேர்க்கைகளை பார்த்து விரிவான விவரங்களுக்கு செல்லலாம்.",
+    intro: "ஒவ்வொரு சேர்க்கையும் தனித்த பயிற்சி சுற்றத்தை குறிக்கிறது. தற்போது வெளியிடப்பட்ட சேர்க்கைகளை பார்த்து விரிவான விவரங்களுக்கு செல்லலாம்.",
     intakeNoLabel: "சேர்க்கை",
     summaryFallback: "இந்த சேர்க்கைக்கான விரிவான சுருக்கம் விரைவில் வெளியிடப்படும்.",
     taglineFallback: "பயிற்சி சுற்ற தகவல் புதுப்பிக்கப்படுகிறது.",
     viewDetails: "விவரங்களை பார்க்க",
     cardImageAlt: "சேர்க்கை காட்சி படம்",
     emptyTitle: "இதுவரை வெளியிடப்பட்ட சேர்க்கைகள் இல்லை",
-    emptyDescription:
-      "குழுவால் வெளியிடப்பட்டதும் சேர்க்கை பதிவுகள் இங்கே காணப்படும்.",
+    emptyDescription: "குழுவால் வெளியிடப்பட்டதும் சேர்க்கை பதிவுகள் இங்கே காணப்படும்.",
+  },
+  intakeDetailPage: {
+    detailEyebrow: "சேர்க்கை விவரம்",
+    startYearLabel: "தொடக்க ஆண்டு",
+    galleryTitle: "சேர்க்கை தொகுப்பு",
+    galleryIntro: "இந்த சேர்க்கைக்கு தொடர்புடைய காட்சிப் பதிவுகள்.",
+    patchTitle: "பேட்ச் விளக்கங்கள்",
+    patchIntro: "பேட்ச் மற்றும் சின்னங்களின் பொருள்.",
+    cadetsTitle: "கேடெட்கள்",
+    cadetsIntro: "இந்த சேர்க்கையுடன் இணைக்கப்பட்ட கேடெட்கள்.",
+    noGalleryPhotos: "இதுவரை கேலரி புகைப்படங்கள் வெளியிடப்படவில்லை.",
+    noPatchExplanations: "பேட்ச் விளக்கங்கள் இன்னும் கிடைக்கவில்லை.",
+    noCadets: "கேடெட்கள் இன்னும் வெளியிடப்படவில்லை.",
+    quoteFallback: "மேற்கோள் இன்னும் கிடைக்கவில்லை.",
+    uniformTitle: "உரூன் காட்சிகள்",
+    uniformIntro: "இந்த சேர்க்கையுடன் தொடர்புடைய inner மற்றும் t-shirt காட்சிகள்.",
+    innerLabel: "Inner",
+    tshirtLabel: "T-shirt",
+    noUniformPhotos: "உரூன் காட்சிகள் இன்னும் கிடைக்கவில்லை.",
+    summaryTab: "சுருக்கம்",
+    patchTab: "பேட்ச்",
+    uniformTab: "Inner & T-shirt",
+    patchLanguagesTitle: "பேட்ச் விளக்கங்கள்",
   },
 };
 

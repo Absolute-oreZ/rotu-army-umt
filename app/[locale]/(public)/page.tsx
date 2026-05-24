@@ -7,7 +7,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CountUp } from "@/components/public/count-up";
 import { SeeAlso } from "@/components/public/see-also";
 import { ScrollReveal } from "@/components/public/scroll-reveal";
 import { JoinTheRanks } from "@/components/public/join-the-ranks";
