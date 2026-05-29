@@ -502,7 +502,6 @@ async function seed() {
         locale,
         title,
         summary,
-        body,
         seo_title,
         seo_description
       )
@@ -511,7 +510,6 @@ async function seed() {
         ${locale},
         ${translation.title},
         ${translation.summary},
-        ${translation.body},
         ${translation.seoTitle},
         ${translation.seoDescription}
       )

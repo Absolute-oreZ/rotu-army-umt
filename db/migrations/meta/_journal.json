@@ -8,6 +8,13 @@
       "when": 1779021562371,
       "tag": "0000_freezing_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779884267228,
+      "tag": "0001_misty_goliath",
+      "breakpoints": true
     }
   ]
 }

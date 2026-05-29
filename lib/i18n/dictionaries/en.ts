@@ -65,12 +65,6 @@ export type Dictionary = {
     emptyTitle: string;
     emptyDescription: string;
   };
-  storiesPage: {
-    title: string;
-    description: string;
-    emptyTitle: string;
-    emptyDescription: string;
-  };
   intakeDetailPage: {
     detailEyebrow: string;
     startYearLabel: string;
@@ -93,6 +87,25 @@ export type Dictionary = {
     patchTab: string;
     uniformTab: string;
     patchLanguagesTitle: string;
+  };
+  storiesPage: {
+    title: string;
+    description: string;
+    emptyTitle: string;
+    emptyDescription: string;
+  };
+  storyDetailPage: {
+    backLabel: string;
+    detailLabel: string;
+    dateLabel: string;
+    locationLabel: string;
+    participantsLabel: string;
+    tagsLabel: string;
+    galleryTitle: string;
+    galleryIntro: string;
+    noGalleryPhotos: string;
+    watchVideo: string;
+    noPhotos: string;
   };
 };
 
@@ -177,12 +190,6 @@ const en: Dictionary = {
     emptyTitle: "No published intakes yet",
     emptyDescription: "Published intake records will appear here once they are made available by the team.",
   },
-  storiesPage: {
-    title: "Our Stories",
-    description: "Browse published ROTU Army UMT programs by year and explore each story.",
-    emptyTitle: "No published stories yet",
-    emptyDescription: "Published stories will appear here once programs are made available by the team.",
-  },
   intakeDetailPage: {
     detailEyebrow: "Intake Detail",
     startYearLabel: "Start year",
@@ -205,6 +212,25 @@ const en: Dictionary = {
     patchTab: "Patch",
     uniformTab: "Inner & Tshirt",
     patchLanguagesTitle: "Patch explanations",
+  },
+  storiesPage: {
+    title: "Our Stories",
+    description: "Browse published ROTU Army UMT programs by year and explore each story.",
+    emptyTitle: "No published stories yet",
+    emptyDescription: "Published stories will appear here once programs are made available by the team.",
+  },
+  storyDetailPage: {
+    backLabel: "Back to stories",
+    detailLabel: "STORY DETAIL",
+    dateLabel: "Date",
+    locationLabel: "Location",
+    participantsLabel: "Participants",
+    tagsLabel: "Tags",
+    galleryTitle: "Photo gallery",
+    galleryIntro: "Visual records from this program.",
+    noGalleryPhotos: "No gallery photos have been published yet.",
+    watchVideo: "Watch video",
+    noPhotos: "No photos have been published yet.",
   },
 };
 

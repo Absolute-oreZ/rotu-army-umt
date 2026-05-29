@@ -829,28 +829,24 @@ export const DEFAULT_PROGRAMS = Array.from(
         en: {
           title: name,
           summary: LONG_EN_PROGRAM_SUMMARY,
-          body: LONG_EN_PROGRAM_SUMMARY.repeat(3),
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `Learn more about ${name} organised by PALAPES UMT.`,
         },
         ms: {
           title: name,
           summary: LONG_MS_PROGRAM_SUMMARY,
-          body: LONG_MS_PROGRAM_SUMMARY.repeat(3),
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `Ketahui lebih lanjut mengenai ${name} anjuran PALAPES UMT.`,
         },
         zh: {
           title: name,
           summary: LONG_ZH_PROGRAM_SUMMARY,
-          body: LONG_ZH_PROGRAM_SUMMARY.repeat(3),
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `了解 PALAPES UMT 举办的 ${name}。`,
         },
         ta: {
           title: name,
           summary: LONG_TA_PROGRAM_SUMMARY,
-          body: LONG_TA_PROGRAM_SUMMARY.repeat(3),
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `${name} பற்றிய தகவல்களை அறிக.`,
         },

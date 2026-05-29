@@ -1,0 +1,1 @@
+ALTER TABLE "program_translations" DROP COLUMN "body";

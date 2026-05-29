@@ -2,21 +2,25 @@ import "server-only";
 import { and, count, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
-  cadetInfos,
-  intakeDisplayPhotos,
-  intakePatchExplanationTranslations,
-  intakePatchExplanations,
-  intakes,
-  members,
-  frequentlyAskedQuestions,
-  frequentlyAskedQuestionTranslations,
-  programs,
-  programTranslations,
-  seeMoreLinks,
   webappContents,
+  seeMoreLinks,
   testimonials,
   testimonialTranslations,
+  frequentlyAskedQuestions,
+  frequentlyAskedQuestionTranslations,
+  members,
+  cadetInfos,
+  intakes,
   intakeTranslations,
+  intakeDisplayPhotos,
+  intakePatchExplanations,
+  intakePatchExplanationTranslations,
+  programs,
+  programTranslations,
+  programDisplayPhotos,
+  programTags,
+  programTagTranslations,
+  programsToTags
 } from "@/db/schema";
 import type { Locale } from "@/lib/i18n/config";
 import { DEFAULT_FAQ_ENTRIES, DEFAULT_SEE_MORE_LINKS } from "@/lib/data";
@@ -101,6 +105,36 @@ export type PublicStoryProgram = {
 export type PublicStoriesByYear = {
   years: number[];
   byYear: Record<number, PublicStoryProgram[]>;
+};
+
+export type PublicStoryTag = {
+  slug: string;
+  name: string;
+};
+
+export type PublicStoryDisplayPhoto = {
+  id: number;
+  photoPath: string;
+};
+
+export type PublicStoryDetail = {
+  id: number;
+  slug: string;
+  name: string;
+  title: string;
+  summary: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  startDate: Date;
+  endDate: Date;
+  location: string;
+  participantCount: number | null;
+  coverPhotoPath: string | null;
+  coverPhotoWidth: number | null;
+  coverPhotoHeight: number | null;
+  videoUrl: string | null;
+  tags: PublicStoryTag[];
+  displayPhotos: PublicStoryDisplayPhoto[];
 };
 
 const FALLBACK_HERO_IMAGE = "/images/default-hero-image.jpg";
@@ -345,11 +379,11 @@ export async function getPublishedIntakeDetail(
       .orderBy(intakePatchExplanations.id),
     db
       .select({
-      displayName: members.displayName,
-      displayPhotoPath: cadetInfos.displayPhotoPath,
-      id: cadetInfos.id,
-      quote: cadetInfos.quote,
-    })
+        displayName: members.displayName,
+        displayPhotoPath: cadetInfos.displayPhotoPath,
+        id: cadetInfos.id,
+        quote: cadetInfos.quote,
+      })
       .from(cadetInfos)
       .innerJoin(members, eq(cadetInfos.memberId, members.id))
       .where(
@@ -483,3 +517,108 @@ export async function getPublishedStoriesByYear(
   };
 }
 
+export async function getPublishedStoryDetail(
+  locale: Locale,
+  slug: string,
+): Promise<PublicStoryDetail | null> {
+  const programRows = await db
+    .select({
+      id: programs.id,
+      name: programs.name,
+      slug: programs.slug,
+      startDate: programs.startDate,
+      endDate: programs.endDate,
+      location: programs.location,
+      participantCount: programs.participantCount,
+      coverPhotoPath: programs.coverPhotoPath,
+      coverPhotoWidth: programs.coverPhotoWidth,
+      coverPhotoHeight: programs.coverPhotoHeight,
+      videoUrl: programs.videoUrl,
+    })
+    .from(programs)
+    .where(and(eq(programs.slug, slug), eq(programs.status, "PUBLISHED")))
+    .limit(1);
+
+  const program = programRows[0];
+  if (!program) return null;
+
+  const [translationRows, tagRows, displayPhotoRows] = await Promise.all([
+    db
+      .select({
+        locale: programTranslations.locale,
+        title: programTranslations.title,
+        summary: programTranslations.summary,
+        seoTitle: programTranslations.seoTitle,
+        seoDescription: programTranslations.seoDescription,
+      })
+      .from(programTranslations)
+      .where(
+        and(
+          eq(programTranslations.programId, program.id),
+          inArray(programTranslations.locale, [locale, "en"]),
+        ),
+      ),
+
+    db
+      .select({
+        tagSlug: programTags.slug,
+        locale: programTagTranslations.locale,
+        name: programTagTranslations.name,
+      })
+      .from(programsToTags)
+      .innerJoin(programTags, eq(programsToTags.tagId, programTags.id))
+      .leftJoin(
+        programTagTranslations,
+        and(
+          eq(programTagTranslations.tagId, programTags.id),
+          inArray(programTagTranslations.locale, [locale, "en"]),
+        ),
+      )
+      .where(eq(programsToTags.programId, program.id))
+      .orderBy(programTags.slug),
+
+    db
+      .select({
+        id: programDisplayPhotos.id,
+        photoPath: programDisplayPhotos.photoPath,
+      })
+      .from(programDisplayPhotos)
+      .where(eq(programDisplayPhotos.programId, program.id))
+      .orderBy(programDisplayPhotos.id),
+  ]);
+
+  const translation =
+    translationRows.find((r) => r.locale === locale) ??
+    translationRows.find((r) => r.locale === "en");
+
+  const tagMap = new Map<string, PublicStoryTag>();
+  for (const row of tagRows) {
+    if (!row.name) continue;
+    const existing = tagMap.get(row.tagSlug);
+    if (row.locale === locale) {
+      tagMap.set(row.tagSlug, { slug: row.tagSlug, name: row.name });
+    } else if (row.locale === "en" && !existing) {
+      tagMap.set(row.tagSlug, { slug: row.tagSlug, name: row.name });
+    }
+  }
+
+  return {
+    id: program.id,
+    slug: program.slug,
+    name: program.name,
+    title: translation?.title ?? program.name,
+    summary: translation?.summary ?? null,
+    seoTitle: translation?.seoTitle ?? null,
+    seoDescription: translation?.seoDescription ?? null,
+    startDate: program.startDate,
+    endDate: program.endDate,
+    location: program.location,
+    participantCount: program.participantCount,
+    coverPhotoPath: program.coverPhotoPath,
+    coverPhotoWidth: program.coverPhotoWidth,
+    coverPhotoHeight: program.coverPhotoHeight,
+    videoUrl: program.videoUrl,
+    tags: Array.from(tagMap.values()),
+    displayPhotos: displayPhotoRows,
+  };
+}

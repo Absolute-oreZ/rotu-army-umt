@@ -398,7 +398,6 @@ export const programTranslations = pgTable(
     locale: localeEnum("locale").notNull(),
     title: varchar("title", { length: 180 }).notNull(),
     summary: text("summary"),
-    body: text("body"),
     seoTitle: varchar("seo_title", { length: 180 }),
     seoDescription: text("seo_description"),
     ...timestamps,

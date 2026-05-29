@@ -81,12 +81,6 @@ const ms: Dictionary = {
     emptyTitle: "Belum ada ambilan diterbitkan",
     emptyDescription: "Rekod ambilan yang telah diterbitkan akan dipaparkan di sini apabila disediakan oleh pasukan.",
   },
-  storiesPage: {
-    title: "Cerita Kami",
-    description: "Lihat program ROTU Army UMT yang diterbitkan mengikut tahun dan teroka setiap cerita.",
-    emptyTitle: "Belum ada cerita diterbitkan",
-    emptyDescription: "Cerita yang diterbitkan akan dipaparkan di sini apabila program disediakan oleh pasukan.",
-  },
   intakeDetailPage: {
     detailEyebrow: "Butiran Ambilan",
     startYearLabel: "Tahun mula",
@@ -109,6 +103,25 @@ const ms: Dictionary = {
     patchTab: "Lencana",
     uniformTab: "Inner & T-shirt",
     patchLanguagesTitle: "Penerangan lencana",
+  },
+  storiesPage: {
+    title: "Cerita Kami",
+    description: "Lihat program ROTU Army UMT yang diterbitkan mengikut tahun dan teroka setiap cerita.",
+    emptyTitle: "Belum ada cerita diterbitkan",
+    emptyDescription: "Cerita yang diterbitkan akan dipaparkan di sini apabila program disediakan oleh pasukan.",
+  },
+  storyDetailPage: {
+    backLabel: "Kembali ke cerita",
+    detailLabel: "BUTIRAN CERITA",
+    dateLabel: "Tarikh",
+    locationLabel: "Lokasi",
+    participantsLabel: "Peserta",
+    tagsLabel: "Tag",
+    galleryTitle: "Galeri foto",
+    galleryIntro: "Rekod visual daripada program ini.",
+    noGalleryPhotos: "Tiada foto galeri diterbitkan lagi.",
+    watchVideo: "Tonton video",
+    noPhotos: "Tiada foto yang telah diterbitkan lagi."
   },
 };
 

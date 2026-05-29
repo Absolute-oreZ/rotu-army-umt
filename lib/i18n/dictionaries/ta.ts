@@ -81,12 +81,6 @@ const ta: Dictionary = {
     emptyTitle: "இதுவரை வெளியிடப்பட்ட சேர்க்கைகள் இல்லை",
     emptyDescription: "குழுவால் வெளியிடப்பட்டதும் சேர்க்கை பதிவுகள் இங்கே காணப்படும்.",
   },
-  storiesPage: {
-    title: "எங்கள் கதைகள்",
-    description: "ஆண்டுவாரியாக வெளியிடப்பட்ட ROTU Army UMT திட்டங்களை பார்த்து ஒவ்வொரு கதையையும் திறக்கவும்.",
-    emptyTitle: "இதுவரை வெளியிடப்பட்ட கதைகள் இல்லை",
-    emptyDescription: "குழுவால் திட்டங்கள் வெளியிடப்பட்டவுடன் கதைகள் இங்கே காணப்படும்.",
-  },
   intakeDetailPage: {
     detailEyebrow: "சேர்க்கை விவரம்",
     startYearLabel: "தொடக்க ஆண்டு",
@@ -109,6 +103,25 @@ const ta: Dictionary = {
     patchTab: "பேட்ச்",
     uniformTab: "Inner & T-shirt",
     patchLanguagesTitle: "பேட்ச் விளக்கங்கள்",
+  },
+  storiesPage: {
+    title: "எங்கள் கதைகள்",
+    description: "ஆண்டுவாரியாக வெளியிடப்பட்ட ROTU Army UMT திட்டங்களை பார்த்து ஒவ்வொரு கதையையும் திறக்கவும்.",
+    emptyTitle: "இதுவரை வெளியிடப்பட்ட கதைகள் இல்லை",
+    emptyDescription: "குழுவால் திட்டங்கள் வெளியிடப்பட்டவுடன் கதைகள் இங்கே காணப்படும்.",
+  },
+  storyDetailPage: {
+    backLabel: "கதைகளுக்கு திரும்பு",
+    detailLabel: "கதை விவரம்",
+    dateLabel: "தேதி",
+    locationLabel: "இடம்",
+    participantsLabel: "பங்கேற்பாளர்கள்",
+    tagsLabel: "குறிச்சொற்கள்",
+    galleryTitle: "புகைப்பட தொகுப்பு",
+    galleryIntro: "இந்த நிகழ்ச்சியின் காட்சிப் பதிவுகள்.",
+    noGalleryPhotos: "இதுவரை கேலரி புகைப்படங்கள் வெளியிடப்படவில்லை.",
+    watchVideo: "வீடியோ பார்க்கவும்",
+    noPhotos: "இதுவரை எந்த புகைப்படங்களும் வெளியிடப்படவில்லை."
   },
 };
 

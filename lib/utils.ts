@@ -51,3 +51,17 @@ export function computeAcademicSchedule(startYear: number): Array<{
 
   return schedule;
 }
+
+export function formatDate(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+export function formatDateRange(start: Date, end: Date, locale: string): string {
+  const s = formatDate(start, locale);
+  const e = formatDate(end, locale);
+  return s === e ? s : `${s} – ${e}`;
+}

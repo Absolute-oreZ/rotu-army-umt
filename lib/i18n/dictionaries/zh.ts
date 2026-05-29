@@ -81,12 +81,6 @@ const zh: Dictionary = {
     emptyTitle: "暂无已发布批次",
     emptyDescription: "团队发布后，入队批次记录将显示在此处。",
   },
-  storiesPage: {
-    title: "我们的故事",
-    description: "按年份浏览已发布的 ROTU Army UMT 活动项目，并查看每个故事。",
-    emptyTitle: "暂无已发布故事",
-    emptyDescription: "团队发布后，故事将在此处显示。",
-  },
   intakeDetailPage: {
     detailEyebrow: "入队详情",
     startYearLabel: "开始年份",
@@ -109,6 +103,25 @@ const zh: Dictionary = {
     patchTab: "徽章",
     uniformTab: "内衬与T恤",
     patchLanguagesTitle: "徽章说明",
+  },
+  storiesPage: {
+    title: "我们的故事",
+    description: "按年份浏览已发布的 ROTU Army UMT 活动项目，并查看每个故事。",
+    emptyTitle: "暂无已发布故事",
+    emptyDescription: "团队发布后，故事将在此处显示。",
+  },
+  storyDetailPage: {
+    backLabel: "返回故事",
+    detailLabel: "故事详情",
+    dateLabel: "日期",
+    locationLabel: "地点",
+    participantsLabel: "参与者",
+    tagsLabel: "标签",
+    galleryTitle: "照片图库",
+    galleryIntro: "本次活动的视觉记录。",
+    noGalleryPhotos: "暂无已发布的图库照片。",
+    watchVideo: "观看视频",
+    noPhotos: "尚未发布任何照片。"
   },
 };
 

@@ -27,8 +27,8 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Build landing page at `/[locale]/`.
 - [x] Build intakes list page at `/[locale]/intakes`.
 - [x] Build intake detail page at `/[locale]/intakes/[slug]`.
-- [ ] Build stories page at `/[locale]/stories`.
-- [ ] Build event detail page at `/[locale]/stories/[slug]`.
+- [x] Build stories page at `/[locale]/stories`.
+- [x] Build story detail page at `/[locale]/stories/[slug]`.
 - [ ] Build contact page at `/[locale]/contact`.
 - [ ] Add localized public `not-found.tsx` handling for missing pages/resources.
 - [ ] Add route-level error boundaries for public and admin surfaces.
