@@ -15,7 +15,7 @@ It has two main surfaces:
    - Restricted internal system for content, operations, role-based workflows, and reporting.
    - Access is controlled by Supabase Auth and server-enforced RBAC.
 
-Do not fabricate ROTU-specific facts, historical data, people, ranks, program details, photos, colors, or copy. Use placeholders when needed and ask for real assets/content when accuracy matters.
+Do not fabricate ROTU-specific facts, historical data, people, ranks, event details, photos, colors, or copy. Use placeholders when needed and ask for real assets/content when accuracy matters.
 
 ---
 
@@ -106,7 +106,7 @@ Rules:
 - Public pages must be independently indexable per locale.
 - Use localized metadata, canonical URLs, and `hreflang` alternates.
 
-For database content that needs translation, prefer translation tables when content is user-managed or can vary by locale. Examples include program summaries, intake explanations, page sections, SEO titles/descriptions, and future marketing content. Static UI labels should stay in locale dictionaries.
+For database content that needs translation, prefer translation tables when content is user-managed or can vary by locale. Examples include event summaries, intake explanations, page sections, SEO titles/descriptions, and future marketing content. Static UI labels should stay in locale dictionaries.
 
 ---
 
@@ -319,12 +319,12 @@ Baseline entities discussed:
 - Member
 - Cadet info
 - Newsletter subscriber
-- Program/event
-- Program summaries
-- Program tags
-- Program keywords
-- Program display photos
-- Many-to-many relations for program tags/keywords
+- Event
+- Event summaries
+- Event tags
+- Event keywords
+- Event display photos
+- Many-to-many relations for event tags/keywords
 
 Enums discussed:
 
@@ -333,7 +333,7 @@ Enums discussed:
 - Gender: `MALE`, `FEMALE`
 - Member role: `OFFICER`, `INSTRUCTOR`, `CADET`
 - Member rank: `PK`, `PKW`, `KPL_CADET`, `SJN_CADET`, `KPL`, `SJN`
-- Study programs matching UMT program names
+- Study events matching UMT event names
 
 Important modeling notes:
 

@@ -80,11 +80,6 @@ export function StoryPhotoCarousel({ photos, alt, className }: Props) {
   const [isAnimating, setIsAnimating] = useState(false);
   const x = useMotionValue(0);
 
-  useEffect(() => {
-    setPosition(0);
-    x.set(0);
-  }, [photos.length, x]);
-
   const handleDragEnd = (
     _: unknown,
     info: { offset: { x: number }; velocity: { x: number } },
@@ -104,6 +99,7 @@ export function StoryPhotoCarousel({ photos, alt, className }: Props) {
 
   return (
     <div
+      key={photos.length}
       ref={containerRef}
       className={cn("overflow-hidden rounded-2xl border border-border bg-background p-3", className)}
     >

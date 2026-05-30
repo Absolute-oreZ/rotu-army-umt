@@ -4,12 +4,12 @@ export const DEFAULT_FACEBOOK_URL = "https://facebook.com/palapesumt.darat";
 export const DEFAULT_RED_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-red-bg.jpg";
 export const DEFAULT_BLUE_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-blue-bg.jpg";
 export const DEFAULT_CADET_DISPLAY_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-display.jpg";
-export const DEFAULT_PROGRAM_COVER_PHOTO = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-cover-photo.jpg";
-export const DEFAULT_PROGRAM_VIDEO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-video.mp4";
-export const DEFAULT_PROGRAM_DISPLAY_PHOTOS = [
-  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-photo-1.jpg",
-  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-photo-2.jpg",
-  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/program-photo-3.jpg",
+export const DEFAULT_EVENT_COVER_PHOTO = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-cover-photo.jpg";
+export const DEFAULT_EVENT_VIDEO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-video.mp4";
+export const DEFAULT_EVENT_DISPLAY_PHOTOS = [
+  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-1.jpg",
+  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-2.jpg",
+  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-3.jpg",
 ] as const;
 
 export const PROGRAM_TOTAL_YEARS = 3;
@@ -20,28 +20,28 @@ export const SESSION_START_MONTH_DAY: Record<number, { month: number; day: numbe
   2: { month: 4,  day: 1, yearOffset: 1 },
 };
 
-export const LONG_EN_PROGRAM_SUMMARY = `
+export const LONG_EN_EVENT_SUMMARY = `
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl nec tincidunt luctus, nunc nisl aliquam nunc, vitae aliquam nisl nunc vitae nisl. Integer tincidunt, sapien sed facilisis efficitur, risus nibh viverra massa, sed suscipit sapien ipsum vel nisi. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec malesuada, lorem non pellentesque suscipit, risus risus consequat turpis, sed aliquet massa lorem vel erat.
 
 Suspendisse potenti. Praesent non est nec augue tristique tincidunt. Curabitur sed eros vitae velit tempus volutpat. Vivamus posuere velit sed orci tristique, non vulputate leo interdum. Integer posuere, nibh sit amet scelerisque malesuada, sapien lorem malesuada est, nec facilisis lorem elit sed massa. In hac habitasse platea dictumst. Etiam vulputate lorem sit amet augue tincidunt, nec tempus velit fermentum.
 
 Aliquam erat volutpat. Quisque tincidunt mauris vel turpis cursus, a feugiat lorem aliquet. Sed nec sapien eget lorem malesuada luctus. Mauris vulputate sem vel sapien accumsan, sed pulvinar mauris hendrerit. Cras vel neque vitae justo aliquet sodales. Proin vitae massa ac elit suscipit bibendum. Fusce malesuada nisi vel magna faucibus, sed dictum odio gravida.
 `;
-export const LONG_MS_PROGRAM_SUMMARY = `
+export const LONG_MS_EVENT_SUMMARY = `
 Program ini memberi penekanan kepada pembangunan kepimpinan, disiplin diri, ketahanan mental, dan semangat kerja berpasukan dalam kalangan kadet PALAPES. Sepanjang program berlangsung, peserta akan menjalani pelbagai aktiviti latihan termasuk latihan lapangan, kawad kaki, pengurusan organisasi, komunikasi taktikal, serta aktiviti lasak yang bertujuan meningkatkan keyakinan diri.
 
 Selain itu, program ini turut memupuk nilai tanggungjawab, integriti, dan kemampuan membuat keputusan dalam situasi mencabar. Para peserta didedahkan kepada pengalaman sebenar dalam pengendalian operasi berkumpulan dan pengurusan masa secara sistematik. Aktiviti yang dijalankan juga membantu meningkatkan kecergasan fizikal dan daya tahan emosi.
 
 Melalui penyertaan dalam program ini, kadet dapat membina hubungan yang lebih erat sesama ahli serta memperkukuhkan semangat patriotisme dan cintakan negara. Program ini juga menjadi platform penting dalam melahirkan bakal pemimpin muda yang berwibawa, berdisiplin, dan mampu menghadapi cabaran masa depan dengan lebih yakin dan profesional.
 `;
-export const LONG_ZH_PROGRAM_SUMMARY = `
+export const LONG_ZH_EVENT_SUMMARY = `
 该活动旨在培养学员的领导能力、团队合作精神、纪律意识以及身体素质。参与者将在活动期间接受多种形式的训练，包括野外训练、体能挑战、战术活动以及团队协作任务。这些活动不仅能够增强学员的自信心，也能够提高他们在高压环境下解决问题的能力。
 
 此外，活动也强调责任感、沟通技巧以及组织管理能力的重要性。学员们将通过实际操作与团队合作学习如何有效地完成任务，并在过程中建立更深厚的友谊与集体精神。整个活动过程将帮助参与者培养坚韧不拔的精神以及积极向上的态度。
 
 通过参与该项目，学员能够获得宝贵的实践经验，同时进一步提升个人综合素质。该活动不仅是一次训练机会，更是培养未来青年领袖的重要平台。
 `;
-export const LONG_TA_PROGRAM_SUMMARY = `
+export const LONG_TA_EVENT_SUMMARY = `
 இந்த திட்டம் PALAPES கேடட்டுகளின் தலைமைத்திறன், ஒழுக்கம், உடல் வலிமை மற்றும் குழு ஒருங்கிணைப்பை மேம்படுத்தும் நோக்கில் உருவாக்கப்பட்டுள்ளது. இதில் பங்கேற்பாளர்கள் களப்பயிற்சி, உடற்பயிற்சி, ஒழுங்கு பயிற்சி மற்றும் பல்வேறு குழு நடவடிக்கைகளில் ஈடுபடுவர். இந்த அனுபவங்கள் அவர்களின் தன்னம்பிக்கையையும் மனவலிமையையும் அதிகரிக்கும்.
 
 மேலும், திட்டம் பொறுப்புணர்வு, ஒத்துழைப்பு மற்றும் சவாலான சூழ்நிலைகளில் முடிவெடுக்கும் திறனை வளர்க்க உதவுகிறது. செயல்முறை அடிப்படையிலான பயிற்சிகள் மூலம் பங்கேற்பாளர்கள் நேர மேலாண்மை மற்றும் குழு வழிநடத்தல் திறன்களை கற்றுக்கொள்வார்கள். இதன் மூலம் நாட்டுப்பற்று மற்றும் ஒற்றுமை உணர்வும் வலுப்பெறும்.
@@ -750,22 +750,118 @@ export const DEFAULT_STUDY_PROGRAMS = [
   { slug: "teknologi-alam-sekitar", name: "TEKNOLOGI (ALAM SEKITAR)" },
 ] as const;
 
-export const DEFAULT_PROGRAM_TAGS = [
-  "leadership",
-  "field-training",
-  "team-building",
-  "survival",
-  "discipline",
-  "marching",
-  "weapons-training",
-  "camp",
-  "fitness",
-  "community-service",
-  "navigation",
-  "strategy",
+export const DEFAULT_EVENT_TAGS = [
+  {
+    slug: "leadership",
+    translations: {
+      en: "Leadership",
+      ms: "Kepimpinan",
+      zh: "领导力",
+      ta: "தலைமையின்",
+    },
+  },
+  {
+    slug: "field-training",
+    translations: {
+      en: "Field Training",
+      ms: "Latihan Lapangan",
+      zh: "野外训练",
+      ta: "களம் பயிற்சி",
+    },
+  },
+  {
+    slug: "team-building",
+    translations: {
+      en: "Team Building",
+      ms: "Pembinaan Pasukan",
+      zh: "团队建设",
+      ta: "குழு கட்டுமானம்",
+    },
+  },
+  {
+    slug: "survival",
+    translations: {
+      en: "Survival",
+      ms: "Kebolehan Bertahan",
+      zh: "生存训练",
+      ta: "முடிவறிவு",
+    },
+  },
+  {
+    slug: "discipline",
+    translations: {
+      en: "Discipline",
+      ms: "Disiplin",
+      zh: "纪律",
+      ta: "ஒழுங்கு",
+    },
+  },
+  {
+    slug: "marching",
+    translations: {
+      en: "Marching",
+      ms: "Perarakan",
+      zh: "行军",
+      ta: "பாதுகாப்பு",
+    },
+  },
+  {
+    slug: "weapons-training",
+    translations: {
+      en: "Weapons Training",
+      ms: "Latihan Senjata",
+      zh: "武器训练",
+      ta: "ஆயுத பயிற்சி",
+    },
+  },
+  {
+    slug: "camp",
+    translations: {
+      en: "Camp",
+      ms: "Kem",
+      zh: "营区",
+      ta: "சேவை முகாம்",
+    },
+  },
+  {
+    slug: "fitness",
+    translations: {
+      en: "Fitness",
+      ms: "Kecergasan",
+      zh: "体能",
+      ta: "உடற்பயிற்சி",
+    },
+  },
+  {
+    slug: "community-service",
+    translations: {
+      en: "Community Service",
+      ms: "Perkhidmatan Komuniti",
+      zh: "社区服务",
+      ta: "சமூக சேவை",
+    },
+  },
+  {
+    slug: "navigation",
+    translations: {
+      en: "Navigation",
+      ms: "Navigasi",
+      zh: "导航",
+      ta: "வழிசெலுத்தல்",
+    },
+  },
+  {
+    slug: "strategy",
+    translations: {
+      en: "Strategy",
+      ms: "Strategi",
+      zh: "策略",
+      ta: "திட்டமிடல்",
+    },
+  },
 ] as const;
 
-export const DEFAULT_PROGRAMS = Array.from(
+export const DEFAULT_EVENTS = Array.from(
   { length: 36 },
   (_, index) => {
     const baseYear = 2023;
@@ -816,37 +912,37 @@ export const DEFAULT_PROGRAMS = Array.from(
         "Kem Batu 10",
       ][index % 5],
       participantCount: 80 + (index % 40),
-      coverPhotoPath: DEFAULT_PROGRAM_COVER_PHOTO,
+      coverPhotoPath: DEFAULT_EVENT_COVER_PHOTO,
       coverPhotoWidth: 1280,
       coverPhotoHeight: 720,
-      videoUrl: DEFAULT_PROGRAM_VIDEO_URL,
-      displayPhotos: [...DEFAULT_PROGRAM_DISPLAY_PHOTOS],
+      videoUrl: DEFAULT_EVENT_VIDEO_URL,
+      displayPhotos: [...DEFAULT_EVENT_DISPLAY_PHOTOS],
       tags: [
-        DEFAULT_PROGRAM_TAGS[index % DEFAULT_PROGRAM_TAGS.length],
-        DEFAULT_PROGRAM_TAGS[(index + 1) % DEFAULT_PROGRAM_TAGS.length],
+        DEFAULT_EVENT_TAGS[index % DEFAULT_EVENT_TAGS.length].slug,
+        DEFAULT_EVENT_TAGS[(index + 1) % DEFAULT_EVENT_TAGS.length].slug,
       ],
       translations: {
         en: {
           title: name,
-          summary: LONG_EN_PROGRAM_SUMMARY,
+          summary: LONG_EN_EVENT_SUMMARY,
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `Learn more about ${name} organised by PALAPES UMT.`,
         },
         ms: {
           title: name,
-          summary: LONG_MS_PROGRAM_SUMMARY,
+          summary: LONG_MS_EVENT_SUMMARY,
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `Ketahui lebih lanjut mengenai ${name} anjuran PALAPES UMT.`,
         },
         zh: {
           title: name,
-          summary: LONG_ZH_PROGRAM_SUMMARY,
+          summary: LONG_ZH_EVENT_SUMMARY,
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `了解 PALAPES UMT 举办的 ${name}。`,
         },
         ta: {
           title: name,
-          summary: LONG_TA_PROGRAM_SUMMARY,
+          summary: LONG_TA_EVENT_SUMMARY,
           seoTitle: `${name} | PALAPES UMT`,
           seoDescription: `${name} பற்றிய தகவல்களை அறிக.`,
         },

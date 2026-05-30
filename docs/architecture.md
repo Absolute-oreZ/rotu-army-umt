@@ -38,7 +38,7 @@ Core platform choices:
   - Dictionary loader in `lib/i18n/dictionaries.ts`.
   - Locale dictionaries in `lib/i18n/dictionaries/*`.
 - Public content services:
-  - `lib/public/content.ts` contains server-side read models for published intakes, programs, and homepage content.
+  - `lib/public/content.ts` contains server-side read models for published intakes, events, and homepage content.
 - Admin access control:
   - Role definitions and module maps in `lib/admin/roles.ts`.
   - Auth + admin identity + module authorization helpers in `lib/admin/rbac.ts`.
@@ -108,7 +108,7 @@ Primary schema domains in `db/schema.ts`:
 - Newsletter:
   - `newsletter_subscribers` with status and token hash fields.
 - stories and metadata:
-  - `programs`, `program_translations`, `program_tags`, `program_tag_translations`, `programs_to_tags`, `program_display_photos`.
+  - `events`, `event_translations`, `event_tags`, `event_tag_translations`, `events_to_tags`, `event_display_photos`.
 - Homepage-managed content:
   - `webapp_contents`, `frequently_asked_questions`, `frequently_asked_question_translations`, `see_more_links`, `testimonials`, `testimonial_translations`.
 

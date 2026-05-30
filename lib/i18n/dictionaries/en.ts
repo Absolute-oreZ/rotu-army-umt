@@ -107,6 +107,13 @@ export type Dictionary = {
     watchVideo: string;
     noPhotos: string;
   };
+  storyTagPage: {
+    backLabel: string;
+    archiveLabel: string;
+    description: string;
+    emptyTitle: string;
+    emptyDescription: string;
+  };
 };
 
 const en: Dictionary = {
@@ -215,9 +222,9 @@ const en: Dictionary = {
   },
   storiesPage: {
     title: "Our Stories",
-    description: "Browse published ROTU Army UMT programs by year and explore each story.",
+    description: "Browse published ROTU Army UMT events by year and explore each story.",
     emptyTitle: "No published stories yet",
-    emptyDescription: "Published stories will appear here once programs are made available by the team.",
+    emptyDescription: "Published stories will appear here once events are made available by the team.",
   },
   storyDetailPage: {
     backLabel: "Back to stories",
@@ -227,10 +234,17 @@ const en: Dictionary = {
     participantsLabel: "Participants",
     tagsLabel: "Tags",
     galleryTitle: "Photo gallery",
-    galleryIntro: "Visual records from this program.",
+    galleryIntro: "Visual records from this event.",
     noGalleryPhotos: "No gallery photos have been published yet.",
     watchVideo: "Watch video",
     noPhotos: "No photos have been published yet.",
+  },
+  storyTagPage: {
+    backLabel: "Back to stories",
+    archiveLabel: "TAG ARCHIVE",
+    description: "Browse published ROTU Army UMT events related to this tag.",
+    emptyTitle: "No related events yet",
+    emptyDescription: "Published events for this tag will appear here once they are available.",
   },
 };
 

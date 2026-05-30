@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   CalendarDays,
   MapPin,
-  Play,
   Users,
 } from "lucide-react";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
@@ -13,20 +12,8 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedStoryDetail } from "@/lib/public/content";
 import { StoryPhotoCarousel } from "@/components/public/story-photo-carousel";
 import { VideoPreview } from "@/components/public/video-preview";
-
-function formatDate(date: Date, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
-}
-
-function formatDateRange(start: Date, end: Date, locale: string): string {
-  const s = formatDate(start, locale);
-  const e = formatDate(end, locale);
-  return s === e ? s : `${s} – ${e}`;
-}
+import { formatDateRange } from "@/lib/utils";
+import { TagLink } from "@/components/public/tag-link";
 
 export async function generateMetadata({
   params,
@@ -61,14 +48,6 @@ export async function generateMetadata({
   };
 }
 
-function TagBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-      {children}
-    </span>
-  );
-}
-
 function MetaRow({
   icon,
   label,
@@ -85,7 +64,7 @@ function MetaRow({
         <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           {label}
         </p>
-        <p className="mt-0.5 break-words text-sm font-medium">{value}</p>
+        <p className="mt-0.5 wrap-break-word text-sm font-medium">{value}</p>
       </div>
     </div>
   );
@@ -139,7 +118,9 @@ export default async function StoryDetailPage({
             {story.tags.length > 0 && (
               <div className="mb-5 flex flex-wrap gap-2">
                 {story.tags.map((tag) => (
-                  <TagBadge key={tag.slug}>{tag.name}</TagBadge>
+                  <TagLink key={tag.slug} href={`/${locale}/stories/tags/${tag.slug}`}>
+                    {tag.name}
+                  </TagLink>
                 ))}
               </div>
             )}

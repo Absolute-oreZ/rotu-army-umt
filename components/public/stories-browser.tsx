@@ -3,13 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Masonry, { type MasonryItem } from "@/components/ui/masonry";
 import type { Locale } from "@/lib/i18n/config";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { PublicStoriesByYear } from "@/lib/public/content";
 import { cn } from "@/lib/utils";
 
+type StoriesBrowserCopy = {
+  emptyDescription: string;
+  emptyTitle: string;
+};
+
 type StoriesBrowserProps = {
   locale: Locale;
-  dictionary: Dictionary["storiesPage"];
+  dictionary: StoriesBrowserCopy;
   stories: PublicStoriesByYear;
 };
 
@@ -66,13 +70,13 @@ export function StoriesBrowser({
       return [];
     }
 
-    return (stories.byYear[activeYear] ?? []).map((program) => ({
-      id: String(program.id),
-      img: program.coverPhotoPath,
-      url: `/${locale}/stories/${program.slug}`,
-      width: program.coverPhotoWidth ?? 1000,
-      height: program.coverPhotoHeight ?? 1000,
-      title: program.title,
+    return (stories.byYear[activeYear] ?? []).map((story) => ({
+      id: String(story.id),
+      img: story.coverPhotoPath,
+      url: `/${locale}/stories/${story.slug}`,
+      width: story.coverPhotoWidth ?? 1000,
+      height: story.coverPhotoHeight ?? 1000,
+      title: story.title,
     }));
   }, [activeYear, locale, stories.byYear]);
 

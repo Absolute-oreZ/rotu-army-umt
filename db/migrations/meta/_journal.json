@@ -15,6 +15,27 @@
       "when": 1779884267228,
       "tag": "0001_misty_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780145972653,
+      "tag": "0002_left_manta",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780155504207,
+      "tag": "0003_known_mentallo",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780159675351,
+      "tag": "0004_pale_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }

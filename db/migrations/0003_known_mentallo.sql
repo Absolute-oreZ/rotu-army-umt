@@ -1,0 +1,1 @@
+ALTER TABLE "event_tag_translations" ADD COLUMN "description" text;

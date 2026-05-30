@@ -16,8 +16,8 @@ import {
   DEFAULT_CADETS_INFO,
   DEFAULT_STUDY_PROGRAMS,
   DEFAULT_TESTIMONIAL_ARMY_NOS,
-  DEFAULT_PROGRAMS,
-  DEFAULT_PROGRAM_TAGS,
+  DEFAULT_EVENTS,
+  DEFAULT_EVENT_TAGS,
 } from "../lib/data";
 import { computeAcademicSchedule } from "@/lib/utils";
 
@@ -76,12 +76,12 @@ async function seed() {
       webapp_contents,
       admin_users,
       study_programs,
-      program_display_photos,
-      programs_to_tags,
-      program_tag_translations,
-      program_tags,
-      program_translations,
-      programs
+      event_display_photos,
+      events_to_tags,
+      event_tag_translations,
+      event_tags,
+      event_translations,
+      events
     RESTART IDENTITY CASCADE
   `;
 
@@ -433,22 +433,22 @@ async function seed() {
 
   const tagIdMap = new Map<string, number>();
 
-  for (const tag of DEFAULT_PROGRAM_TAGS) {
+  for (const tag of DEFAULT_EVENT_TAGS) {
     const [tagRow] = await sql<[{ id: number }]>`
-    insert into program_tags (
+    insert into event_tags (
       slug
     )
     values (
-      ${tag}
+      ${tag.slug}
     )
     returning id
   `;
 
-    tagIdMap.set(tag, tagRow.id);
+    tagIdMap.set(tag.slug, tagRow.id);
 
     for (const locale of ["en", "ms", "zh", "ta"] as const) {
       await sql`
-      insert into program_tag_translations (
+      insert into event_tag_translations (
         tag_id,
         locale,
         name
@@ -456,15 +456,15 @@ async function seed() {
       values (
         ${tagRow.id},
         ${locale},
-        ${tag.replace(/-/g, " ")}
+        ${tag.translations[locale]}
       )
     `;
     }
   }
 
-  for (const program of DEFAULT_PROGRAMS) {
-    const [programRow] = await sql<[{ id: number }]>`
-    insert into programs (
+  for (const event of DEFAULT_EVENTS) {
+    const [eventRow] = await sql<[{ id: number }]>`
+    insert into events (
       name,
       slug,
       start_date,
@@ -478,27 +478,27 @@ async function seed() {
       status
     )
     values (
-      ${program.name},
-      ${program.slug},
-      ${program.startDate.toISOString()},
-      ${program.endDate.toISOString()},
-      ${program.location},
-      ${program.participantCount},
-      ${program.coverPhotoPath},
-      ${program.coverPhotoWidth},
-      ${program.coverPhotoHeight},
-      ${program.videoUrl},
+      ${event.name},
+      ${event.slug},
+      ${event.startDate.toISOString()},
+      ${event.endDate.toISOString()},
+      ${event.location},
+      ${event.participantCount},
+      ${event.coverPhotoPath},
+      ${event.coverPhotoWidth},
+      ${event.coverPhotoHeight},
+      ${event.videoUrl},
       'PUBLISHED'
     )
     returning id
   `;
 
     for (const locale of ["en", "ms", "zh", "ta"] as const) {
-      const translation = program.translations[locale];
+      const translation = event.translations[locale];
 
       await sql`
-      insert into program_translations (
-        program_id,
+      insert into event_translations (
+        event_id,
         locale,
         title,
         summary,
@@ -506,7 +506,7 @@ async function seed() {
         seo_description
       )
       values (
-        ${programRow.id},
+        ${eventRow.id},
         ${locale},
         ${translation.title},
         ${translation.summary},
@@ -516,31 +516,31 @@ async function seed() {
     `;
     }
 
-    for (const photo of program.displayPhotos) {
+    for (const photo of event.displayPhotos) {
       await sql`
-      insert into program_display_photos (
-        program_id,
+      insert into event_display_photos (
+        event_id,
         photo_path
       )
       values (
-        ${programRow.id},
+        ${eventRow.id},
         ${photo}
       )
     `;
     }
 
-    for (const tag of program.tags) {
+    for (const tag of event.tags) {
       const tagId = tagIdMap.get(tag);
 
       if (!tagId) continue;
 
       await sql`
-      insert into programs_to_tags (
-        program_id,
+      insert into events_to_tags (
+        event_id,
         tag_id
       )
       values (
-        ${programRow.id},
+        ${eventRow.id},
         ${tagId}
       )
     `;

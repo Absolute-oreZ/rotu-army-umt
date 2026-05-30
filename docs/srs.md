@@ -130,7 +130,7 @@ System data model shall include at minimum:
 - Intake patch explanations and translations.
 - Intake display photos.
 - Stories and translations.
-- Program tags and tag translations.
+- Events tags and tag translations.
 - Members and cadet information.
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.

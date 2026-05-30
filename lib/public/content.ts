@@ -15,12 +15,12 @@ import {
   intakeDisplayPhotos,
   intakePatchExplanations,
   intakePatchExplanationTranslations,
-  programs,
-  programTranslations,
-  programDisplayPhotos,
-  programTags,
-  programTagTranslations,
-  programsToTags
+  events,
+  eventTranslations,
+  eventDisplayPhotos,
+  eventTags,
+  eventTagTranslations,
+  eventsToTags
 } from "@/db/schema";
 import type { Locale } from "@/lib/i18n/config";
 import { DEFAULT_FAQ_ENTRIES, DEFAULT_SEE_MORE_LINKS } from "@/lib/data";
@@ -110,6 +110,11 @@ export type PublicStoriesByYear = {
 export type PublicStoryTag = {
   slug: string;
   name: string;
+};
+
+export type PublicStoryTagArchive = {
+  stories: PublicStoriesByYear;
+  tag: PublicStoryTag;
 };
 
 export type PublicStoryDisplayPhoto = {
@@ -438,51 +443,51 @@ export async function getPublishedIntakeDetail(
 export async function getPublishedStoriesByYear(
   locale: Locale,
 ): Promise<PublicStoriesByYear> {
-  const programRows = await db
+  const eventRows = await db
     .select({
-      id: programs.id,
-      name: programs.name,
-      slug: programs.slug,
-      startDate: programs.startDate,
-      coverPhotoPath: programs.coverPhotoPath,
-      coverPhotoWidth: programs.coverPhotoWidth,
-      coverPhotoHeight: programs.coverPhotoHeight,
+      id: events.id,
+      name: events.name,
+      slug: events.slug,
+      startDate: events.startDate,
+      coverPhotoPath: events.coverPhotoPath,
+      coverPhotoWidth: events.coverPhotoWidth,
+      coverPhotoHeight: events.coverPhotoHeight,
     })
-    .from(programs)
+    .from(events)
     .where(
       and(
-        eq(programs.status, "PUBLISHED"),
-        isNotNull(programs.coverPhotoPath),
+        eq(events.status, "PUBLISHED"),
+        isNotNull(events.coverPhotoPath),
       ),
     )
-    .orderBy(desc(programs.startDate));
+    .orderBy(desc(events.startDate));
 
-  if (programRows.length === 0) {
+  if (eventRows.length === 0) {
     return { years: [], byYear: {} };
   }
 
   const translationRows = await db
     .select({
-      programId: programTranslations.programId,
-      locale: programTranslations.locale,
-      title: programTranslations.title,
+      eventId: eventTranslations.eventId,
+      locale: eventTranslations.locale,
+      title: eventTranslations.title,
     })
-    .from(programTranslations)
+    .from(eventTranslations)
     .where(
       and(
         inArray(
-          programTranslations.programId,
-          programRows.map((item) => item.id),
+          eventTranslations.eventId,
+          eventRows.map((item) => item.id),
         ),
-        inArray(programTranslations.locale, [locale, "en"]),
+        inArray(eventTranslations.locale, [locale, "en"]),
       ),
     );
 
-  const titleByProgramId = new Map<number, Partial<Record<Locale, string>>>();
+  const titleByEventId = new Map<number, Partial<Record<Locale, string>>>();
 
   for (const row of translationRows) {
-    const current = titleByProgramId.get(row.programId) ?? {};
-    titleByProgramId.set(row.programId, {
+    const current = titleByEventId.get(row.eventId) ?? {};
+    titleByEventId.set(row.eventId, {
       ...current,
       [row.locale]: row.title,
     });
@@ -490,8 +495,8 @@ export async function getPublishedStoriesByYear(
 
   const byYear = new Map<number, PublicStoryProgram[]>();
 
-  for (const row of programRows) {
-    const titleEntry = titleByProgramId.get(row.id);
+  for (const row of eventRows) {
+    const titleEntry = titleByEventId.get(row.id);
     const title = titleEntry?.[locale] ?? titleEntry?.en ?? row.name;
     const startYear = row.startDate.getUTCFullYear();
     const list = byYear.get(startYear) ?? [];
@@ -521,70 +526,70 @@ export async function getPublishedStoryDetail(
   locale: Locale,
   slug: string,
 ): Promise<PublicStoryDetail | null> {
-  const programRows = await db
+  const eventRows = await db
     .select({
-      id: programs.id,
-      name: programs.name,
-      slug: programs.slug,
-      startDate: programs.startDate,
-      endDate: programs.endDate,
-      location: programs.location,
-      participantCount: programs.participantCount,
-      coverPhotoPath: programs.coverPhotoPath,
-      coverPhotoWidth: programs.coverPhotoWidth,
-      coverPhotoHeight: programs.coverPhotoHeight,
-      videoUrl: programs.videoUrl,
+      id: events.id,
+      name: events.name,
+      slug: events.slug,
+      startDate: events.startDate,
+      endDate: events.endDate,
+      location: events.location,
+      participantCount: events.participantCount,
+      coverPhotoPath: events.coverPhotoPath,
+      coverPhotoWidth: events.coverPhotoWidth,
+      coverPhotoHeight: events.coverPhotoHeight,
+      videoUrl: events.videoUrl,
     })
-    .from(programs)
-    .where(and(eq(programs.slug, slug), eq(programs.status, "PUBLISHED")))
+    .from(events)
+    .where(and(eq(events.slug, slug), eq(events.status, "PUBLISHED")))
     .limit(1);
 
-  const program = programRows[0];
-  if (!program) return null;
+  const event = eventRows[0];
+  if (!event) return null;
 
   const [translationRows, tagRows, displayPhotoRows] = await Promise.all([
     db
       .select({
-        locale: programTranslations.locale,
-        title: programTranslations.title,
-        summary: programTranslations.summary,
-        seoTitle: programTranslations.seoTitle,
-        seoDescription: programTranslations.seoDescription,
+        locale: eventTranslations.locale,
+        title: eventTranslations.title,
+        summary: eventTranslations.summary,
+        seoTitle: eventTranslations.seoTitle,
+        seoDescription: eventTranslations.seoDescription,
       })
-      .from(programTranslations)
+      .from(eventTranslations)
       .where(
         and(
-          eq(programTranslations.programId, program.id),
-          inArray(programTranslations.locale, [locale, "en"]),
+          eq(eventTranslations.eventId, event.id),
+          inArray(eventTranslations.locale, [locale, "en"]),
         ),
       ),
 
     db
       .select({
-        tagSlug: programTags.slug,
-        locale: programTagTranslations.locale,
-        name: programTagTranslations.name,
+        tagSlug: eventTags.slug,
+        locale: eventTagTranslations.locale,
+        name: eventTagTranslations.name,
       })
-      .from(programsToTags)
-      .innerJoin(programTags, eq(programsToTags.tagId, programTags.id))
+      .from(eventsToTags)
+      .innerJoin(eventTags, eq(eventsToTags.tagId, eventTags.id))
       .leftJoin(
-        programTagTranslations,
+        eventTagTranslations,
         and(
-          eq(programTagTranslations.tagId, programTags.id),
-          inArray(programTagTranslations.locale, [locale, "en"]),
+          eq(eventTagTranslations.tagId, eventTags.id),
+          inArray(eventTagTranslations.locale, [locale, "en"]),
         ),
       )
-      .where(eq(programsToTags.programId, program.id))
-      .orderBy(programTags.slug),
+      .where(eq(eventsToTags.eventId, event.id))
+      .orderBy(eventTags.slug, eventTagTranslations.locale),
 
     db
       .select({
-        id: programDisplayPhotos.id,
-        photoPath: programDisplayPhotos.photoPath,
+        id: eventDisplayPhotos.id,
+        photoPath: eventDisplayPhotos.photoPath,
       })
-      .from(programDisplayPhotos)
-      .where(eq(programDisplayPhotos.programId, program.id))
-      .orderBy(programDisplayPhotos.id),
+      .from(eventDisplayPhotos)
+      .where(eq(eventDisplayPhotos.eventId, event.id))
+      .orderBy(eventDisplayPhotos.id),
   ]);
 
   const translation =
@@ -603,22 +608,155 @@ export async function getPublishedStoryDetail(
   }
 
   return {
-    id: program.id,
-    slug: program.slug,
-    name: program.name,
-    title: translation?.title ?? program.name,
+    id: event.id,
+    slug: event.slug,
+    name: event.name,
+    title: translation?.title ?? event.name,
     summary: translation?.summary ?? null,
     seoTitle: translation?.seoTitle ?? null,
     seoDescription: translation?.seoDescription ?? null,
-    startDate: program.startDate,
-    endDate: program.endDate,
-    location: program.location,
-    participantCount: program.participantCount,
-    coverPhotoPath: program.coverPhotoPath,
-    coverPhotoWidth: program.coverPhotoWidth,
-    coverPhotoHeight: program.coverPhotoHeight,
-    videoUrl: program.videoUrl,
+    startDate: event.startDate,
+    endDate: event.endDate,
+    location: event.location,
+    participantCount: event.participantCount,
+    coverPhotoPath: event.coverPhotoPath,
+    coverPhotoWidth: event.coverPhotoWidth,
+    coverPhotoHeight: event.coverPhotoHeight,
+    videoUrl: event.videoUrl,
     tags: Array.from(tagMap.values()),
     displayPhotos: displayPhotoRows,
+  };
+}
+
+export async function getPublishedStoriesByTag(
+  locale: Locale,
+  tagSlug: string,
+): Promise<PublicStoryTagArchive | null> {
+  const tagRows = await db
+    .select({
+      locale: eventTagTranslations.locale,
+      name: eventTagTranslations.name,
+      slug: eventTags.slug,
+    })
+    .from(eventTags)
+    .leftJoin(
+      eventTagTranslations,
+      and(
+        eq(eventTagTranslations.tagId, eventTags.id),
+        inArray(eventTagTranslations.locale, [locale, "en"]),
+      ),
+    )
+    .where(eq(eventTags.slug, tagSlug))
+    .orderBy(eventTags.slug, eventTagTranslations.locale);
+
+  if (tagRows.length === 0) {
+    return null;
+  }
+
+  let tagName: string | null = null;
+  for (const row of tagRows) {
+    if (!row.name) continue;
+    if (row.locale === locale) {
+      tagName = row.name;
+      break;
+    }
+    if (row.locale === "en" && tagName === null) {
+      tagName = row.name;
+    }
+  }
+
+  const eventRows = await db
+    .select({
+      coverPhotoHeight: events.coverPhotoHeight,
+      coverPhotoPath: events.coverPhotoPath,
+      coverPhotoWidth: events.coverPhotoWidth,
+      id: events.id,
+      name: events.name,
+      slug: events.slug,
+      startDate: events.startDate,
+    })
+    .from(eventsToTags)
+    .innerJoin(eventTags, eq(eventsToTags.tagId, eventTags.id))
+    .innerJoin(events, eq(eventsToTags.eventId, events.id))
+    .where(
+      and(
+        eq(eventTags.slug, tagSlug),
+        eq(events.status, "PUBLISHED"),
+        isNotNull(events.coverPhotoPath),
+      ),
+    )
+    .orderBy(desc(events.startDate));
+
+  const tag = {
+    slug: tagSlug,
+    name: tagName ?? tagSlug,
+  };
+
+  if (eventRows.length === 0) {
+    return {
+      tag,
+      stories: {
+        years: [],
+        byYear: {},
+      },
+    };
+  }
+
+  const translationRows = await db
+    .select({
+      locale: eventTranslations.locale,
+      eventId: eventTranslations.eventId,
+      title: eventTranslations.title,
+    })
+    .from(eventTranslations)
+    .where(
+      and(
+        inArray(
+          eventTranslations.eventId,
+          eventRows.map((item) => item.id),
+        ),
+        inArray(eventTranslations.locale, [locale, "en"]),
+      ),
+    );
+
+  const titleByEventId = new Map<number, Partial<Record<Locale, string>>>();
+
+  for (const row of translationRows) {
+    const current = titleByEventId.get(row.eventId) ?? {};
+    titleByEventId.set(row.eventId, {
+      ...current,
+      [row.locale]: row.title,
+    });
+  }
+
+  const byYear = new Map<number, PublicStoryProgram[]>();
+
+  for (const row of eventRows) {
+    const titleEntry = titleByEventId.get(row.id);
+    const title = titleEntry?.[locale] ?? titleEntry?.en ?? row.name;
+    const startYear = row.startDate.getUTCFullYear();
+    const list = byYear.get(startYear) ?? [];
+
+    list.push({
+      id: row.id,
+      slug: row.slug,
+      startYear,
+      coverPhotoPath: row.coverPhotoPath ?? "/images/default-hero-image.jpg",
+      coverPhotoWidth: row.coverPhotoWidth,
+      coverPhotoHeight: row.coverPhotoHeight,
+      title,
+    });
+
+    byYear.set(startYear, list);
+  }
+
+  const years = Array.from(byYear.keys()).sort((a, b) => b - a);
+
+  return {
+    tag,
+    stories: {
+      years,
+      byYear: Object.fromEntries(years.map((year) => [year, byYear.get(year) ?? []])),
+    },
   };
 }

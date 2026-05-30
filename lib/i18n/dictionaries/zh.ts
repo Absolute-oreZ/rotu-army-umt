@@ -123,6 +123,13 @@ const zh: Dictionary = {
     watchVideo: "观看视频",
     noPhotos: "尚未发布任何照片。"
   },
+  storyTagPage: {
+    backLabel: "返回故事",
+    archiveLabel: "标签归档",
+    description: "浏览与此标签相关的已发布 ROTU Army UMT 项目。",
+    emptyTitle: "暂无相关项目",
+    emptyDescription: "当该标签下有已发布项目时，它们会显示在这里。",
+  },
 };
 
 export default zh;

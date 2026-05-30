@@ -365,8 +365,8 @@ export const newsletterSubscribers = pgTable(
   ],
 );
 
-export const programs = pgTable(
-  "programs",
+export const events = pgTable(
+  "events",
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 180 }).notNull(),
@@ -383,18 +383,18 @@ export const programs = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("programs_slug_idx").on(table.slug),
-    index("programs_start_date_idx").on(table.startDate),
+    uniqueIndex("events_slug_idx").on(table.slug),
+    index("events_start_date_idx").on(table.startDate),
   ],
 );
 
-export const programTranslations = pgTable(
-  "program_translations",
+export const eventTranslations = pgTable(
+  "event_translations",
   {
     id: serial("id").primaryKey(),
-    programId: integer("program_id")
+    eventId: integer("event_id")
       .notNull()
-      .references(() => programs.id, { onDelete: "cascade" }),
+      .references(() => events.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
     title: varchar("title", { length: 180 }).notNull(),
     summary: text("summary"),
@@ -403,69 +403,69 @@ export const programTranslations = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("program_translations_program_locale_idx").on(
-      table.programId,
+    uniqueIndex("event_translations_event_locale_idx").on(
+      table.eventId,
       table.locale,
     ),
   ],
 );
 
-export const programTags = pgTable(
-  "program_tags",
+export const eventTags = pgTable(
+  "event_tags",
   {
     id: serial("id").primaryKey(),
     slug: varchar("slug", { length: 100 }).notNull(),
     ...timestamps,
   },
-  (table) => [uniqueIndex("program_tags_slug_idx").on(table.slug)],
+  (table) => [uniqueIndex("event_tags_slug_idx").on(table.slug)],
 );
 
-export const programTagTranslations = pgTable(
-  "program_tag_translations",
+export const eventTagTranslations = pgTable(
+  "event_tag_translations",
   {
     id: serial("id").primaryKey(),
     tagId: integer("tag_id")
       .notNull()
-      .references(() => programTags.id, { onDelete: "cascade" }),
+      .references(() => eventTags.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
     name: varchar("name", { length: 100 }).notNull(),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("program_tag_translations_tag_locale_idx").on(
+    uniqueIndex("event_tag_translations_tag_locale_idx").on(
       table.tagId,
       table.locale,
     ),
   ],
 );
 
-export const programsToTags = pgTable(
-  "programs_to_tags",
+export const eventsToTags = pgTable(
+  "events_to_tags",
   {
-    programId: integer("program_id")
+    eventId: integer("event_id")
       .notNull()
-      .references(() => programs.id, { onDelete: "cascade" }),
+      .references(() => events.id, { onDelete: "cascade" }),
     tagId: integer("tag_id")
       .notNull()
-      .references(() => programTags.id, { onDelete: "cascade" }),
+      .references(() => eventTags.id, { onDelete: "cascade" }),
   },
   (table) => [
-    primaryKey({ columns: [table.programId, table.tagId] }),
-    index("programs_to_tags_tag_id_idx").on(table.tagId),
+    primaryKey({ columns: [table.eventId, table.tagId] }),
+    index("events_to_tags_tag_id_idx").on(table.tagId),
   ],
 );
 
-export const programDisplayPhotos = pgTable(
-  "program_display_photos",
+export const eventDisplayPhotos = pgTable(
+  "event_display_photos",
   {
     id: serial("id").primaryKey(),
-    programId: integer("program_id")
+    eventId: integer("event_id")
       .notNull()
-      .references(() => programs.id, { onDelete: "cascade" }),
+      .references(() => events.id, { onDelete: "cascade" }),
     photoPath: text("photo_path").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index("program_display_photos_program_id_idx").on(table.programId)],
+  (table) => [index("event_display_photos_event_id_idx").on(table.eventId)],
 );
 
 export const webappContents = pgTable(
