@@ -121,7 +121,8 @@ const zh: Dictionary = {
     galleryIntro: "本次活动的视觉记录。",
     noGalleryPhotos: "暂无已发布的图库照片。",
     watchVideo: "观看视频",
-    noPhotos: "尚未发布任何照片。"
+    noPhotos: "尚未发布任何照片。",
+    similarStoriesLabel: "相似行动",
   },
   storyTagPage: {
     backLabel: "返回故事",

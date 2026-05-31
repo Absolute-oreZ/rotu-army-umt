@@ -106,6 +106,7 @@ export type Dictionary = {
     noGalleryPhotos: string;
     watchVideo: string;
     noPhotos: string;
+    similarStoriesLabel: string;
   };
   storyTagPage: {
     backLabel: string;
@@ -238,6 +239,7 @@ const en: Dictionary = {
     noGalleryPhotos: "No gallery photos have been published yet.",
     watchVideo: "Watch video",
     noPhotos: "No photos have been published yet.",
+    similarStoriesLabel: "Similar Operations",
   },
   storyTagPage: {
     backLabel: "Back to stories",

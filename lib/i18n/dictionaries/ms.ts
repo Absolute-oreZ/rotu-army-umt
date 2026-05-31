@@ -121,7 +121,8 @@ const ms: Dictionary = {
     galleryIntro: "Rekod visual daripada acara ini.",
     noGalleryPhotos: "Tiada foto galeri diterbitkan lagi.",
     watchVideo: "Tonton video",
-    noPhotos: "Tiada foto yang telah diterbitkan lagi."
+    noPhotos: "Tiada foto yang telah diterbitkan lagi.",
+    similarStoriesLabel: "Operasi Serupa",
   },
   storyTagPage: {
     backLabel: "Kembali ke cerita",

@@ -12,9 +12,7 @@ export function VideoPreview({ url, label }: Props) {
   const [open, setOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const handleOpen = () => {
-    setOpen(true);
-  };
+  const handleOpen = () => setOpen(true);
 
   const handleClose = () => {
     setOpen(false);
@@ -38,7 +36,7 @@ export function VideoPreview({ url, label }: Props) {
           />
           <div className="absolute inset-0 bg-black/30 transition-colors duration-200 group-hover:bg-black/40" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform duration-200 group-hover:scale-110">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform duration-200 group-hover:scale-110 group-active:scale-95">
               <Play className="h-5 w-5 translate-x-0.5 fill-black text-black" />
             </div>
           </div>
@@ -51,17 +49,17 @@ export function VideoPreview({ url, label }: Props) {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-sm"
           onClick={handleClose}
         >
           <div
-            className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-black shadow-2xl"
+            className="relative w-full max-w-3xl overflow-hidden rounded-xl sm:rounded-2xl bg-black shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={handleClose}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+              className="absolute right-2 top-2 sm:right-3 sm:top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80 active:scale-95"
             >
               <X className="h-4 w-4" />
             </button>

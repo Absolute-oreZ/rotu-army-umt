@@ -10,7 +10,7 @@ export function TagLink({
   return (
     <Link
       href={href}
-      className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+      className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground active:scale-95"
     >
       {children}
     </Link>

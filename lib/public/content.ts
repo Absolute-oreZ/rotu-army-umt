@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   webappContents,
@@ -626,6 +626,98 @@ export async function getPublishedStoryDetail(
     tags: Array.from(tagMap.values()),
     displayPhotos: displayPhotoRows,
   };
+}
+
+export async function getSimilarStories(
+  locale: Locale,
+  eventId: number,
+  limit: number = 4,
+): Promise<PublicStoryProgram[]> {
+  const currentTagRows = await db
+    .select({
+      tagId: eventsToTags.tagId,
+    })
+    .from(eventsToTags)
+    .where(eq(eventsToTags.eventId, eventId));
+
+  const tagIds = currentTagRows.map((row) => row.tagId);
+
+  if (tagIds.length === 0) {
+    return [];
+  }
+
+  const sharedTagsCount = count(eventsToTags.tagId);
+
+  const similarEventRows = await db
+    .select({
+      id: events.id,
+      name: events.name,
+      slug: events.slug,
+      startDate: events.startDate,
+      coverPhotoPath: events.coverPhotoPath,
+      coverPhotoWidth: events.coverPhotoWidth,
+      coverPhotoHeight: events.coverPhotoHeight,
+      sharedTagsCount,
+    })
+    .from(events)
+    .innerJoin(eventsToTags, eq(eventsToTags.eventId, events.id))
+    .where(
+      and(
+        eq(events.status, "PUBLISHED"),
+        isNotNull(events.coverPhotoPath),
+        ne(events.id, eventId),
+        inArray(eventsToTags.tagId, tagIds),
+      ),
+    )
+    .groupBy(events.id)
+    .orderBy(desc(sharedTagsCount), desc(events.startDate))
+    .limit(limit);
+
+  if (similarEventRows.length === 0) {
+    return [];
+  }
+
+  const translationRows = await db
+    .select({
+      eventId: eventTranslations.eventId,
+      locale: eventTranslations.locale,
+      title: eventTranslations.title,
+    })
+    .from(eventTranslations)
+    .where(
+      and(
+        inArray(
+          eventTranslations.eventId,
+          similarEventRows.map((item) => item.id),
+        ),
+        inArray(eventTranslations.locale, [locale, "en"]),
+      ),
+    );
+
+  const titleByEventId = new Map<number, Partial<Record<Locale, string>>>();
+
+  for (const row of translationRows) {
+    const current = titleByEventId.get(row.eventId) ?? {};
+    titleByEventId.set(row.eventId, {
+      ...current,
+      [row.locale]: row.title,
+    });
+  }
+
+  return similarEventRows.map((row) => {
+    const titleEntry = titleByEventId.get(row.id);
+    const title = titleEntry?.[locale] ?? titleEntry?.en ?? row.name;
+
+    return {
+      id: row.id,
+      slug: row.slug,
+      startYear: row.startDate.getUTCFullYear(),
+      coverPhotoPath: row.coverPhotoPath ?? "/images/default-hero-image.jpg",
+      coverPhotoWidth: row.coverPhotoWidth,
+      coverPhotoHeight: row.coverPhotoHeight,
+      title,
+    };
+  });
 }
 
 export async function getPublishedStoriesByTag(

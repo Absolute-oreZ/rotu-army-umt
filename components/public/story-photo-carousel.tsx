@@ -51,7 +51,7 @@ function CarouselPhoto({
           fill
           draggable={false}
           className="pointer-events-none object-cover"
-          sizes="(max-width: 768px) 90vw, (max-width: 1280px) 55vw, 640px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 55vw, 380px"
         />
       </div>
     </motion.div>
@@ -101,56 +101,69 @@ export function StoryPhotoCarousel({ photos, alt, className }: Props) {
     <div
       key={photos.length}
       ref={containerRef}
-      className={cn("overflow-hidden rounded-2xl border border-border bg-background p-3", className)}
+      className={cn("rounded-2xl border border-border bg-background", className)}
+      style={{ padding: containerPadding }}
     >
       {containerWidth > 0 && (
         <>
-          <motion.div
-            className="flex cursor-grab active:cursor-grabbing"
-            drag={isAnimating ? false : "x"}
-            dragConstraints={{
-              left: -trackItemOffset * Math.max(photos.length - 1, 0),
-              right: 0,
-            }}
-            style={{
-              width: itemWidth,
-              gap: GAP,
-              perspective: 1000,
-              perspectiveOrigin: `${position * trackItemOffset + itemWidth / 2}px 50%`,
-              x,
-            }}
-            animate={{ x: -(position * trackItemOffset) }}
-            transition={SPRING_OPTIONS}
-            onDragEnd={handleDragEnd}
-            onAnimationStart={() => setIsAnimating(true)}
-            onAnimationComplete={() => setIsAnimating(false)}
+          <div
+            style={{ width: itemWidth }}
+            className="overflow-hidden mx-auto"
           >
-            {photos.map((photo, i) => (
-              <CarouselPhoto
-                key={photo.id}
-                photo={photo}
-                index={i}
-                alt={alt}
-                itemWidth={itemWidth}
-                trackItemOffset={trackItemOffset}
-                x={x}
-              />
-            ))}
-          </motion.div>
+            <motion.div
+              className="flex cursor-grab active:cursor-grabbing select-none"
+              drag={isAnimating ? false : "x"}
+              dragConstraints={{
+                left: -trackItemOffset * Math.max(photos.length - 1, 0),
+                right: 0,
+              }}
+              dragElastic={0.1}
+              style={{
+                width: itemWidth * photos.length + GAP * (photos.length - 1),
+                gap: GAP,
+                perspective: 1000,
+                perspectiveOrigin: `${position * trackItemOffset + itemWidth / 2}px 50%`,
+                x,
+              }}
+              animate={{ x: -(position * trackItemOffset) }}
+              transition={SPRING_OPTIONS}
+              onDragEnd={handleDragEnd}
+              onAnimationStart={() => setIsAnimating(true)}
+              onAnimationComplete={() => setIsAnimating(false)}
+            >
+              {photos.map((photo, i) => (
+                <CarouselPhoto
+                  key={photo.id}
+                  photo={photo}
+                  index={i}
+                  alt={alt}
+                  itemWidth={itemWidth}
+                  trackItemOffset={trackItemOffset}
+                  x={x}
+                />
+              ))}
+            </motion.div>
+          </div>
 
           {photos.length > 1 && (
-            <div className="mt-3 flex justify-center gap-2">
+            <div className="flex justify-center gap-1" style={{ marginTop: containerPadding }}>
               {photos.map((_, i) => (
-                <div
+                <button
                   key={i}
+                  type="button"
                   onClick={() => setPosition(i)}
-                  className={cn(
-                    "h-1.5 cursor-pointer rounded-full transition-all duration-150",
-                    i === position
-                      ? "w-4 bg-foreground"
-                      : "w-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70",
-                  )}
-                />
+                  aria-label={`Go to photo ${i + 1}`}
+                  className="flex items-center justify-center p-2"
+                >
+                  <div
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-150",
+                      i === position
+                        ? "w-4 bg-foreground"
+                        : "w-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70",
+                    )}
+                  />
+                </button>
               ))}
             </div>
           )}

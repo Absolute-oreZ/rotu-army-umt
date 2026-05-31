@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeft,
-  CalendarDays,
-  MapPin,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, MapPin, Users } from "lucide-react";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getPublishedStoryDetail } from "@/lib/public/content";
+import { getPublishedStoryDetail, getSimilarStories } from "@/lib/public/content";
 import { StoryPhotoCarousel } from "@/components/public/story-photo-carousel";
 import { VideoPreview } from "@/components/public/video-preview";
 import { formatDateRange } from "@/lib/utils";
 import { TagLink } from "@/components/public/tag-link";
+import { SimilarStories } from "@/components/public/similar-stories";
+import { MetaRow } from "@/components/public/story-meta-row";
 
 export async function generateMetadata({
   params,
@@ -48,28 +45,6 @@ export async function generateMetadata({
   };
 }
 
-function MetaRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {label}
-        </p>
-        <p className="mt-0.5 wrap-break-word text-sm font-medium">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 export default async function StoryDetailPage({
   params,
 }: {
@@ -94,17 +69,17 @@ export default async function StoryDetailPage({
 
   const d = dictionary.storyDetailPage;
   const dateRange = formatDateRange(story.startDate, story.endDate, locale);
+  const similarStories = await getSimilarStories(locale, story.id);
 
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-        <div className="flex items-center justify-between pt-6">
+        <div className="flex items-center justify-between pt-4 sm:pt-6">
           <Link
             href={`/${locale}/stories`}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
           >
-            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <ArrowLeft className="size-4" aria-hidden="true" />
             {d.backLabel}
           </Link>
           <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -112,11 +87,10 @@ export default async function StoryDetailPage({
           </span>
         </div>
 
-        <div className="grid gap-10 pt-10 pb-16 lg:grid-cols-[1fr_20rem] lg:gap-12 xl:grid-cols-[1fr_22rem]">
-
-          <div className="min-w-0">
+        <div className="grid grid-cols-1 gap-8 pt-8 pb-16 sm:gap-10 sm:pt-10 lg:grid-cols-[1fr_20rem] lg:gap-12 xl:grid-cols-[1fr_22rem]">
+          <div className="min-w-0 lg:order-1">
             {story.tags.length > 0 && (
-              <div className="mb-5 flex flex-wrap gap-2">
+              <div className="mb-4 flex flex-wrap gap-2">
                 {story.tags.map((tag) => (
                   <TagLink key={tag.slug} href={`/${locale}/stories/tags/${tag.slug}`}>
                     {tag.name}
@@ -125,19 +99,19 @@ export default async function StoryDetailPage({
               </div>
             )}
 
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl xl:text-6xl">
               {story.title}
             </h1>
 
             {story.summary && (
-              <p className="mt-6 text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+              <p className="mt-4 text-base leading-6 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-8">
                 {story.summary}
               </p>
             )}
           </div>
 
-          <aside className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-border bg-muted/30 p-5 flex flex-col gap-4">
+          <aside className="flex flex-col gap-4 lg:order-2">
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5 flex flex-col gap-4">
               <MetaRow
                 icon={<CalendarDays className="h-4 w-4" />}
                 label={d.dateLabel}
@@ -158,10 +132,7 @@ export default async function StoryDetailPage({
             </div>
 
             {story.videoUrl && (
-              <VideoPreview
-                url={story.videoUrl}
-                label={d.watchVideo}
-              />
+              <VideoPreview url={story.videoUrl} label={d.watchVideo} />
             )}
 
             {story.displayPhotos.length > 0 && (
@@ -172,8 +143,13 @@ export default async function StoryDetailPage({
               />
             )}
           </aside>
-
         </div>
+
+        <SimilarStories
+          locale={locale}
+          stories={similarStories}
+          title={d.similarStoriesLabel}
+        />
       </div>
     </main>
   );
