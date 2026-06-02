@@ -30,10 +30,10 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Build stories page at `/[locale]/stories`.
 - [x] Build story detail page at `/[locale]/stories/[slug]`.
 - [x] Build stroy tags page at `/[locale]/stories/tags/[slug]`.
-- [ ] Build contact page at `/[locale]/contact`.
+- [x] Build contact page at `/[locale]/contact`.
+- [x] Add newsletter subscription form on Contact page.
 - [ ] Add localized public `not-found.tsx` handling for missing pages/resources.
 - [ ] Add route-level error boundaries for public and admin surfaces.
-- [ ] Add newsletter subscription form on Contact page.
 - [ ] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [ ] Add `sitemap.xml` and `robots.txt`.
 - [x] Draft Drizzle schema for intakes, members, cadets, stories, newsletters, and academic results.

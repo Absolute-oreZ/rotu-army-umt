@@ -1,6 +1,11 @@
 export const DEFAULT_HERO_IMAGE_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/hero-images/default-hero-image.jpg";
-export const DEFAULT_INSTAGRAM_URL = "https://www.insztagram.com/palapesdaratumt_2019";
+export const DEFAULT_GOOGLE_MAP_LOCATION_URL = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3972.0307093423557!2d103.0855613748609!3d5.412293794566897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31b7bd9170fb4525%3A0x95ae1a9651800784!2sMarkas%20PALAPES%20Darat%20UMT!5e0!3m2!1sen!2smy!4v1766609697968!5m2!1sen!2smy";
+export const DEFAULT_OFFICIAL_EMAIL = "";
+export const DEFAULT_INSTAGRAM_URL = "https://www.instagram.com/palapesdaratumt_2019";
 export const DEFAULT_FACEBOOK_URL = "https://facebook.com/palapesumt.darat";
+export const DEFAULT_YOUTUBE_URL = "";
+export const DEFAULT_TIKTOK_URL = "";
+export const DEFAULT_X_URL = "";
 export const DEFAULT_RED_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-red-bg.jpg";
 export const DEFAULT_BLUE_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-blue-bg.jpg";
 export const DEFAULT_CADET_DISPLAY_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-display.jpg";
@@ -950,3 +955,36 @@ export const DEFAULT_EVENTS = Array.from(
     };
   },
 );
+
+export const DEFAULT_CONTACT_REASONS = [
+  {
+    iconKey: "Mail",
+    sortOrder: 1,
+    translations: {
+      en: { title: "General Inquiries", description: "Have a general question about our program? Reach out to us via email." },
+      ms: { title: "Pertanyaan Umum", description: "Mempunyai soalan umum tentang program kami? Hubungi kami melalui e-mel." },
+      zh: { title: "一般查询", description: "对我们的计划有任何疑问？请通过电子邮件与我们联系。" },
+      ta: { title: "பொதுவான விசாரணைகள்", description: "எங்கள் திட்டத்தைப் பற்றி பொதுவான கேள்விகள் உள்ளதா? மின்னஞ்சல் மூலம் எங்களைத் தொடர்பு கொள்ளவும்." },
+    },
+  },
+  {
+    iconKey: "Phone",
+    sortOrder: 2,
+    translations: {
+      en: { title: "Admissions Support", description: "Need help with your application process? Our team is here to guide you." },
+      ms: { title: "Sokongan Kemasukan", description: "Memerlukan bantuan dengan proses permohonan anda? Pasukan kami sedia membantu." },
+      zh: { title: "招生支持", description: "在申请过程中需要帮助？我们的团队将引导您。" },
+      ta: { title: "சேர்க்கை ஆதரவு", description: "விண்ணப்ப செயல்முறையில் உதவி தேவையா? எங்கள் குழு உங்களுக்கு வழிகாட்ட இங்கே உள்ளது." },
+    },
+  },
+  {
+    iconKey: "HelpCircle",
+    sortOrder: 3,
+    translations: {
+      en: { title: "Officer Consultation", description: "Looking for specific guidance from our officers? Schedule a consultation." },
+      ms: { title: "Konsultasi Pegawai", description: "Mencari bimbingan khusus daripada pegawai kami? Jadualkan sesi konsultasi." },
+      zh: { title: "军官咨询", description: "寻求军官的具体指导？请预约咨询。" },
+      ta: { title: "அதிகாரி ஆலோசனை", description: "எங்கள் அதிகாரிகளிடமிருந்து குறிப்பிட்ட வழிகாட்டுதலை எதிர்பார்க்கிறீர்களா? ஆலோசனையை திட்டமிடுங்கள்." },
+    },
+  },
+] as const;

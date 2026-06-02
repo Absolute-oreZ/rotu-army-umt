@@ -36,6 +36,20 @@
       "when": 1780159675351,
       "tag": "0004_pale_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780210387001,
+      "tag": "0005_tricky_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780280181341,
+      "tag": "0006_kind_thunderball",
+      "breakpoints": true
     }
   ]
 }

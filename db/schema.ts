@@ -474,6 +474,7 @@ export const webappContents = pgTable(
     id: serial("id").primaryKey(),
     singletonKey: boolean("singleton_key").default(true).notNull(),
     heroImageUrl: text("hero_image_url"),
+    googleMapLocationUrl: text("google_map_location_url"),
     officialEmail: varchar("official_email", { length: 320 }),
     facebookUrl: text("facebook_url"),
     instagramUrl: text("instagram_url"),
@@ -582,3 +583,34 @@ export const testimonialTranslations = pgTable(
     ),
   ],
 );
+
+export const contactReasons = pgTable(
+  "contact_reasons",
+  {
+    id: serial("id").primaryKey(),
+    iconKey: varchar("icon_key", { length: 60 }).notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    ...timestamps,
+  },
+);
+
+export const contactReasonTranslations = pgTable(
+  "contact_reason_translations",
+  {
+    id: serial("id").primaryKey(),
+    reasonId: integer("reason_id")
+      .notNull()
+      .references(() => contactReasons.id, { onDelete: "cascade" }),
+    locale: localeEnum("locale").notNull(),
+    title: varchar("title", { length: 180 }).notNull(),
+    description: text("description").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("contact_reason_translations_reason_locale_idx").on(
+      table.reasonId,
+      table.locale,
+    ),
+  ],
+);
+

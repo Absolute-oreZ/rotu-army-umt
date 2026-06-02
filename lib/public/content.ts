@@ -20,10 +20,23 @@ import {
   eventDisplayPhotos,
   eventTags,
   eventTagTranslations,
-  eventsToTags
+  eventsToTags,
+  contactReasons,
+  contactReasonTranslations,
 } from "@/db/schema";
 import type { Locale } from "@/lib/i18n/config";
-import { DEFAULT_FAQ_ENTRIES, DEFAULT_SEE_MORE_LINKS } from "@/lib/data";
+import {
+  DEFAULT_HERO_IMAGE_URL,
+  DEFAULT_GOOGLE_MAP_LOCATION_URL,
+  DEFAULT_OFFICIAL_EMAIL,
+  DEFAULT_FACEBOOK_URL,
+  DEFAULT_INSTAGRAM_URL,
+  DEFAULT_YOUTUBE_URL,
+  DEFAULT_TIKTOK_URL,
+  DEFAULT_X_URL,
+  DEFAULT_FAQ_ENTRIES,
+  DEFAULT_SEE_MORE_LINKS
+} from "@/lib/data";
 
 export type HomePageContent = {
   faqs: Array<{
@@ -142,7 +155,24 @@ export type PublicStoryDetail = {
   displayPhotos: PublicStoryDisplayPhoto[];
 };
 
-const FALLBACK_HERO_IMAGE = "/images/default-hero-image.jpg";
+export type PublicContactReason = {
+  id: number;
+  iconKey: string;
+  title: string;
+  description: string;
+};
+
+export type ContactPageContent = {
+  googleMapLocationUrl: string
+  officialEmail: string
+  facebookUrl: string;
+  instagramUrl: string;
+  youtubeUrl: string;
+  tiktokUrl: string;
+  xUrl: string;
+  contactReasons: PublicContactReason[];
+};
+
 const FALLBACK_STATS = {
   cadetCount: 120,
   intakeCount: 12,
@@ -291,7 +321,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
 
   return {
     faqs: faqRows.length > 0 ? faqRows : FALLBACK_FAQS[locale],
-    heroImageUrl: singletonContent[0]?.heroImageUrl ?? FALLBACK_HERO_IMAGE,
+    heroImageUrl: singletonContent[0]?.heroImageUrl ?? DEFAULT_HERO_IMAGE_URL,
     seeAlsoLinks: linksRows.length > 0 ? linksRows : FALLBACK_SEE_ALSO_LINKS,
     stats: resolvedStats,
     testimonials: Array.from(testimonialMap.values()),
@@ -850,5 +880,51 @@ export async function getPublishedStoriesByTag(
       years,
       byYear: Object.fromEntries(years.map((year) => [year, byYear.get(year) ?? []])),
     },
+  };
+}
+
+export async function getContactPageContent(locale: Locale): Promise<ContactPageContent> {
+  const [webappContentRow, reasonRows] = await Promise.all([
+    db
+      .select({
+        googleMapLocationUrl: webappContents.googleMapLocationUrl ?? DEFAULT_GOOGLE_MAP_LOCATION_URL,
+        officialEmail: webappContents.officialEmail ?? DEFAULT_OFFICIAL_EMAIL,
+        facebookUrl: webappContents.facebookUrl ?? DEFAULT_FACEBOOK_URL,
+        instagramUrl: webappContents.instagramUrl ?? DEFAULT_INSTAGRAM_URL,
+        youtubeUrl: webappContents.youtubeUrl ?? DEFAULT_YOUTUBE_URL,
+        tiktokUrl: webappContents.tiktokUrl ?? DEFAULT_TIKTOK_URL,
+        xUrl: webappContents.xUrl ?? DEFAULT_X_URL,
+      })
+      .from(webappContents)
+      .limit(1),
+    db
+      .select({
+        id: contactReasons.id,
+        iconKey: contactReasons.iconKey,
+        title: contactReasonTranslations.title,
+        description: contactReasonTranslations.description,
+      })
+      .from(contactReasons)
+      .innerJoin(
+        contactReasonTranslations,
+        and(
+          eq(contactReasonTranslations.reasonId, contactReasons.id),
+          eq(contactReasonTranslations.locale, locale),
+        ),
+      )
+      .orderBy(contactReasons.sortOrder),
+  ]);
+
+  const webappContent = webappContentRow[0];
+
+  return {
+    googleMapLocationUrl: webappContent?.googleMapLocationUrl ?? DEFAULT_GOOGLE_MAP_LOCATION_URL,
+    officialEmail: webappContent?.officialEmail ?? DEFAULT_OFFICIAL_EMAIL,
+    facebookUrl: webappContent?.facebookUrl ?? DEFAULT_FACEBOOK_URL,
+    instagramUrl: webappContent?.instagramUrl ?? DEFAULT_INSTAGRAM_URL,
+    youtubeUrl: webappContent?.youtubeUrl ?? DEFAULT_YOUTUBE_URL,
+    tiktokUrl: webappContent?.tiktokUrl ?? DEFAULT_TIKTOK_URL,
+    xUrl: webappContent?.xUrl ?? DEFAULT_X_URL,
+    contactReasons: reasonRows,
   };
 }

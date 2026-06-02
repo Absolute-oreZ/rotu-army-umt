@@ -1,0 +1,1 @@
+ALTER TABLE "webapp_contents" ADD COLUMN "google_map_location_url" text;

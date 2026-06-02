@@ -115,6 +115,60 @@ export type Dictionary = {
     emptyTitle: string;
     emptyDescription: string;
   };
+  contactPage: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    newsletterTitle: string;
+    newsletterSubTitle: string;
+    newsletterDescription: string;
+    newsletterEmailLabel: string;
+    newsletterEmailPlaceholder: string;
+    newsletterLoadingLabel: string;
+    newsletterLocaleLabel: string;
+    newsletterLocaleOptions: {
+      en: string;
+      ms: string;
+      zh: string;
+      ta: string;
+    };
+    newsletterSubscribeButton: string;
+    newsletterErrorMessage: string;
+    newsletterRequiredError: string;
+    newsletterInvalidEmailError: string;
+    newsletterDuplicateError: string;
+    newsletterSendFailedError: string;
+    newsletterSuccess: string;
+    socialTitle: string;
+    socialTikTokLabel: string;
+    locationTitle: string;
+  };
+  newsletter: {
+    emailSubject: string;
+    emailGreeting: string;
+    emailIntro: string;
+    emailButton: string;
+    emailFallback: string;
+    emailFooter: string;
+    emailUnsubscribeLabel: string;
+    confirmationPageEyebrow: string;
+    confirmationPageTitle: string;
+    confirmationPageSuccessTitle: string;
+    confirmationPageSuccessDescription: string;
+    confirmationPageAlreadyTitle: string;
+    confirmationPageAlreadyDescription: string;
+    confirmationPageInvalidTitle: string;
+    confirmationPageInvalidDescription: string;
+    unsubscribePageEyebrow: string;
+    unsubscribePageTitle: string;
+    unsubscribePageSuccessTitle: string;
+    unsubscribePageSuccessDescription: string;
+    unsubscribePageAlreadyTitle: string;
+    unsubscribePageAlreadyDescription: string;
+    unsubscribePageInvalidTitle: string;
+    unsubscribePageInvalidDescription: string;
+    backToSiteLabel: string;
+  };
 };
 
 const en: Dictionary = {
@@ -247,6 +301,60 @@ const en: Dictionary = {
     description: "Browse published ROTU Army UMT events related to this tag.",
     emptyTitle: "No related events yet",
     emptyDescription: "Published events for this tag will appear here once they are available.",
+  },
+  contactPage: {
+    eyebrow: "Contact Command",
+    title: "We'd love to hear from you",
+    description: "If you have any questions, please do not hesitate to contact us",
+    newsletterTitle: "Newsletter Subscription",
+    newsletterSubTitle: "Stay Updated",
+    newsletterDescription: "Stay informed about the latest updates.",
+    newsletterEmailLabel: "Email",
+    newsletterEmailPlaceholder: "email@example.com",
+    newsletterLoadingLabel: "Sending...",
+    newsletterLocaleLabel: "Preferred Language",
+    newsletterLocaleOptions: {
+      en: "English",
+      ms: "Bahasa Melayu",
+      zh: "Chinese",
+      ta: "Tamil",
+    },
+    newsletterSubscribeButton: "Subscribe",
+    newsletterErrorMessage: "An unexpected error occurred",
+    newsletterRequiredError: "Email is required.",
+    newsletterInvalidEmailError: "Please enter a valid email address.",
+    newsletterDuplicateError: "This email is already subscribed.",
+    newsletterSendFailedError: "We could not send the confirmation email right now. Please try again.",
+    newsletterSuccess: "Check your inbox to confirm your subscription.",
+    socialTitle: "Digital Presence",
+    socialTikTokLabel: "TikTok",
+    locationTitle: "Our Headquarters",
+  },
+  newsletter: {
+    emailSubject: "Confirm your ROTU Army UMT subscription",
+    emailGreeting: "Hello from ROTU Army UMT,",
+    emailIntro: "Thank you for joining our newsletter. Confirm your subscription to start receiving official updates and announcements.",
+    emailButton: "Confirm subscription",
+    emailFallback: "If the button does not work, copy this link:",
+    emailFooter: "If you did not request this subscription, you can ignore this email.",
+    emailUnsubscribeLabel: "Unsubscribe",
+    confirmationPageEyebrow: "Newsletter",
+    confirmationPageTitle: "Confirm your subscription",
+    confirmationPageSuccessTitle: "Subscription confirmed",
+    confirmationPageSuccessDescription: "Your newsletter subscription is now active.",
+    confirmationPageAlreadyTitle: "Subscription already confirmed",
+    confirmationPageAlreadyDescription: "This confirmation link has already been used, and your subscription is already active.",
+    confirmationPageInvalidTitle: "Confirmation link is invalid",
+    confirmationPageInvalidDescription: "This confirmation link is invalid or has expired.",
+    unsubscribePageEyebrow: "Newsletter",
+    unsubscribePageTitle: "Unsubscribe from the newsletter",
+    unsubscribePageSuccessTitle: "You have been unsubscribed",
+    unsubscribePageSuccessDescription: "You will no longer receive newsletter updates from ROTU Army UMT.",
+    unsubscribePageAlreadyTitle: "You are already unsubscribed",
+    unsubscribePageAlreadyDescription: "This unsubscribe link has already been used.",
+    unsubscribePageInvalidTitle: "Unsubscribe link is invalid",
+    unsubscribePageInvalidDescription: "This unsubscribe link is invalid or has expired.",
+    backToSiteLabel: "Back to site",
   },
 };
 

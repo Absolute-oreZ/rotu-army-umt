@@ -18,6 +18,12 @@ import {
   DEFAULT_TESTIMONIAL_ARMY_NOS,
   DEFAULT_EVENTS,
   DEFAULT_EVENT_TAGS,
+  DEFAULT_GOOGLE_MAP_LOCATION_URL,
+  DEFAULT_OFFICIAL_EMAIL,
+  DEFAULT_CONTACT_REASONS,
+  DEFAULT_YOUTUBE_URL,
+  DEFAULT_TIKTOK_URL,
+  DEFAULT_X_URL,
 } from "../lib/data";
 import { computeAcademicSchedule } from "@/lib/utils";
 
@@ -81,7 +87,10 @@ async function seed() {
       event_tag_translations,
       event_tags,
       event_translations,
-      events
+      events,
+      contact_reasons,
+      contact_reason_translations,
+      newsletter_subscribers
     RESTART IDENTITY CASCADE
   `;
 
@@ -119,16 +128,58 @@ async function seed() {
       singleton_key,
       hero_image_url,
       facebook_url,
-      instagram_url
+      instagram_url,
+      youtube_url,
+      tiktok_url,
+      x_url,
+      google_map_location_url,
+      official_email
     )
     values (
       true,
       ${DEFAULT_HERO_IMAGE_URL},
       ${DEFAULT_FACEBOOK_URL},
-      ${DEFAULT_INSTAGRAM_URL}
+      ${DEFAULT_INSTAGRAM_URL},
+      ${DEFAULT_YOUTUBE_URL},
+      ${DEFAULT_TIKTOK_URL},
+      ${DEFAULT_X_URL},
+      ${DEFAULT_GOOGLE_MAP_LOCATION_URL},
+      ${DEFAULT_OFFICIAL_EMAIL}
     )
     returning id
   `;
+
+  for (const reason of DEFAULT_CONTACT_REASONS) {
+    const [reasonRow] = await sql<[{ id: number }]>`
+      insert into contact_reasons (
+        icon_key,
+        sort_order
+      )
+      values (
+        ${reason.iconKey},
+        ${reason.sortOrder}
+      )
+      returning id
+    `;
+
+    for (const locale of ["en", "ms", "zh", "ta"] as const) {
+      const translation = reason.translations[locale];
+      await sql`
+        insert into contact_reason_translations (
+          reason_id,
+          locale,
+          title,
+          description
+        )
+        values (
+          ${reasonRow.id},
+          ${locale},
+          ${translation.title},
+          ${translation.description}
+        )
+      `;
+    }
+  }
 
   for (let i = 0; i < DEFAULT_FAQ_ENTRIES.length; i += 1) {
     const faq = DEFAULT_FAQ_ENTRIES[i];
