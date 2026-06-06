@@ -12,7 +12,7 @@ export default async function RootNotFound() {
   const d = dictionary.notFoundPage;
 
   return (
-    <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-background text-foreground">
+    <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-lg flex-col items-center px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8">
         <div className="relative h-48 w-48 sm:h-56 sm:w-56">
           <Image

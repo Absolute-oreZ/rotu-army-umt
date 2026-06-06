@@ -33,7 +33,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Build contact page at `/[locale]/contact`.
 - [x] Add newsletter subscription form on Contact page.
 - [x] Add localized public `not-found.tsx` handling for missing pages/resources.
-- [ ] Add route-level error boundaries for public and admin surfaces.
+- [x] Add global error boundarie for public surfaces (`app/error.tsx`).
 - [ ] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [ ] Add `sitemap.xml` and `robots.txt`.
 - [x] Draft Drizzle schema for intakes, members, cadets, stories, newsletters, and academic results.
@@ -41,13 +41,14 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Store Supabase Storage paths/keys for managed files and images.
 - [ ] Build admin layout shell with responsive left sidebar navigation.
 - [ ] Build Secretary-owned admin invitations/user management.
-- [ ] Build Officer and Instructor bento dashboard.
 - [ ] Build Secretary modules: Rank Holders, Intakes, Cadets.
 - [ ] Build Treasurer modules: Collections, Expenses.
 - [ ] Build Multimedia modules: Portfolio, stories, Newsletters.
 - [ ] Build Sports modules: Activities, Collaborations.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.
 - [ ] Build Academic modules: Results, Timetables.
+- [ ] Build Officer and Instructor bento dashboard.
+- [ ] Add route-level error boundaries for admin surfaces.
 - [ ] Confirm required documents and fields for seasonal intake applications.
 - [ ] Build seasonal intake application form and submission flow.
 - [ ] Add Resend configuration when email sending is implemented.

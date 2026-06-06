@@ -199,7 +199,7 @@ System data model shall include at minimum:
 
 ### 5.5 Reliability
 1. System should provide localized not-found behavior for missing resources.
-2. System should include route-level error boundaries for public and admin surfaces.
+2. System should include route-level error boundaries for public surfaces. Public error boundaries are implemented with localized strings for all 4 locales. Admin error boundaries are deferred.
 
 ## 6. External Interface Requirements
 
@@ -236,7 +236,8 @@ System data model shall include at minimum:
 - Static `robots.txt`.
 - Per-page canonical/hreflang audit.
 - Localized page-level not-found pages.
-- Route-level error boundaries.
+- Route-level error boundaries for admin surfaces.
+- Admin error boundaries.
 - Admin sidebar shell with role-aware navigation.
 - All admin module pages (rank-holders, intakes, cadets, collections, expenses, portfolio, stories, newsletters, activities, collaborations, health, accommodations, religion, results, timetables).
 - Admin CMS: Multimedia for `webapp_contents`, stories CRUD, newsletter management, application deadline config.

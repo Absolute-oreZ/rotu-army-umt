@@ -83,6 +83,14 @@ Planned role module routes exist in RBAC mapping but most pages are not yet impl
 - Public header includes language switching by URL segment replacement.
 - Locale-aware metadata baseline generated in `app/[locale]/layout.tsx`.
 
+## 5.5 Error Handling Architecture
+- Route-level error boundaries for public surfaces:
+  - `app/[locale]/error.tsx` — catches errors in all public pages under a locale, localized error strings, provides "Try again" (reset) and "Go home" navigation.
+  - `app/error.tsx` — root fallback for errors outside locale context (e.g., invalid locale), defaults to English.
+- Error UI strings are maintained in `lib/i18n/error-strings.ts` — separate from full dictionary, minimal set for error pages.
+- Locale detection in error boundaries uses `localeFromPathname()` on `window.location.pathname` (client-side only, safe after hydration).
+- Admin error boundaries are not yet implemented — deferred pending admin UI completion.
+
 ## 6. Authentication and Authorization
 ### 6.1 Authentication
 - Admin login uses Supabase OAuth provider `google` (`app/admin/login/actions.ts`).
@@ -183,10 +191,11 @@ Based on `TASKS.md` and codebase review:
 - Newsletter: subscription form, double opt-in confirmation, unsubscribe flow (Resend integration complete).
 - Localization: all 4 locales (en, ms, zh, ta) with dictionaries.
 - Root not-found page for invalid locales (hardcoded English, acceptable).
+- Route-level error boundaries for public surfaces (localized for all 4 locales).
 
 ### Pending
 - Public SEO completeness: dynamic `sitemap.xml` from DB, static `robots.txt`, per-page canonical/hreflang audit.
-- Error handling: localized page-level `not-found`, route-level error boundaries.
+- Error handling: localized page-level `not-found`, route-level error boundaries for admin surfaces.
 - Admin shell: role-aware sidebar, all role module pages (rank-holders, intakes, cadets, collections, expenses, portfolio, stories, newsletters, activities, collaborations, health, accommodations, religion, results, timetables).
 - Admin CMS: Multimedia-managed `webapp_contents`, stories CRUD, newsletter management, application deadline config.
 - Secretary admin user management with role change (delete + recreate) and audit logging.
@@ -207,5 +216,5 @@ Based on `TASKS.md` and codebase review:
 4. Build email templates for application confirmation and status update notifications.
 5. Implement admin CMS modules: Multimedia for `webapp_contents`, stories CRUD, newsletter management; Secretary for admin user management with delete+recreate role changes and audit logging.
 6. Add dynamic `sitemap.xml` route (DB-driven, 1-hour cache) and static `robots.txt`.
-7. Add localized page-level `not-found` and route-level error boundaries.
+7. Add localized page-level `not-found` for public routes and route-level error boundaries for admin surfaces.
 8. Audit per-page canonical URLs and `hreflang` alternates across all public routes.
