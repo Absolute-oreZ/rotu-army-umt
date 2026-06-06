@@ -23,7 +23,7 @@ Core platform choices:
 ## 3. High-Level Component View
 ### 3.1 Presentation Layer
 - Route groups and layouts:
-  - `app/(root)` redirects `/` to default locale `/en`.
+  - `app/page.tsx` and `app/layout.tsx` handle root-level redirect to default locale `/en`.
   - `app/[locale]` provides locale-aware root document, metadata base, and hosts all public pages directly (no intermediate `(public)` route group).
   - `app/admin` hosts admin pages and admin shell.
 - UI components:
@@ -157,7 +157,7 @@ Design patterns:
 - Hero image fallback.
 - Stats fallbacks.
 - FAQ fallback entries by locale.
-- �See also� fallback links.
+- "See also" fallback links.
 
 This supports early public page delivery while admin-managed content modules are still in progress.
 

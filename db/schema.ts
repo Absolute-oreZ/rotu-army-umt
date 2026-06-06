@@ -193,7 +193,7 @@ export const intakeDisplayPhotos = pgTable(
       .notNull()
       .references(() => intakes.id, { onDelete: "cascade" }),
     photoPath: text("photo_path").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    ...timestamps,
   },
   (table) => [index("intake_display_photos_intake_id_idx").on(table.intakeId)],
 );
@@ -463,7 +463,7 @@ export const eventDisplayPhotos = pgTable(
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
     photoPath: text("photo_path").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    ...timestamps,
   },
   (table) => [index("event_display_photos_event_id_idx").on(table.eventId)],
 );

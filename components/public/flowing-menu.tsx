@@ -3,6 +3,8 @@
 import React from "react";
 import { gsap } from "gsap";
 
+const animationDefaults = { duration: 0.6, ease: "expo" };
+
 interface MenuItemProps {
   image: string;
   link: string;
@@ -17,8 +19,8 @@ export default function FlowingMenu({ items = [] }: FlowingMenuProps) {
   return (
     <div className="h-full min-h-52 w-full overflow-hidden border-y border-border dark:border-border">
       <nav className="m-0 flex h-full min-h-152 flex-col p-0">
-        {items.map((item, idx) => (
-          <MenuItem key={idx} {...item} />
+        {items.map((item) => (
+          <MenuItem key={item.link} {...item} />
         ))}
       </nav>
     </div>
@@ -29,8 +31,6 @@ function MenuItem({ link, text, image }: MenuItemProps) {
   const itemRef = React.useRef<HTMLDivElement>(null);
   const marqueeRef = React.useRef<HTMLDivElement>(null);
   const marqueeInnerRef = React.useRef<HTMLDivElement>(null);
-
-  const animationDefaults = { duration: 0.6, ease: "expo" };
 
   const findClosestEdge = (
     mouseX: number,

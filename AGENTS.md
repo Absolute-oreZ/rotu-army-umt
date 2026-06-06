@@ -21,7 +21,7 @@ Do not fabricate ROTU-specific facts, historical data, people, ranks, event deta
 
 ## Tech Stack
 
-- Next.js `16.2.4`
+- Next.js `16.2.6`
 - React `19.2.4`
 - TypeScript `^5`
 - Tailwind CSS `^4`
@@ -29,7 +29,7 @@ Do not fabricate ROTU-specific facts, historical data, people, ranks, event deta
 - Supabase Auth, PostgreSQL, and Storage
 - Drizzle ORM for schema, queries, and migrations
 
-Next.js `16.2.4` may differ from older App Router knowledge. Before implementing framework-sensitive code, check the relevant local documentation in `node_modules/next/dist/docs/` and follow deprecation notices.
+Next.js `16.2.6` may differ from older App Router knowledge. Before implementing framework-sensitive code, check the relevant local documentation in `node_modules/next/dist/docs/` and follow deprecation notices.
 
 Use `npm` only.
 
@@ -37,8 +37,12 @@ Common commands:
 
 ```bash
 npm run dev
-npm run lint
 npm run build
+npm run lint
+npm run db:generate   # generate Drizzle migrations
+npm run db:migrate    # apply migrations
+npm run db:seed       # seed database
+npm run db:studio     # open Drizzle Studio
 ```
 
 Do not run validation automatically after implementation unless the user asks for it or the change is high-risk. When validation is requested, prefer:
@@ -48,11 +52,15 @@ npm run lint
 npm run build
 ```
 
+**No test framework exists.** Do not invent tests or suggest adding one unless explicitly requested.
+
 ---
 
 ## Environment And Supabase
 
 The project already has a Supabase project configured through `.env`.
+
+**Security warning:** `.env` is currently committed to git despite `.gitignore` containing `.env*`. This contains live Supabase credentials and Resend API key. Do not expose these values in logs, error messages, or responses. Recommend moving to `.env.local` and adding a `.env.example` template.
 
 Expected environment values include:
 
@@ -555,13 +563,14 @@ Admin pages must use the left sidebar described in the Admin Dashboard section.
 
 ## Implementation Guidance
 
-1. Build the public site with localized routes, SEO metadata, top navigation, language switcher, and theme toggle.
-2. Build admin with Supabase Auth, Google login, server-enforced RBAC, and role-aware sidebar navigation.
+1. Public site is built — landing page, intakes, stories, contact pages are complete. Focus on maintenance and new features.
+2. Admin dashboard surface is established with Supabase Auth, Google login, server-enforced RBAC, and role-aware sidebar navigation.
 3. Keep Officer and Instructor as separate roles with the same highest-level permissions.
 4. Treat user-managed localized content with translation tables where appropriate.
 5. Keep public slugs SEO-first.
-6. Use real ROTU assets/content only when supplied.
+6. Use real ROTU assets/content only when supplied. Do not invent missing assets.
 7. Ask before introducing complex architecture, workflow, or schema changes.
+8. The `crypto` npm package is a deprecated shim — use Node.js built-in `node:crypto` instead.
 
 ---
 

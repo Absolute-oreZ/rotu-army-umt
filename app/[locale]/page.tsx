@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
@@ -11,10 +12,38 @@ import { ScrollReveal } from "@/components/public/scroll-reveal";
 import { JoinTheRanks } from "@/components/public/join-the-ranks";
 import { Testimonials } from "@/components/public/testimonials";
 import { HeroImage } from "@/components/public/hero-image";
-import { type Locale } from "@/lib/i18n/config";
+import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getHomePageContent } from "@/lib/public/content";
 import { StatCard } from "@/components/public/stat-card";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params as { locale: Locale };
+  const dictionary = await getDictionary(locale);
+
+  return {
+    title: dictionary.home.title,
+    description: dictionary.home.intro,
+    alternates: {
+      canonical: `/${locale}`,
+      languages: Object.fromEntries(
+        locales.map((l) => [l, `/${l}`]),
+      ),
+    },
+    openGraph: {
+      title: dictionary.home.title,
+      description: dictionary.home.intro,
+      type: "website",
+      locale,
+      alternateLocale: locales.filter((l) => l !== locale),
+      url: `/${locale}`,
+    },
+  };
+}
 
 export default async function HomePage({
   params,

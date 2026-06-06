@@ -99,7 +99,6 @@ export function StoryPhotoCarousel({ photos, alt, className }: Props) {
 
   return (
     <div
-      key={photos.length}
       ref={containerRef}
       className={cn("rounded-2xl border border-border bg-background", className)}
       style={{ padding: containerPadding }}

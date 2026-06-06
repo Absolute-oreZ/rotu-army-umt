@@ -116,16 +116,18 @@ export default function Masonry({
       };
 
       if (!hasMounted.current) {
+        const winWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
+        const winHeight = typeof window !== "undefined" ? window.innerHeight : 1080;
         let initialPosition = { x: item.x, y: item.y + 100 };
 
         if (animateFrom === "top") {
           initialPosition = { x: item.x, y: -200 };
         } else if (animateFrom === "bottom") {
-          initialPosition = { x: item.x, y: window.innerHeight + 200 };
+          initialPosition = { x: item.x, y: winHeight + 200 };
         } else if (animateFrom === "left") {
           initialPosition = { x: -200, y: item.y };
         } else if (animateFrom === "right") {
-          initialPosition = { x: window.innerWidth + 200, y: item.y };
+          initialPosition = { x: winWidth + 200, y: item.y };
         } else if (animateFrom === "center" && containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           initialPosition = {
@@ -136,9 +138,9 @@ export default function Masonry({
           const directions = ["top", "bottom", "left", "right"] as const;
           const direction = directions[Math.floor(Math.random() * directions.length)];
           if (direction === "top") initialPosition = { x: item.x, y: -200 };
-          if (direction === "bottom") initialPosition = { x: item.x, y: window.innerHeight + 200 };
+          if (direction === "bottom") initialPosition = { x: item.x, y: winHeight + 200 };
           if (direction === "left") initialPosition = { x: -200, y: item.y };
-          if (direction === "right") initialPosition = { x: window.innerWidth + 200, y: item.y };
+          if (direction === "right") initialPosition = { x: winWidth + 200, y: item.y };
         }
 
         gsap.fromTo(
@@ -222,7 +224,6 @@ export default function Masonry({
               src={item.img}
               alt={item.title}
               fill
-              priority
               sizes="(max-width: 600px) 100vw, (max-width: 1000px) 50vw, 33vw"
               className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             />

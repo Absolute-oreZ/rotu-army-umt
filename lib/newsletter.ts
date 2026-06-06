@@ -1,6 +1,6 @@
 import "server-only";
 
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterSubscribers } from "@/db/schema";

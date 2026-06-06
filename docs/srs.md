@@ -68,10 +68,18 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 1. System shall render published intakes from database.
 2. System shall show placeholder empty state when no published intakes exist.
 
-#### 3.3.3 Planned Public Pages
-1. System shall provide intake detail page by slug.
-2. System shall provide stories list and detail pages by slug.
-3. System shall provide contact page with newsletter entry point.
+#### 3.3.3 Intake Detail Page
+1. System shall render intake detail by slug with patch explanations, gallery, cadet list, and uniform visuals.
+2. System shall provide tabbed navigation between summary, patch, and uniform sections.
+
+#### 3.3.4 Stories Pages
+1. System shall render stories list grouped by year.
+2. System shall render story detail by slug with photo gallery, tags, and similar stories.
+3. System shall render stories filtered by tag with tag archive view.
+
+#### 3.3.5 Contact Page
+1. System shall render contact page with contact reasons, social links, map embed, and newsletter subscription form.
+2. System shall support newsletter double opt-in confirmation and unsubscribe flows.
 
 ### 3.4 SEO and Discoverability
 1. System shall use Next.js Metadata API for public pages.

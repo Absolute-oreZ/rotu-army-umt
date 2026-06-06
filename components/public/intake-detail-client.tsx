@@ -40,8 +40,14 @@ export function IntakeDetailClient({
   summary,
 }: IntakeDetailClientProps) {
   const rosterRef = useRef<HTMLDivElement | null>(null);
-  const stackedDisplayPhotos = intake.displayPhotos.slice(0, 4);
-  const mobileDisplayPhotos = intake.displayPhotos;
+  const stackedDisplayPhotos = useMemo(
+    () => intake.displayPhotos.slice(0, 4),
+    [intake.displayPhotos],
+  );
+  const mobileDisplayPhotos = useMemo(
+    () => intake.displayPhotos,
+    [intake.displayPhotos],
+  );
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const [desktopPhotoMap] = useState(
     () => new Map<number, string>(stackedDisplayPhotos.map((photo, index) => [index + 1, photo.photoPath])),
@@ -52,10 +58,7 @@ export function IntakeDetailClient({
     intake.displayPhotos[0]?.photoPath ??
     "/images/default-hero-image.jpg";
 
-  const patchExplanationKeys = useMemo(
-    () => ["ANIMAL", "COLOR", "PHILOSOPHY"] as const,
-    [],
-  );
+  const patchExplanationKeys = ["ANIMAL", "COLOR", "PHILOSOPHY"] as const;
 
   const rotatingHeaderItems = useMemo(
     () => [

@@ -163,8 +163,8 @@ export type PublicContactReason = {
 };
 
 export type ContactPageContent = {
-  googleMapLocationUrl: string
-  officialEmail: string
+  googleMapLocationUrl: string;
+  officialEmail: string;
   facebookUrl: string;
   instagramUrl: string;
   youtubeUrl: string;
@@ -349,7 +349,7 @@ export async function getPublishedIntakeList(
       ),
     )
     .where(eq(intakes.status, "PUBLISHED"))
-    .orderBy(desc(intakes.startYear))
+    .orderBy(desc(intakes.startYear));
 }
 
 export async function getPublishedIntakeDetail(

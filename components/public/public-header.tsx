@@ -185,14 +185,13 @@ function LanguageSwitcher({
     <div
       aria-label={label}
       className="flex rounded-md border border-border bg-background p-1"
-      role="navigation"
     >
       {locales.map((item) => (
         <Link
           key={item}
           href={switchLocale(pathname, item)}
           hrefLang={item}
-          aria-current={item === locale ? "true" : undefined}
+          aria-current={item === locale ? "page" : undefined}
           className={cn(
             "flex h-7 min-w-8 items-center justify-center rounded-[calc(var(--radius)-0.1rem)] px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
             item === locale &&

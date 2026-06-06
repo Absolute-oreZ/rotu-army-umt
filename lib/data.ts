@@ -85,7 +85,7 @@ export const DEFAULT_TESTIMONIAL_ENTRIES = [
       en: "Joining ROTU was the best decision of my university life. It taught me discipline and leadership like nowhere else.",
       ms: "Menyertai ROTU adalah keputusan terbaik dalam kehidupan universiti saya. Ia mengajar saya disiplin dan kepimpinan yang tidak dapat diperolehi di tempat lain.",
       zh: "加入 ROTU 是我大学生活最正确的决定。它教会了我其他地方无法学到的纪律和领导力。",
-      ta: "ROTU-வில் சேர்ந்தது எனது பல்கலைக்கழக வாழ்க்கையின் சிறந்த முடிவாகும். இது எனக்கு வேறு எங்கும் கிடைக்காத ஒழுக்கத்தையும் தலைமைத்துவத்தையும் கற்றுக்கொடுத்தது。",
+      ta: "ROTU-வில் சேர்ந்தது எனது பல்கலைக்கழக வாழ்க்கையின் சிறந்த முடிவாகும். இது எனக்கு வேறு எங்கும் கிடைக்காத ஒழுக்கத்தையும் தலைமைத்துவத்தையும் கற்றுக்கொடுத்தது.",
     },
   },
   {
@@ -227,7 +227,7 @@ export const DEFAULT_FAQ_ENTRIES = [
 
 export const DEFAULT_SEE_MORE_LINKS = [
   {
-    title: "Angakatan Tentera Malaysia",
+    title: "Angkatan Tentera Malaysia",
     link: "https://www.mafhq.mil.my/",
     imageUrl: "/images/see-also-atm.svg",
   },
@@ -568,19 +568,19 @@ export const DEFAULT_INTAKES = [
         en: "The wolf symbolizes loyalty and unity.",
         ms: "Serigala melambangkan kesetiaan dan perpaduan.",
         zh: "狼象征忠诚与团结。",
-        ta: "ஓநாய் விசுவாசத்தையும் ஒற்றுமையையும் குறிக்கிறது。",
+        ta: "ஓநாய் விசுவாசத்தையும் ஒற்றுமையையும் குறிக்கிறது.",
       },
       COLOR: {
         en: "Red represents courage and sacrifice.",
         ms: "Merah melambangkan keberanian dan pengorbanan.",
         zh: "红色象征勇气与牺牲。",
-        ta: "சிவப்பு தைரியத்தையும் தியாகத்தையும் குறிக்கிறது。",
+        ta: "சிவப்பு தைரியத்தையும் தியாகத்தையும் குறிக்கிறது.",
       },
       PHILOSOPHY: {
         en: "Move as one, succeed as one.",
         ms: "Bergerak sebagai satu, berjaya sebagai satu.",
         zh: "团结一致，共同成功。",
-        ta: "ஒன்றுபட்டு செயல்பட்டு வெற்றியடைவோம்。",
+        ta: "ஒன்றுபட்டு செயல்பட்டு வெற்றியடைவோம்.",
       },
     },
   },
@@ -630,7 +630,7 @@ export const DEFAULT_INTAKES = [
           "Iron Eagles அணியினர் திட்டமிடல் மற்றும் ஒழுக்கத்திற்காக அறியப்பட்டனர்.",
         seoTitle: "Iron Eagles சேர்க்கை",
         seoDescription:
-          "Iron Eagles அணியின் பாரம்பரியம் மற்றும் சாதனைகளை அறிக。",
+          "Iron Eagles அணியின் பாரம்பரியம் மற்றும் சாதனைகளை அறிக.",
       },
     },
     patchExplanations: {
@@ -638,19 +638,19 @@ export const DEFAULT_INTAKES = [
         en: "The eagle symbolizes vision and determination.",
         ms: "Helang melambangkan visi dan keazaman.",
         zh: "鹰象征远见与决心。",
-        ta: "கழுகு பார்வையையும் உறுதியையும் குறிக்கிறது。",
+        ta: "கழுகு பார்வையையும் உறுதியையும் குறிக்கிறது.",
       },
       COLOR: {
         en: "Blue reflects integrity and calm leadership.",
         ms: "Biru mencerminkan integriti dan kepimpinan tenang.",
         zh: "蓝色代表诚信与冷静领导。",
-        ta: "நீலம் நேர்மையையும் அமைதியான தலைமைத்துவத்தையும் குறிக்கிறது。",
+        ta: "நீலம் நேர்மையையும் அமைதியான தலைமைத்துவத்தையும் குறிக்கிறது.",
       },
       PHILOSOPHY: {
         en: "Aim high, stay grounded.",
         ms: "Sasar tinggi, tetap berpijak di bumi nyata.",
         zh: "志存高远，脚踏实地。",
-        ta: "உயரத்தை நோக்கி பறந்து நிலைத்திருக்கவும்。",
+        ta: "உயரத்தை நோக்கி பறந்து நிலைத்திருக்கவும்.",
       },
     },
   },
@@ -700,7 +700,7 @@ export const DEFAULT_INTAKES = [
           "Shadow Panthers அணியினர் தன்னம்பிக்கை மற்றும் மன உறுதியால் அறியப்படுகின்றனர்.",
         seoTitle: "Shadow Panthers சேர்க்கை",
         seoDescription:
-          "Shadow Panthers அணியின் அச்சமற்ற தத்துவத்தை அறிக。",
+          "Shadow Panthers அணியின் அச்சமற்ற தத்துவத்தை அறிக.",
       },
     },
     patchExplanations: {
@@ -708,19 +708,19 @@ export const DEFAULT_INTAKES = [
         en: "The panther symbolizes stealth and confidence.",
         ms: "Harimau kumbang melambangkan ketangkasan dan keyakinan.",
         zh: "黑豹象征敏捷与自信。",
-        ta: "பாந்தர் அமைதியையும் தன்னம்பிக்கையையும் குறிக்கிறது。",
+        ta: "பாந்தர் அமைதியையும் தன்னம்பிக்கையையும் குறிக்கிறது.",
       },
       COLOR: {
         en: "Black signifies strength and mystery.",
         ms: "Hitam menandakan kekuatan dan misteri.",
         zh: "黑色象征力量与神秘。",
-        ta: "கருப்பு வலிமையையும் மர்மத்தையும் குறிக்கிறது。",
+        ta: "கருப்பு வலிமையையும் மர்மத்தையும் குறிக்கிறது.",
       },
       PHILOSOPHY: {
         en: "Strike with precision and purpose.",
         ms: "Bertindak dengan tepat dan bermatlamat.",
         zh: "精准出击，目标明确。",
-        ta: "துல்லியத்துடனும் நோக்கத்துடனும் செயல்படு。",
+        ta: "துல்லியத்துடனும் நோக்கத்துடனும் செயல்படு.",
       },
     },
   },
