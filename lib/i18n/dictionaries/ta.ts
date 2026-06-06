@@ -1,4 +1,4 @@
-﻿import type { Dictionary } from "./en";
+﻿import type { Dictionary } from "../dictionaries";
 
 const ta: Dictionary = {
   metadata: {
@@ -80,6 +80,7 @@ const ta: Dictionary = {
     cardImageAlt: "சேர்க்கை காட்சி படம்",
     emptyTitle: "இதுவரை வெளியிடப்பட்ட சேர்க்கைகள் இல்லை",
     emptyDescription: "குழுவால் வெளியிடப்பட்டதும் சேர்க்கை பதிவுகள் இங்கே காணப்படும்.",
+    emptyActionLabel: "முகப்புக்கு திரும்பு",
   },
   intakeDetailPage: {
     detailEyebrow: "சேர்க்கை விவரம்",
@@ -109,6 +110,7 @@ const ta: Dictionary = {
     description: "ஆண்டுவாரியாக வெளியிடப்பட்ட ROTU Army UMT திட்டங்களை பார்த்து ஒவ்வொரு கதையையும் திறக்கவும்.",
     emptyTitle: "இதுவரை வெளியிடப்பட்ட கதைகள் இல்லை",
     emptyDescription: "குழுவால் திட்டங்கள் வெளியிடப்பட்டவுடன் கதைகள் இங்கே காணப்படும்.",
+    emptyActionLabel: "கதைகளின் முகப்புக்கு திரும்பு",
   },
   storyDetailPage: {
     backLabel: "கதைகளுக்கு திரும்பு",
@@ -130,6 +132,7 @@ const ta: Dictionary = {
     description: "இந்த குறிச்சொல்லுடன் தொடர்புடைய வெளியிடப்பட்ட ROTU Army UMT திட்டங்களைப் பார்வையிடவும்.",
     emptyTitle: "தொடர்புடைய திட்டங்கள் இன்னும் இல்லை",
     emptyDescription: "இந்த குறிச்சொல்லுக்கான வெளியிடப்பட்ட திட்டங்கள் கிடைக்கும்போது இங்கே தோன்றும்.",
+    emptyActionLabel: "கதைகளுக்கு திரும்பு",
   },
   contactPage: {
     eyebrow: "தொடர்பு பிரிவு",
@@ -184,6 +187,13 @@ const ta: Dictionary = {
     unsubscribePageInvalidTitle: "விலகல் இணைப்பு தவறானது",
     unsubscribePageInvalidDescription: "இந்த விலகல் இணைப்பு தவறானது அல்லது காலாவதியானது.",
     backToSiteLabel: "தளத்திற்கு திரும்பு",
+  },
+  notFoundPage: {
+    eyebrow: "404",
+    title: "பக்கம் கிடைக்கவில்லை",
+    description: "நீங்கள் தேடும் பக்கம் இல்லை அல்லது நகர்த்தப்பட்டுள்ளது.",
+    backHomeLabel: "முகப்புக்கு திரும்பு",
+    imageAlt: "பக்கம் கிடைக்கவில்லை விளக்கப்படம்",
   },
 };
 

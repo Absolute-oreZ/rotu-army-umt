@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { isLocale,locales, type Locale } from "@/lib/i18n/config";
+import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getContactPageContent } from "@/lib/public/content";
 import { NewsletterForm } from "@/components/public/newsletter-form";
@@ -35,13 +34,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale: rawLocale } = await params;
+  const { locale } = await params as { locale: Locale };
 
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
   const dictionary = await getDictionary(locale);
 
   return {
@@ -69,13 +63,7 @@ export default async function ContactPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale: rawLocale } = await params;
-
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
+  const { locale } = await params as { locale: Locale };
 
   const [dictionary, content] = await Promise.all([
     getDictionary(locale),

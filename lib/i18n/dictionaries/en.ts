@@ -1,175 +1,4 @@
-export type Dictionary = {
-  metadata: {
-    siteName: string;
-    title: string;
-    description: string;
-  };
-  navigation: {
-    about: string;
-    intakes: string;
-    stories: string;
-    contact: string;
-  };
-  common: {
-    language: string;
-    theme: string;
-    light: string;
-    dark: string;
-    menu: string;
-    closeMenu: string;
-    switchToLight: string;
-    switchToDark: string;
-    primaryNavigation: string;
-  };
-  home: {
-    title: string;
-    intro: string;
-    primaryCta: string;
-    secondaryCta: string;
-    heroImageAlt: string;
-    statsTitle: string;
-    statsIntro: string;
-    intakeCountLabel: string;
-    officerCountLabel: string;
-    instructorCountLabel: string;
-    cadetCountLabel: string;
-    faqTitle: string;
-    faqIntro: string;
-    faqEmpty: string;
-    seeAlsoTitle: string;
-    seeAlsoIntro: string;
-    seeAlsoEmpty: string;
-    seeAlsoExplore: string;
-    testimonials: {
-      title: string;
-      intro: string;
-    };
-    joinTheRanks: {
-      eyebrow: string;
-      title: string;
-      intro: string;
-      steps: {
-        title: string;
-        description: string;
-      }[];
-    };
-  };
-  intakesPage: {
-    title: string;
-    description: string;
-    intakeNoLabel: string;
-    summaryFallback: string;
-    taglineFallback: string;
-    viewDetails: string;
-    cardImageAlt: string;
-    emptyTitle: string;
-    emptyDescription: string;
-  };
-  intakeDetailPage: {
-    detailEyebrow: string;
-    startYearLabel: string;
-    galleryTitle: string;
-    galleryIntro: string;
-    patchTitle: string;
-    patchIntro: string;
-    cadetsTitle: string;
-    cadetsIntro: string;
-    noGalleryPhotos: string;
-    noPatchExplanations: string;
-    noCadets: string;
-    quoteFallback: string;
-    uniformTitle: string;
-    uniformIntro: string;
-    innerLabel: string;
-    tshirtLabel: string;
-    noUniformPhotos: string;
-    summaryTab: string;
-    patchTab: string;
-    uniformTab: string;
-    patchLanguagesTitle: string;
-  };
-  storiesPage: {
-    title: string;
-    description: string;
-    emptyTitle: string;
-    emptyDescription: string;
-  };
-  storyDetailPage: {
-    backLabel: string;
-    detailLabel: string;
-    dateLabel: string;
-    locationLabel: string;
-    participantsLabel: string;
-    tagsLabel: string;
-    galleryTitle: string;
-    galleryIntro: string;
-    noGalleryPhotos: string;
-    watchVideo: string;
-    noPhotos: string;
-    similarStoriesLabel: string;
-  };
-  storyTagPage: {
-    backLabel: string;
-    archiveLabel: string;
-    description: string;
-    emptyTitle: string;
-    emptyDescription: string;
-  };
-  contactPage: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    newsletterTitle: string;
-    newsletterSubTitle: string;
-    newsletterDescription: string;
-    newsletterEmailLabel: string;
-    newsletterEmailPlaceholder: string;
-    newsletterLoadingLabel: string;
-    newsletterLocaleLabel: string;
-    newsletterLocaleOptions: {
-      en: string;
-      ms: string;
-      zh: string;
-      ta: string;
-    };
-    newsletterSubscribeButton: string;
-    newsletterErrorMessage: string;
-    newsletterRequiredError: string;
-    newsletterInvalidEmailError: string;
-    newsletterDuplicateError: string;
-    newsletterSendFailedError: string;
-    newsletterSuccess: string;
-    socialTitle: string;
-    socialTikTokLabel: string;
-    locationTitle: string;
-  };
-  newsletter: {
-    emailSubject: string;
-    emailGreeting: string;
-    emailIntro: string;
-    emailButton: string;
-    emailFallback: string;
-    emailFooter: string;
-    emailUnsubscribeLabel: string;
-    confirmationPageEyebrow: string;
-    confirmationPageTitle: string;
-    confirmationPageSuccessTitle: string;
-    confirmationPageSuccessDescription: string;
-    confirmationPageAlreadyTitle: string;
-    confirmationPageAlreadyDescription: string;
-    confirmationPageInvalidTitle: string;
-    confirmationPageInvalidDescription: string;
-    unsubscribePageEyebrow: string;
-    unsubscribePageTitle: string;
-    unsubscribePageSuccessTitle: string;
-    unsubscribePageSuccessDescription: string;
-    unsubscribePageAlreadyTitle: string;
-    unsubscribePageAlreadyDescription: string;
-    unsubscribePageInvalidTitle: string;
-    unsubscribePageInvalidDescription: string;
-    backToSiteLabel: string;
-  };
-};
+import type { Dictionary } from "../dictionaries";
 
 const en: Dictionary = {
   metadata: {
@@ -251,6 +80,7 @@ const en: Dictionary = {
     cardImageAlt: "Intake visual",
     emptyTitle: "No published intakes yet",
     emptyDescription: "Published intake records will appear here once they are made available by the team.",
+    emptyActionLabel: "Back to Home",
   },
   intakeDetailPage: {
     detailEyebrow: "Intake Detail",
@@ -280,6 +110,7 @@ const en: Dictionary = {
     description: "Browse published ROTU Army UMT events by year and explore each story.",
     emptyTitle: "No published stories yet",
     emptyDescription: "Published stories will appear here once events are made available by the team.",
+    emptyActionLabel: "Back to Home",
   },
   storyDetailPage: {
     backLabel: "Back to stories",
@@ -301,6 +132,7 @@ const en: Dictionary = {
     description: "Browse published ROTU Army UMT events related to this tag.",
     emptyTitle: "No related events yet",
     emptyDescription: "Published events for this tag will appear here once they are available.",
+    emptyActionLabel: "Back to stories",
   },
   contactPage: {
     eyebrow: "Contact Command",
@@ -355,6 +187,13 @@ const en: Dictionary = {
     unsubscribePageInvalidTitle: "Unsubscribe link is invalid",
     unsubscribePageInvalidDescription: "This unsubscribe link is invalid or has expired.",
     backToSiteLabel: "Back to site",
+  },
+  notFoundPage: {
+    eyebrow: "404",
+    title: "Page not found",
+    description: "The page you are looking for does not exist or has been moved.",
+    backHomeLabel: "Back to home",
+    imageAlt: "Page not found illustration",
   },
 };
 

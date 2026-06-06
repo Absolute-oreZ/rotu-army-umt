@@ -47,21 +47,6 @@ export function IntakesTimeline({ intakes, locale, dictionary }: IntakesTimeline
     };
   }, []);
 
-  if (intakes.length === 0) {
-    return (
-      <div className="relative mx-auto max-w-3xl rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 sm:px-10">
-        <div className="pointer-events-none absolute left-7 top-0 h-full w-px bg-border sm:left-10" />
-        <div className="relative pl-8 sm:pl-10">
-          <span className="absolute left-0 top-1 inline-flex h-4 w-4 rounded-full border-2 border-primary bg-background" />
-          <h2 className="text-2xl font-semibold tracking-tight">{dictionary.emptyTitle}</h2>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-            {dictionary.emptyDescription}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div ref={timelineRef} className="relative">
       <div className="pointer-events-none absolute left-3 top-0 h-full w-px bg-border sm:left-4 lg:left-1/2 lg:-translate-x-1/2" />

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, MapPin, Users } from "lucide-react";
-import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedStoryDetail, getSimilarStories } from "@/lib/public/content";
 import { StoryPhotoCarousel } from "@/components/public/story-photo-carousel";
@@ -17,12 +17,12 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { locale: rawLocale, slug } = await params;
-  if (!isLocale(rawLocale)) return {};
+  const { locale, slug } = await params as { locale: Locale; slug: string };
 
-  const locale: Locale = rawLocale;
+  if (!isLocale(locale)) notFound();
+
   const story = await getPublishedStoryDetail(locale, slug);
-  if (!story) return {};
+  if (!story) notFound();
 
   const title = story.seoTitle ?? story.title;
   const description = story.seoDescription ?? story.summary ?? undefined;
@@ -50,11 +50,9 @@ export default async function StoryDetailPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale: rawLocale, slug } = await params;
+  const { locale: rawLocale, slug } = await params as { locale: Locale; slug: string };
 
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
+  if (!isLocale(rawLocale)) notFound();
 
   const locale: Locale = rawLocale;
 

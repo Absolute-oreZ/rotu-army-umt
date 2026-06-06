@@ -32,7 +32,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Build stroy tags page at `/[locale]/stories/tags/[slug]`.
 - [x] Build contact page at `/[locale]/contact`.
 - [x] Add newsletter subscription form on Contact page.
-- [ ] Add localized public `not-found.tsx` handling for missing pages/resources.
+- [X] Add localized public `not-found.tsx` handling for missing pages/resources.
 - [ ] Add route-level error boundaries for public and admin surfaces.
 - [ ] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [ ] Add `sitemap.xml` and `robots.txt`.

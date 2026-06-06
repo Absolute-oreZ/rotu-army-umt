@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import { StoriesBrowser } from "@/components/public/stories-browser";
-import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedStoriesByYear } from "@/lib/public/content";
+import { Empty } from "@/components/ui/empty";
+import { LibraryBig } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale: rawLocale } = await params;
+  const { locale } = await params as { locale: Locale };
 
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
   const dictionary = await getDictionary(locale);
 
   return {
@@ -44,18 +42,34 @@ export default async function StoriesPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale: rawLocale } = await params;
-
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
+  const { locale } = await params as { locale: Locale };
 
   const [dictionary, stories] = await Promise.all([
     getDictionary(locale),
     getPublishedStoriesByYear(locale),
   ]);
+
+  if (stories.years.length === 0) {
+    return (
+      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center">
+        <Empty
+          title={dictionary.storiesPage.emptyTitle}
+          description={dictionary.storiesPage.emptyDescription}
+          icon={<LibraryBig />}
+          action={
+            <Button
+              variant="link"
+              className="border border-border text-muted-foreground"
+            >
+              <Link href={`/${locale}`}>
+                {dictionary.storiesPage.emptyActionLabel}
+              </Link>
+            </Button>
+          }
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="h-[calc(100dvh-4rem)] overflow-hidden bg-background text-foreground">
@@ -63,7 +77,6 @@ export default async function StoriesPage({
         <div className="mx-auto h-full w-full max-w-7xl overflow-hidden">
           <StoriesBrowser
             locale={locale}
-            dictionary={dictionary.storiesPage}
             stories={stories}
           />
         </div>

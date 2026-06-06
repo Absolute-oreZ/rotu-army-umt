@@ -61,9 +61,7 @@ export function isAdminRole(value: string): value is AdminRole {
 }
 
 export function isFullAccessAdminRole(role: AdminRole) {
-  return FULL_ACCESS_ADMIN_ROLES.includes(
-    role as (typeof FULL_ACCESS_ADMIN_ROLES)[number],
-  );
+  return FULL_ACCESS_ADMIN_ROLES.includes(role);
 }
 
 export function getDefaultAdminRoute(role: AdminRole) {

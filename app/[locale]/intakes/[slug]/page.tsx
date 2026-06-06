@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { IntakeDetailClient } from "@/components/public/intake-detail-client";
-import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedIntakeDetail } from "@/lib/public/content";
+import { IntakeDetailClient } from "@/components/public/intake-detail-client";
 
 const PATCH_EXPLANATION_ORDER = ["ANIMAL", "COLOR", "PHILOSOPHY"] as const;
 

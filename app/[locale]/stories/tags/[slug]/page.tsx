@@ -1,31 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LibraryBig } from "lucide-react";
 import { StoriesBrowser } from "@/components/public/stories-browser";
-import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedStoriesByTag } from "@/lib/public/content";
+import { Empty } from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { locale: rawLocale, slug } = await params;
+  const { locale, slug } = await params as { locale: Locale; slug: string };
 
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
+  if (!isLocale(locale)) notFound();
 
-  const locale: Locale = rawLocale;
   const [dictionary, archive] = await Promise.all([
     getDictionary(locale),
     getPublishedStoriesByTag(locale, slug),
   ]);
 
   if (!archive) {
-    return {};
+    notFound();
   }
 
   const title = `${archive.tag.name} - ${dictionary.storiesPage.title}`;
@@ -55,13 +54,9 @@ export default async function StoryTagPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale: rawLocale, slug } = await params;
+  const { locale, slug } = await params as { locale: Locale; slug: string };
 
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
+  if (!isLocale(locale)) notFound();
 
   const [dictionary, archive] = await Promise.all([
     getDictionary(locale),
@@ -73,6 +68,28 @@ export default async function StoryTagPage({
   }
 
   const d = dictionary.storyTagPage;
+
+  if (archive.stories.years.length === 0) {
+    return (
+      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center">
+        <Empty
+          title={dictionary.storyTagPage.emptyTitle}
+          description={dictionary.storyTagPage.emptyDescription}
+          icon={<LibraryBig />}
+          action={
+            <Button
+              variant="link"
+              className="border border-border text-muted-foreground"
+            >
+              <Link href={`/${locale}`}>
+                {dictionary.storyTagPage.emptyActionLabel}
+              </Link>
+            </Button>
+          }
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="h-[calc(100dvh-4rem)] overflow-hidden bg-background text-foreground">
@@ -103,7 +120,6 @@ export default async function StoryTagPage({
           <div className="min-h-0 flex-1 overflow-hidden">
             <StoriesBrowser
               locale={locale}
-              dictionary={d}
               stories={archive.stories}
             />
           </div>

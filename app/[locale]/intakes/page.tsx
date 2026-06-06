@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Empty } from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
 import { IntakesTimeline } from "@/components/public/intakes-timeline";
-import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedIntakeList } from "@/lib/public/content";
+import { ContactRound } from "lucide-react";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale: rawLocale } = await params;
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
+  const { locale } = await params as { locale: Locale };
 
-  const locale: Locale = rawLocale;
   const dictionary = await getDictionary(locale);
 
   return {
@@ -36,21 +35,32 @@ export async function generateMetadata({
   };
 }
 
-export default async function IntakesPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale: rawLocale } = await params;
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
+export default async function IntakesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params as { locale: Locale };
 
-  const locale: Locale = rawLocale;
   const [dictionary, intakes] = await Promise.all([
     getDictionary(locale),
     getPublishedIntakeList(locale),
   ]);
+
+  if (intakes.length === 0) {
+    return (
+      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-background text-foreground">
+        <Empty
+          title={dictionary.intakesPage.emptyTitle}
+          description={dictionary.intakesPage.emptyDescription}
+          icon={<ContactRound />}
+          action={
+            <Button variant="link" className="text-muted-foreground border border-border">
+              <Link href={`/${locale}`}>
+                {dictionary.intakesPage.emptyActionLabel}
+              </Link>
+            </Button>
+          }
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 overflow-y-auto bg-background text-foreground">

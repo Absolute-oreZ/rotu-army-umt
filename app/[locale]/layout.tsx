@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import "../globals.css";
-import { RootDocument } from "@/components/root-document";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { isTheme, themeStorageKey } from "@/lib/theme";
+import { PublicShell } from "@/components/public/public-shell";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -54,12 +52,11 @@ export default async function LocaleLayout({
   }
 
   const locale: Locale = rawLocale;
-  const storedTheme = (await cookies()).get(themeStorageKey)?.value;
-  const initialTheme = isTheme(storedTheme) ? storedTheme : "system";
+  const dictionary = await getDictionary(locale);
 
   return (
-    <RootDocument initialTheme={initialTheme} lang={locale}>
+    <PublicShell dictionary={dictionary} locale={locale}>
       {children}
-    </RootDocument>
+    </PublicShell>
   );
 }

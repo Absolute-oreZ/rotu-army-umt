@@ -1,4 +1,4 @@
-﻿import type { Dictionary } from "./en";
+﻿import type { Dictionary } from "../dictionaries";
 
 const zh: Dictionary = {
   metadata: {
@@ -80,6 +80,7 @@ const zh: Dictionary = {
     cardImageAlt: "入队批次视觉图",
     emptyTitle: "暂无已发布批次",
     emptyDescription: "团队发布后，入队批次记录将显示在此处。",
+    emptyActionLabel: "返回首页",
   },
   intakeDetailPage: {
     detailEyebrow: "入队详情",
@@ -109,6 +110,7 @@ const zh: Dictionary = {
     description: "按年份浏览已发布的 ROTU Army UMT 活动项目，并查看每个故事。",
     emptyTitle: "暂无已发布故事",
     emptyDescription: "团队发布后，故事将在此处显示。",
+    emptyActionLabel: "返回首页",
   },
   storyDetailPage: {
     backLabel: "返回故事",
@@ -130,6 +132,7 @@ const zh: Dictionary = {
     description: "浏览与此标签相关的已发布 ROTU Army UMT 项目。",
     emptyTitle: "暂无相关项目",
     emptyDescription: "当该标签下有已发布项目时，它们会显示在这里。",
+    emptyActionLabel: "返回故事",
   },
   contactPage: {
     eyebrow: "联系部门",
@@ -184,6 +187,13 @@ const zh: Dictionary = {
     unsubscribePageInvalidTitle: "取消订阅链接无效",
     unsubscribePageInvalidDescription: "此取消订阅链接无效或已过期。",
     backToSiteLabel: "返回网站",
+  },
+  notFoundPage: {
+    eyebrow: "404",
+    title: "页面未找到",
+    description: "您访问的页面不存在或已被移动。",
+    backHomeLabel: "返回首页",
+    imageAlt: "页面未找到插图",
   },
 };
 

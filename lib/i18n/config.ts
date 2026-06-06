@@ -22,3 +22,9 @@ export function assertLocale(value: string): Locale {
 
   return defaultLocale;
 }
+
+export function localeFromPathname(pathname: string): Locale {
+  const segments = pathname.split("/");
+  const candidate = segments[1];
+  return isLocale(candidate) ? candidate : defaultLocale;
+}

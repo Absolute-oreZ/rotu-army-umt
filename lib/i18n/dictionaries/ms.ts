@@ -1,4 +1,4 @@
-import type { Dictionary } from "./en";
+import type { Dictionary } from "../dictionaries";
 
 const ms: Dictionary = {
   metadata: {
@@ -80,6 +80,7 @@ const ms: Dictionary = {
     cardImageAlt: "Visual ambilan",
     emptyTitle: "Belum ada ambilan diterbitkan",
     emptyDescription: "Rekod ambilan yang telah diterbitkan akan dipaparkan di sini apabila disediakan oleh pasukan.",
+    emptyActionLabel: "Kembali ke laman utama",
   },
   intakeDetailPage: {
     detailEyebrow: "Butiran Ambilan",
@@ -109,6 +110,7 @@ const ms: Dictionary = {
     description: "Lihat acara ROTU Army UMT yang diterbitkan mengikut tahun dan teroka setiap cerita.",
     emptyTitle: "Belum ada cerita diterbitkan",
     emptyDescription: "Cerita yang diterbitkan akan dipaparkan di sini apabila acara disediakan oleh pasukan.",
+    emptyActionLabel: "Kembali ke laman utama",
   },
   storyDetailPage: {
     backLabel: "Kembali ke cerita",
@@ -130,6 +132,7 @@ const ms: Dictionary = {
     description: "Lihat acara ROTU Army UMT yang diterbitkan berkaitan dengan tag ini.",
     emptyTitle: "Belum ada acara berkaitan",
     emptyDescription: "Acara yang diterbitkan untuk tag ini akan dipaparkan di sini apabila tersedia.",
+    emptyActionLabel: "Kembali ke cerita",
   },
   contactPage: {
     eyebrow: "Hubungi Kami",
@@ -184,6 +187,13 @@ const ms: Dictionary = {
     unsubscribePageInvalidTitle: "Pautan nyahlanggan tidak sah",
     unsubscribePageInvalidDescription: "Pautan nyahlanggan ini tidak sah atau telah tamat tempoh.",
     backToSiteLabel: "Kembali ke laman",
+  },
+  notFoundPage: {
+    eyebrow: "404",
+    title: "Halaman tidak dijumpai",
+    description: "Halaman yang anda cari tidak wujud atau telah dipindahkan.",
+    backHomeLabel: "Kembali ke laman utama",
+    imageAlt: "Ilustrasi halaman tidak dijumpai",
   },
 };
 

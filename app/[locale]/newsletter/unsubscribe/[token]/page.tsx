@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { unsubscribeNewsletterSubscription } from "@/lib/newsletter";
 import { NewsletterStatusPage } from "@/components/public/newsletter-status-page";
@@ -10,13 +9,9 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; token: string }>;
 }): Promise<Metadata> {
-  const { locale: rawLocale } = await params;
+  const { locale } = await params as { locale: Locale; token: string };
 
-  if (!isLocale(rawLocale)) {
-    return {};
-  }
-
-  const dictionary = await getDictionary(rawLocale);
+  const dictionary = await getDictionary(locale);
 
   return {
     title: dictionary.newsletter.unsubscribePageTitle,
@@ -32,13 +27,8 @@ export default async function NewsletterUnsubscribePage({
 }: {
   params: Promise<{ locale: string; token: string }>;
 }) {
-  const { locale: rawLocale, token } = await params;
+  const { locale, token } = await params as { locale: Locale; token: string };
 
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
   const dictionary = await getDictionary(locale);
   const newsletter = dictionary.newsletter;
   const result = await unsubscribeNewsletterSubscription(token);

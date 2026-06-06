@@ -6,20 +6,13 @@ import type { Locale } from "@/lib/i18n/config";
 import type { PublicStoriesByYear } from "@/lib/public/content";
 import { cn } from "@/lib/utils";
 
-type StoriesBrowserCopy = {
-  emptyDescription: string;
-  emptyTitle: string;
-};
-
 type StoriesBrowserProps = {
   locale: Locale;
-  dictionary: StoriesBrowserCopy;
   stories: PublicStoriesByYear;
 };
 
 export function StoriesBrowser({
   locale,
-  dictionary,
   stories,
 }: StoriesBrowserProps) {
   const [selectedYear, setSelectedYear] = useState<number | null>(
@@ -80,20 +73,6 @@ export function StoriesBrowser({
     }));
   }, [activeYear, locale, stories.byYear]);
 
-  if (stories.years.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 sm:px-10">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {dictionary.emptyTitle}
-        </h2>
-
-        <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-          {dictionary.emptyDescription}
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div
       ref={containerRef}
@@ -122,7 +101,7 @@ export function StoriesBrowser({
                 className={cn(
                   "shrink-0 rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors hover:cursor-pointer",
                   isActive &&
-                    "border-primary bg-primary text-primary-foreground",
+                  "border-primary bg-primary text-primary-foreground",
                 )}
               >
                 {year}

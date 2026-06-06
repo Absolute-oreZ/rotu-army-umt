@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { notFound } from "next/navigation";
 import {
   Accordion,
   AccordionContent,
@@ -12,7 +11,7 @@ import { ScrollReveal } from "@/components/public/scroll-reveal";
 import { JoinTheRanks } from "@/components/public/join-the-ranks";
 import { Testimonials } from "@/components/public/testimonials";
 import { HeroImage } from "@/components/public/hero-image";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getHomePageContent } from "@/lib/public/content";
 import { StatCard } from "@/components/public/stat-card";
@@ -22,12 +21,8 @@ export default async function HomePage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale: rawLocale } = await params;
-  if (!isLocale(rawLocale)) {
-    notFound();
-  }
-
-  const locale: Locale = rawLocale;
+  const { locale } = await params as { locale: Locale };
+  
   const dictionary = await getDictionary(locale);
   const content = await getHomePageContent(locale);
 

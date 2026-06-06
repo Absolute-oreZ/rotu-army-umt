@@ -208,7 +208,7 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
       const fake = crypto.randomBytes(tokenBuf.length);
       // timingSafeEqual will throw if buffers length mismatch, guarded above
       crypto.timingSafeEqual(tokenBuf, fake);
-    } catch (e) {
+    } catch {
       // ignore
     }
     await randomDelay();
@@ -270,7 +270,7 @@ export async function unsubscribeNewsletterSubscription(token: string): Promise<
       const tokenBuf = Buffer.from(tokenHash, "hex");
       const fake = crypto.randomBytes(tokenBuf.length);
       crypto.timingSafeEqual(tokenBuf, fake);
-    } catch (e) {
+    } catch {
       // ignore
     }
     await randomDelay();
