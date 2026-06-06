@@ -78,6 +78,18 @@ Do not print secrets in logs or responses.
 - `OFFICER` and `INSTRUCTOR` are separate roles but currently have identical highest-level permissions.
 - Client-side hiding is only UX; it is not authorization.
 
+#### Role Changes
+
+- Admin roles can be changed after creation, but only by `OFFICER` or `INSTRUCTOR`.
+- Role changes are performed as **delete + recreate** (not direct update) to maintain clear audit trails.
+- All role changes must be logged/audited (who changed it, when, old role, new role).
+- Multi-role assignments are not allowed. One admin user = one role, strictly.
+
+#### Full-Access Bypass
+
+- `OFFICER` and `INSTRUCTOR` bypass module restrictions entirely and can access all admin routes and content.
+- Other roles see only paths and content under their assigned module access.
+
 ---
 
 ## Localization (i18n)
@@ -164,22 +176,32 @@ Performance:
 
 - Use `next/image` for images.
 - Lazy-load non-critical sections where appropriate.
-- Generate `sitemap.xml` and `robots.txt`.
+- Generate `sitemap.xml` dynamically from database (published intakes, stories, contact page per locale) with 1-hour revalidation cache.
+- Generate `robots.txt` as a static file.
+- Exclude from sitemap: `/admin/*`, `/newsletter/confirm/*`, `/newsletter/unsubscribe/*`.
 
 ---
 
 ## Public Content Strategy
 
-Some public content may start as static placeholders, but the system should be designed so Multimedia can manage public content later where appropriate.
+The landing page is complete with sufficient content. Other public content is designed for Multimedia management via the admin dashboard.
 
-Likely Multimedia-managed public content:
+### Multimedia-Managed Public Content
 
-- stories/stories
-- Portfolio/media highlights
-- Newsletters
-- Selected landing/contact page content
+Multimedia role can manage the following via admin CMS:
 
-Use real provided assets when available. The user has logos, colors, information, photos, and other ROTU assets, but do not invent missing assets.
+- **`webapp_contents`**: Hero text, statistics, FAQs, testimonials, see-more links, social media links, map embed (contact page).
+- **Stories**: Full CRUD (create, read, update, delete) for event/story content.
+- **Newsletters**: Subscriber management and email campaigns.
+- **Application deadline**: Configurable seasonal intake deadline.
+
+### Static/Non-Managed Content
+
+- Landing page structure and layout (complete, no further content changes needed).
+- Navigation labels and UI strings (managed via i18n dictionaries).
+- Intake-specific content (managed via `intakes` and `intakeTranslations` tables).
+
+Use real provided assets when available. The user has logos, colors, information, photos, and other ROTU assets, but do not invent missing assets. Current placeholder images (`default-hero-image.jpg`, `join-the-ranks-step-*.svg`) are real ROTU assets and should be kept as-is.
 
 ---
 
@@ -187,14 +209,47 @@ Use real provided assets when available. The user has logos, colors, information
 
 The application/intake collection flow is seasonal, usually around October during the new academic year. It is not open all year.
 
-Expected flow:
+### Application Workflow States
 
-- Collect student biodata.
-- Collect required documents.
-- Collect physical information such as height, weight, and BMI-related data.
-- After submission or review, send an email instructing the student to attend physical assessment.
+Applications progress through these statuses:
 
-Ask before finalizing detailed intake workflow states, required documents, email templates, approval steps, or schemas beyond the agreed baseline.
+1. `DRAFT` - Applicant has started but not submitted.
+2. `SUBMITTED` - Applicant has submitted the form.
+3. `UNDER_REVIEW` - Secretary is reviewing the application.
+4. `APPROVED` - Application passed review (may transition to `AWAITING_PHYSICAL_ASSESSMENT`).
+5. `REJECTED` - Application did not pass review.
+6. `AWAITING_PHYSICAL_ASSESSMENT` - Secretary has triggered the physical assessment email; applicant is expected to attend.
+7. `PASSED` - Applicant completed physical assessment and is accepted.
+
+### Required Documents
+
+- IC copy (identity card).
+- Blue-background passport photo.
+- SPM transcripts.
+
+### Physical Information
+
+Collect height, weight, and BMI-related data as part of the application form.
+
+### Physical Assessment Email
+
+- Triggered **manually** by the Secretary after review.
+- Not sent automatically on submission.
+- Use Resend for email delivery.
+
+### Application Deadline
+
+- Admin-configurable (not hardcoded to October).
+- Stored in `webapp_contents` or a similar configuration table.
+- Multimedia role can update the deadline via admin dashboard.
+
+### Email Templates
+
+Three email templates are required:
+
+1. **Newsletter confirmation** (already implemented).
+2. **Application confirmation** - sent to applicant after successful submission.
+3. **Application status update** - sent to applicant when status changes (e.g., `UNDER_REVIEW` -> `APPROVED`).
 
 ---
 
@@ -261,8 +316,11 @@ Each admin user has exactly one role.
 - Default: Portfolio.
 - Access:
   - Portfolio
-  - stories/stories
+  - stories/stories (full CRUD)
   - Newsletters
+  - Public content management:
+    - `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed)
+    - Application deadline configuration
   - Public content/media areas as approved
 
 ### Sports
@@ -330,6 +388,7 @@ Enums discussed:
 
 - Intake explanation keys: `ANIMAL`, `COLOR`, `PHILOSOPHY`
 - Subscription status: `PENDING`, `ACTIVE`, `UNSUBSCRIBED`
+- Application status: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`
 - Gender: `MALE`, `FEMALE`
 - Member role: `OFFICER`, `INSTRUCTOR`, `CADET`
 - Member rank: `PK`, `PKW`, `KPL_CADET`, `SJN_CADET`, `KPL`, `SJN`
@@ -344,6 +403,20 @@ Important modeling notes:
 - Store file paths/storage keys where possible, not only public URLs, especially for Supabase Storage-managed assets.
 - Add translation tables for managed localized content rather than stuffing multiple language fields into primary tables.
 - Ask before making major schema/workflow decisions.
+
+#### Member-Admin Linking
+
+- When a cadet becomes an admin (e.g., assigned Multimedia role), the `adminUsers` record should be linked to `cadetInfos.id` via a nullable FK.
+- This allows the system to associate admin actions with cadet identity when relevant.
+
+#### Role Audit Log
+
+- Add a role audit/audit log table to track:
+  - Who changed the role (auth user ID).
+  - When the change occurred.
+  - Old role and new role.
+  - Target admin user.
+- This supports the delete + recreate pattern for role changes.
 
 ---
 

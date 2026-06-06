@@ -98,16 +98,22 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
    - WELFARE -> `/admin/health`
    - ACADEMIC -> `/admin/results`
 4. OFFICER and INSTRUCTOR shall be separate roles with same highest permissions.
+5. OFFICER and INSTRUCTOR shall bypass module restrictions entirely and access all admin routes and content.
+6. Other roles shall see only paths and content under their assigned module access.
+7. Admin roles can be changed after creation, but only by OFFICER or INSTRUCTOR.
+8. Role changes shall be performed as delete + recreate (not direct update).
+9. System shall log all role changes (who, when, old role, new role, target admin user).
+10. Multi-role assignments are not allowed. One admin user = one role, strictly.
 
 ### 3.7 Admin Modules
 1. System shall provide role-aware module access:
    - Secretary: rank holders, intakes, cadets, admin users.
    - Treasurer: collections, expenses.
-   - Multimedia: portfolio, stories, newsletters.
+   - Multimedia: portfolio, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed), application deadline configuration.
    - Sports: activities, collaborations.
    - Welfare: health, accommodations, religion.
    - Academic: results, timetables.
-2. Full-access roles shall access all modules.
+2. Full-access roles (OFFICER, INSTRUCTOR) shall access all modules.
 
 ### 3.8 Newsletter
 1. System shall collect newsletter subscriptions from contact page.
@@ -115,11 +121,25 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 3. Confirmation and unsubscribe tokens shall be unique and treated as sensitive.
 4. Newsletter management shall be available to Multimedia role.
 
-### 3.9 Intake/Application Flow (Planned)
-1. System shall support seasonal intake application periods.
-2. System shall collect biodata, required documents, and physical metrics.
-3. System shall support post-submission messaging for physical assessment attendance.
-4. Detailed workflow states shall be finalized before implementation.
+### 3.9 Intake/Application Flow
+1. System shall support seasonal intake application periods with admin-configurable deadlines.
+2. System shall collect biodata, required documents (IC copy, blue-background passport photo, SPM transcripts), and physical metrics (height, weight, BMI-related data).
+3. Application status shall progress through: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
+4. System shall send application confirmation email upon successful submission.
+5. System shall send application status update email when status changes (e.g., `UNDER_REVIEW` -> `APPROVED`).
+6. System shall allow Secretary to manually trigger physical assessment email after review (not automatic).
+7. System shall use Resend for all email delivery.
+
+### 3.10 Email Templates
+1. Newsletter confirmation (already implemented).
+2. Application confirmation - sent to applicant after successful submission.
+3. Application status update - sent to applicant when status changes.
+
+### 3.11 Sitemap and Robots
+1. System shall generate `sitemap.xml` dynamically from database (published intakes, stories, contact page per locale).
+2. Dynamic sitemap shall use 1-hour revalidation cache.
+3. System shall generate `robots.txt` as a static file.
+4. System shall exclude from sitemap: `/admin/*`, `/newsletter/confirm/*`, `/newsletter/unsubscribe/*`.
 
 ## 4. Data Requirements
 
@@ -129,12 +149,15 @@ System data model shall include at minimum:
 - Intakes and translations.
 - Intake patch explanations and translations.
 - Intake display photos.
-- Stories and translations.
+- Stories (events) and translations.
 - Events tags and tag translations.
 - Members and cadet information.
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.
-- Homepage managed content (FAQ, see-more links, testimonials).
+- Homepage managed content (FAQ, see-more links, testimonials, webapp_contents).
+- Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
+- Role audit log table for tracking role changes.
+- Admin-cadet linking: nullable FK from `adminUsers` to `cadetInfos`.
 
 ### 4.2 Localization Data
 1. Managed content shall use translation tables where content varies by locale.
@@ -185,26 +208,51 @@ System data model shall include at minimum:
 - PostgreSQL via Drizzle ORM.
 - Planned: Resend for email sending.
 
-## 7. Implementation Status Snapshot (from TASKS.md)
+## 7. Implementation Status Snapshot
 ### 7.1 Completed
-- Locale foundations and dictionary loading.
-- Theme infrastructure.
-- Public shell/header.
+- Locale foundations and dictionary loading (4 locales: en, ms, zh, ta).
+- Theme infrastructure (light/dark/system).
+- Public shell/header with language switcher and theme toggle.
 - Admin auth skeleton and server RBAC helpers.
-- Baseline schema and migration structure.
-- Landing page and intakes list page.
-- Public content data access layer.
+- Baseline schema and migration structure (6 migrations).
+- Landing page with hero, stats, FAQ, testimonials, see-more links.
+- Intakes list and detail pages.
+- Stories list, detail, and tag pages.
+- Contact page with newsletter subscription.
+- Newsletter double opt-in flow (subscription, confirmation, unsubscribe) with Resend integration.
+- Public content data access layer with DB fallbacks.
+- Root not-found page for invalid locales.
 
 ### 7.2 Pending
-- Intake detail, story list/detail, contact page.
-- Newsletter form and delivery flow.
-- Public SEO completeness, sitemap, robots.
-- Admin sidebar shell and role module pages.
-- Seasonal intake application workflow.
-- Resend integration for email features.
+- Dynamic `sitemap.xml` from DB with 1-hour cache.
+- Static `robots.txt`.
+- Per-page canonical/hreflang audit.
+- Localized page-level not-found pages.
+- Route-level error boundaries.
+- Admin sidebar shell with role-aware navigation.
+- All admin module pages (rank-holders, intakes, cadets, collections, expenses, portfolio, stories, newsletters, activities, collaborations, health, accommodations, religion, results, timetables).
+- Admin CMS: Multimedia for `webapp_contents`, stories CRUD, newsletter management, application deadline config.
+- Secretary admin user management with delete+recreate role changes and audit logging.
+- Schema additions: application status enum, role audit log table, `adminUsers.cadetInfoId` nullable FK.
+- Seasonal intake application workflow: form, document upload, status state machine, Secretary review UI, physical assessment email trigger.
+- Email templates: application confirmation, application status update.
 
 ## 8. Assumptions and Open Items
-1. ROTU factual/public copy, branding, and media assets will be supplied by stakeholders.
-2. Detailed seasonal intake workflow states require stakeholder confirmation before schema/workflow lock.
-3. Admin invitation lifecycle (beyond baseline auth mapping) remains to be finalized and implemented.
-4. RAG requirement listed in tasks is out-of-scope for current baseline and needs separate requirements definition.
+### 8.1 Confirmed Decisions
+1. Intake application workflow states: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
+2. Required documents: IC copy, blue-background passport photo, SPM transcripts.
+3. Physical assessment email: manual trigger by Secretary after review.
+4. Application deadline: admin-configurable (not hardcoded).
+5. Role changes: delete + recreate pattern with audit logging, only by OFFICER/INSTRUCTOR.
+6. Member-admin linking: `adminUsers` can link to `cadetInfos.id` when a cadet becomes admin.
+7. Sitemap: dynamic from DB with 1-hour cache; robots.txt: static file.
+8. Branding assets: current placeholder images are real ROTU assets and should be kept.
+9. Root not-found page: hardcoded English is acceptable (invalid locale case).
+10. No separate `intakeApplications` table needed; intake status workflow is sufficient.
+
+### 8.2 Remaining Open Items
+1. Detailed document upload implementation (file size limits, formats, storage paths).
+2. Email template copy/design for application confirmation and status update.
+3. Admin invitation lifecycle details beyond baseline auth mapping.
+4. RAG requirement (listed in tasks) is out-of-scope for current baseline and needs separate requirements definition.
+5. Locale-specific font fallbacks for Mandarin Chinese (Noto Sans SC) and Tamil (Noto Sans Tamil) may need review for glyph coverage and visual consistency.

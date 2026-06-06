@@ -24,8 +24,7 @@ Core platform choices:
 ### 3.1 Presentation Layer
 - Route groups and layouts:
   - `app/(root)` redirects `/` to default locale `/en`.
-  - `app/[locale]` provides locale-aware root document and metadata base.
-  - `app/[locale]/(public)` hosts public pages and shared public shell/header.
+  - `app/[locale]` provides locale-aware root document, metadata base, and hosts all public pages directly (no intermediate `(public)` route group).
   - `app/admin` hosts admin pages and admin shell.
 - UI components:
   - Public components under `components/public`.
@@ -61,12 +60,13 @@ Core platform choices:
 Current implemented routes:
 - `/<locale>/` (landing page)
 - `/<locale>/intakes` (intakes list)
-
-Target routes (planned in `TASKS.md`):
-- `/<locale>/intakes/[slug]`
-- `/<locale>/stories`
-- `/<locale>/stories/[slug]`
-- `/<locale>/contact`
+- `/<locale>/intakes/[slug]` (intake detail)
+- `/<locale>/stories` (stories list)
+- `/<locale>/stories/[slug]` (story detail)
+- `/<locale>/stories/tags/[slug]` (stories by tag)
+- `/<locale>/contact` (contact page with newsletter subscription)
+- `/<locale>/newsletter/confirm/[token]` (newsletter confirmation)
+- `/<locale>/newsletter/unsubscribe/[token]` (newsletter unsubscribe)
 
 ### 4.2 Admin Routes (Non-localized)
 Current implemented routes:
@@ -107,10 +107,32 @@ Primary schema domains in `db/schema.ts`:
   - `members`, `cadet_infos`, `study_programs`.
 - Newsletter:
   - `newsletter_subscribers` with status and token hash fields.
-- stories and metadata:
+- Stories and metadata:
   - `events`, `event_translations`, `event_tags`, `event_tag_translations`, `events_to_tags`, `event_display_photos`.
 - Homepage-managed content:
   - `webapp_contents`, `frequently_asked_questions`, `frequently_asked_question_translations`, `see_more_links`, `testimonials`, `testimonial_translations`.
+
+### 7.1 Intake Application Data Model (Planned)
+- Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
+- Required documents: IC copy, blue-background passport photo, SPM transcripts.
+- Physical metrics: height, weight, BMI-related data.
+- Admin-configurable deadline stored in `webapp_contents` or similar.
+- No separate `intakeApplications` table needed; intake status workflow is sufficient.
+
+### 7.2 Role Management Architecture
+- Role changes: delete + recreate pattern (not direct update).
+- Only `OFFICER` or `INSTRUCTOR` can change roles.
+- Role audit log table tracks: who changed it, when, old role, new role, target admin user.
+- Member-admin linking: `adminUsers` can have nullable FK to `cadetInfos.id` when a cadet becomes an admin.
+
+### 7.3 CMS Architecture (Planned)
+Multimedia role manages public content via admin dashboard:
+- `webapp_contents`: hero text, stats, FAQs, testimonials, see-more links, social links, map embed.
+- Stories: full CRUD for event/story content.
+- Newsletters: subscriber management and email campaigns.
+- Application deadline: configurable seasonal intake deadline.
+
+Landing page structure is complete; no further content changes needed.
 
 Design patterns:
 - Translation tables per locale for managed localized content.
@@ -154,13 +176,23 @@ This supports early public page delivery while admin-managed content modules are
 - Remote images currently allow Supabase storage host via `next.config.ts`.
 
 ## 11. Current Gaps vs Target Architecture
-Based on `TASKS.md`, pending major items include:
-- Public pages: intake detail, stories list/detail, contact page.
-- Public SEO completeness: per-page canonical/hreflang, sitemap, robots.
-- Error handling: localized `not-found`, route-level error boundaries.
-- Newsletter submission and confirmation flow.
-- Admin shell with role-aware sidebar and role module pages.
-- Seasonal intake application workflow and email templates.
+Based on `TASKS.md` and codebase review:
+
+### Completed
+- Public pages: landing, intakes list, intake detail, stories list, stories detail, stories by tag, contact page.
+- Newsletter: subscription form, double opt-in confirmation, unsubscribe flow (Resend integration complete).
+- Localization: all 4 locales (en, ms, zh, ta) with dictionaries.
+- Root not-found page for invalid locales (hardcoded English, acceptable).
+
+### Pending
+- Public SEO completeness: dynamic `sitemap.xml` from DB, static `robots.txt`, per-page canonical/hreflang audit.
+- Error handling: localized page-level `not-found`, route-level error boundaries.
+- Admin shell: role-aware sidebar, all role module pages (rank-holders, intakes, cadets, collections, expenses, portfolio, stories, newsletters, activities, collaborations, health, accommodations, religion, results, timetables).
+- Admin CMS: Multimedia-managed `webapp_contents`, stories CRUD, newsletter management, application deadline config.
+- Secretary admin user management with role change (delete + recreate) and audit logging.
+- Seasonal intake application workflow: form, document upload, status transitions, physical assessment email trigger.
+- Email templates: application confirmation, application status update.
+- Schema additions: application status enum, role audit log table, admin-cadet linking FK.
 
 ## 12. Key Risks and Considerations
 - AGENTS constraints require avoiding fabricated ROTU-specific facts; seeded/demo content should be treated as placeholder until confirmed.
@@ -169,8 +201,11 @@ Based on `TASKS.md`, pending major items include:
 - Next.js version drift: framework-sensitive updates should be validated against local Next.js docs in `node_modules/next/dist/docs`.
 
 ## 13. Recommended Next Architectural Steps
-1. Complete public route surface (`intake detail`, `stories`, `contact`) using existing content service pattern.
-2. Add shared SEO utilities for canonical + alternates to avoid repeated metadata logic.
-3. Introduce admin shell and module route scaffolding with `requireAdminModule` guard usage.
-4. Implement newsletter mutation endpoints with token hashing and status transitions.
-5. Add sitemap and robots generation routes once public content routes are complete.
+1. Implement admin shell with role-aware sidebar navigation and module routing guards.
+2. Build schema additions: application status enum, role audit log table, `adminUsers.cadetInfoId` nullable FK.
+3. Build intake application workflow: form, document upload, status state machine, Secretary review UI, physical assessment email trigger.
+4. Build email templates for application confirmation and status update notifications.
+5. Implement admin CMS modules: Multimedia for `webapp_contents`, stories CRUD, newsletter management; Secretary for admin user management with delete+recreate role changes and audit logging.
+6. Add dynamic `sitemap.xml` route (DB-driven, 1-hour cache) and static `robots.txt`.
+7. Add localized page-level `not-found` and route-level error boundaries.
+8. Audit per-page canonical URLs and `hreflang` alternates across all public routes.
