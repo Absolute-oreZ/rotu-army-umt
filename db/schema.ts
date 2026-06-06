@@ -348,7 +348,7 @@ export const newsletterSubscribers = pgTable(
     preferredLocale: localeEnum("preferred_locale").default("en").notNull(),
     status: subscriptionStatusEnum("status").default("PENDING").notNull(),
     confirmationTokenHash: text("confirmation_token_hash"),
-    unsubscribeTokenHash: text("unsubscribe_token_hash").notNull(),
+    unsubscribeTokenHash: text("unsubscribe_token_hash"),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
     ...timestamps,
@@ -360,7 +360,7 @@ export const newsletterSubscribers = pgTable(
       .where(sql`${table.confirmationTokenHash} is not null`),
     uniqueIndex("newsletter_subscribers_unsubscribe_token_hash_idx").on(
       table.unsubscribeTokenHash,
-    ),
+    ).where(sql`${table.unsubscribeTokenHash} is not null`),
     index("newsletter_subscribers_status_idx").on(table.status),
   ],
 );
@@ -613,4 +613,3 @@ export const contactReasonTranslations = pgTable(
     ),
   ],
 );
-

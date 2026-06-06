@@ -1,0 +1,3 @@
+DROP INDEX "newsletter_subscribers_unsubscribe_token_hash_idx";--> statement-breakpoint
+ALTER TABLE "newsletter_subscribers" ALTER COLUMN "unsubscribe_token_hash" DROP NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "newsletter_subscribers_unsubscribe_token_hash_idx" ON "newsletter_subscribers" USING btree ("unsubscribe_token_hash") WHERE "newsletter_subscribers"."unsubscribe_token_hash" is not null;

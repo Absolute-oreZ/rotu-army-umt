@@ -5,6 +5,16 @@ import { eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterSubscribers } from "@/db/schema";
 
+function sleep(ms: number) {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
+function randomDelay() {
+  const min = 150;
+  const max = 300;
+  return sleep(min + Math.floor(Math.random() * (max - min + 1)));
+}
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
@@ -191,14 +201,36 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
     .limit(1);
 
   if (!subscriber) {
+    // Perform a timing-safe fake compare and randomized delay to reduce timing
+    // side-channel leakage for non-existing tokens.
+    try {
+      const tokenBuf = Buffer.from(tokenHash, "hex");
+      const fake = crypto.randomBytes(tokenBuf.length);
+      // timingSafeEqual will throw if buffers length mismatch, guarded above
+      crypto.timingSafeEqual(tokenBuf, fake);
+    } catch (e) {
+      // ignore
+    }
+    await randomDelay();
     return "invalid";
   }
 
   if (subscriber.status === "ACTIVE" || subscriber.confirmedAt) {
+    // Clear the confirmation token to prevent re-use and enumeration.
+    await db
+      .update(newsletterSubscribers)
+      .set({ confirmationTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    await randomDelay();
     return "already_confirmed";
   }
 
   if (subscriber.status !== "PENDING") {
+    await db
+      .update(newsletterSubscribers)
+      .set({ confirmationTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    await randomDelay();
     return "invalid";
   }
 
@@ -207,8 +239,11 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
     .set({
       confirmedAt: new Date(),
       status: "ACTIVE",
+      confirmationTokenHash: null,
     })
     .where(eq(newsletterSubscribers.id, subscriber.id));
+
+  await randomDelay();
 
   return "confirmed";
 }
@@ -230,13 +265,25 @@ export async function unsubscribeNewsletterSubscription(token: string): Promise<
     )
     .limit(1);
 
-  console.log("Subscriber found for unsubscription:", subscriber);
-
   if (!subscriber) {
+    try {
+      const tokenBuf = Buffer.from(tokenHash, "hex");
+      const fake = crypto.randomBytes(tokenBuf.length);
+      crypto.timingSafeEqual(tokenBuf, fake);
+    } catch (e) {
+      // ignore
+    }
+    await randomDelay();
     return "invalid";
   }
 
   if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
+    // Clear token hash to prevent re-use and enumeration.
+    await db
+      .update(newsletterSubscribers)
+      .set({ unsubscribeTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    await randomDelay();
     return "already_unsubscribed";
   }
 
@@ -245,6 +292,7 @@ export async function unsubscribeNewsletterSubscription(token: string): Promise<
     .set({
       status: "UNSUBSCRIBED",
       unsubscribedAt: new Date(),
+      unsubscribeTokenHash: null,
     })
     .where(eq(newsletterSubscribers.id, subscriber.id));
 
