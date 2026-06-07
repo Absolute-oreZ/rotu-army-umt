@@ -25,10 +25,12 @@ Core platform choices:
 - Route groups and layouts:
   - `app/page.tsx` and `app/layout.tsx` handle root-level redirect to default locale `/en`.
   - `app/[locale]` provides locale-aware root document, metadata base, and hosts all public pages directly (no intermediate `(public)` route group).
-  - `app/admin` hosts admin pages and admin shell.
+  - `app/admin` hosts admin pages with conditional sidebar shell (renders when authenticated, bare layout for login).
+  - `app/admin/[role-group]` provides per-group RBAC-enforced layouts (secretary, treasurer, multimedia, sports, welfare, academic).
 - UI components:
   - Public components under `components/public`.
-  - Shared primitives under `components/ui`.
+  - Shared primitives under `components/ui` (button, tabs, accordion, breadcrumb, separator, sheet, tooltip, sidebar).
+  - Admin components under `components/admin` (admin-shell, admin-sidebar, admin-sidebar-nav, access-denied).
   - Root theme/font document in `components/root-document.tsx`.
 
 ### 3.2 Application Layer
@@ -41,6 +43,7 @@ Core platform choices:
 - Admin access control:
   - Role definitions and module maps in `lib/admin/roles.ts`.
   - Auth + admin identity + module authorization helpers in `lib/admin/rbac.ts`.
+  - Navigation configuration and role-filtered menu items in `lib/admin/nav-config.ts`.
 
 ### 3.3 Data Layer
 - Drizzle database client in `db/index.ts`.
@@ -68,13 +71,29 @@ Current implemented routes:
 - `/<locale>/newsletter/confirm/[token]` (newsletter confirmation)
 - `/<locale>/newsletter/unsubscribe/[token]` (newsletter unsubscribe)
 
-### 4.2 Admin Routes (Non-localized)
+### 4.2 Admin Routes (Non-localized, Module-Scoped)
 Current implemented routes:
-- `/admin/login` (Google OAuth start)
-- `/admin` (role-aware root behavior; full-access roles see dashboard shell)
+- `/admin` (role-aware root; full-access roles see dashboard, others redirect to their default module)
+- `/admin/login` (Google OAuth start, no sidebar shell)
+- `/admin/secretary/rank-holders` (Secretary: rank holders management)
+- `/admin/secretary/intakes` (Secretary: intake management)
+- `/admin/secretary/cadets` (Secretary: cadet management)
+- `/admin/secretary/admin-users` (Secretary: admin user management)
+- `/admin/treasurer/collections` (Treasurer: collections)
+- `/admin/treasurer/expenses` (Treasurer: expenses)
+- `/admin/multimedia/portfolio` (Multimedia: portfolio)
+- `/admin/multimedia/stories` (Multimedia: stories CRUD)
+- `/admin/multimedia/newsletters` (Multimedia: newsletter management)
+- `/admin/sports/activities` (Sports: activities)
+- `/admin/sports/collaborations` (Sports: collaborations)
+- `/admin/welfare/health` (Welfare: health)
+- `/admin/welfare/accommodations` (Welfare: accommodations)
+- `/admin/welfare/religion` (Welfare: religion)
+- `/admin/academic/results` (Academic: results)
+- `/admin/academic/timetables` (Academic: timetables)
 - `/auth/callback` (OAuth code exchange)
 
-Planned role module routes exist in RBAC mapping but most pages are not yet implemented.
+Routes are organized by role group (e.g., `/admin/secretary/*`, `/admin/treasurer/*`). Each role group has its own layout that enforces RBAC via `requireRoleGroup()`. Unauthorized access returns a 403 Access Denied page. Officer and Instructor bypass all group restrictions.
 
 ## 5. Localization Architecture
 - Supported locales: `en` (default), `ms`, `zh`, `ta`.
@@ -192,16 +211,19 @@ Based on `TASKS.md` and codebase review:
 - Localization: all 4 locales (en, ms, zh, ta) with dictionaries.
 - Root not-found page for invalid locales (hardcoded English, acceptable).
 - Route-level error boundaries for public surfaces (localized for all 4 locales).
+- Admin shell: responsive sidebar with collapsible icon mode (desktop) and drawer (mobile), role-aware navigation, active route highlighting.
+- Admin route structure: module-scoped routes under role groups (e.g., `/admin/secretary/rank-holders`), per-group RBAC layouts with 403 Access Denied for unauthorized access.
+- Placeholder pages for all 16 admin modules across 6 role groups.
 
 ### Pending
-- Public SEO completeness: dynamic `sitemap.xml` from DB, static `robots.txt`, per-page canonical/hreflang audit.
-- Error handling: localized page-level `not-found`, route-level error boundaries for admin surfaces.
-- Admin shell: role-aware sidebar, all role module pages (rank-holders, intakes, cadets, collections, expenses, portfolio, stories, newsletters, activities, collaborations, health, accommodations, religion, results, timetables).
+- Public SEO completeness: per-page canonical/hreflang audit.
+- Error handling: route-level error boundaries for admin surfaces.
 - Admin CMS: Multimedia-managed `webapp_contents`, stories CRUD, newsletter management, application deadline config.
 - Secretary admin user management with role change (delete + recreate) and audit logging.
 - Seasonal intake application workflow: form, document upload, status transitions, physical assessment email trigger.
 - Email templates: application confirmation, application status update.
 - Schema additions: application status enum, role audit log table, admin-cadet linking FK.
+- Officer/Instructor bento dashboard with cross-system statistics.
 
 ## 12. Key Risks and Considerations
 - AGENTS constraints require avoiding fabricated ROTU-specific facts; seeded/demo content should be treated as placeholder until confirmed.
@@ -210,11 +232,10 @@ Based on `TASKS.md` and codebase review:
 - Next.js version drift: framework-sensitive updates should be validated against local Next.js docs in `node_modules/next/dist/docs`.
 
 ## 13. Recommended Next Architectural Steps
-1. Implement admin shell with role-aware sidebar navigation and module routing guards.
+1. Build Officer/Instructor bento dashboard with cross-system statistics and summary cards.
 2. Build schema additions: application status enum, role audit log table, `adminUsers.cadetInfoId` nullable FK.
 3. Build intake application workflow: form, document upload, status state machine, Secretary review UI, physical assessment email trigger.
 4. Build email templates for application confirmation and status update notifications.
 5. Implement admin CMS modules: Multimedia for `webapp_contents`, stories CRUD, newsletter management; Secretary for admin user management with delete+recreate role changes and audit logging.
-6. Add dynamic `sitemap.xml` route (DB-driven, 1-hour cache) and static `robots.txt`.
-7. Add localized page-level `not-found` for public routes and route-level error boundaries for admin surfaces.
-8. Audit per-page canonical URLs and `hreflang` alternates across all public routes.
+6. Add route-level error boundaries for admin surfaces.
+7. Audit per-page canonical URLs and `hreflang` alternates across all public routes.

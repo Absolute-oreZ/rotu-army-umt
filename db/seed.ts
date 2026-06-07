@@ -24,6 +24,7 @@ import {
   DEFAULT_YOUTUBE_URL,
   DEFAULT_TIKTOK_URL,
   DEFAULT_X_URL,
+  DEFAULT_BLUE_BG_PHOTO_URL,
 } from "../lib/data";
 import { computeAcademicSchedule } from "@/lib/utils";
 
@@ -106,18 +107,50 @@ async function seed() {
     studyProgramIds.push(row.id);
   }
 
+  const [adminMemberRow] = await sql<[{ id: number }]>`
+    insert into members (
+      army_no,
+      rank,
+      name,
+      personal_email,
+      display_name,
+      gender,
+      role,
+      religion,
+      race,
+      address,
+      red_bg_photo_path,
+      blue_bg_photo_path
+    )
+    values (
+      2099,
+      'MAJOR',
+      ${DEFAULT_ADMIN.fullName},
+      ${DEFAULT_ADMIN.email},
+      'Yong',
+      'MALE',
+      'OFFICER',
+      'CHRISTIAN',
+      'CHINESE',
+      'Kuala Lumpur',
+      ${DEFAULT_CADET_DISPLAY_PHOTO_URL},
+      ${DEFAULT_BLUE_BG_PHOTO_URL}
+    )
+    returning id
+  `;
+
   await sql`
     insert into admin_users (
       auth_user_id,
+      member_id,
       email,
-      full_name,
       role,
       is_active
     )
     values (
       ${DEFAULT_ADMIN.authUserId},
+      ${adminMemberRow.id},
       ${DEFAULT_ADMIN.email},
-      ${DEFAULT_ADMIN.fullName},
       ${DEFAULT_ADMIN.role},
       true
     )
@@ -379,7 +412,7 @@ async function seed() {
         army_no,
         rank,
         name,
-        email,
+        personal_email,
         display_name,
         gender,
         role,

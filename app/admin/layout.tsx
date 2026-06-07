@@ -1,15 +1,18 @@
-import { cookies } from "next/headers";
-import "../globals.css";
-import { RootDocument } from "@/components/root-document";
-import { isTheme, themeStorageKey } from "@/lib/theme";
+import { headers } from "next/headers";
+import { getCurrentAdmin } from "@/lib/admin/rbac";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const storedTheme = (await cookies()).get(themeStorageKey)?.value;
-  const initialTheme = isTheme(storedTheme) ? storedTheme : "system";
+  const pathname = (await headers()).get("x-pathname");
+  const admin = await getCurrentAdmin();
 
-  return <RootDocument initialTheme={initialTheme}>{children}</RootDocument>;
+  if (!admin || pathname === "/admin/login") {
+    return children;
+  }
+
+  return <AdminShell admin={admin}>{children}</AdminShell>;
 }

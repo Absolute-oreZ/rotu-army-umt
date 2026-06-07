@@ -39,8 +39,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Draft Drizzle schema for intakes, members, cadets, stories, newsletters, and academic results.
 - [x] Use translation tables for managed localized content.
 - [x] Store Supabase Storage paths/keys for managed files and images.
-- [ ] Build admin layout shell with responsive left sidebar navigation.
-- [ ] Build Secretary-owned admin invitations/user management.
+- [x] Build admin layout shell with responsive left sidebar navigation.
 - [ ] Build Secretary modules: Rank Holders, Intakes, Cadets.
 - [ ] Build Treasurer modules: Collections, Expenses.
 - [ ] Build Multimedia modules: Portfolio, stories, Newsletters.

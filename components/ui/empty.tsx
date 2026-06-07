@@ -14,14 +14,14 @@ export function Empty({
   action,
 }: EmptyProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
+    <div className="flex flex-col items-center justify-start py-8 text-center">
       {icon && (
-        <div className="mb-4 flex h-12 w-12 items-center justify-center bg-muted rounded-lg">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-muted">
           {icon}
         </div>
       )}
 
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <h3 className="text-base font-semibold">{title}</h3>
 
       {description && (
         <p className="mt-2 max-w-sm text-sm text-muted-foreground">

@@ -89,8 +89,8 @@ export const adminUsers = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     authUserId: uuid("auth_user_id").notNull(),
+    memberId: integer("member_id").notNull().references(() => members.id),
     email: varchar("email", { length: 320 }).notNull(),
-    fullName: varchar("full_name", { length: 160 }),
     role: adminRoleEnum("role").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     invitedByAuthUserId: uuid("invited_by_auth_user_id"),
@@ -98,6 +98,7 @@ export const adminUsers = pgTable(
   },
   (table) => [
     uniqueIndex("admin_users_auth_user_id_idx").on(table.authUserId),
+    uniqueIndex("admin_users_member_id_idx").on(table.memberId),
     uniqueIndex("admin_users_email_idx").on(table.email),
     index("admin_users_role_idx").on(table.role),
   ],
@@ -256,7 +257,8 @@ export const members = pgTable(
     armyNo: integer("army_no").notNull(),
     rank: memberRankEnum("rank").notNull(),
     name: varchar("name", { length: 180 }).notNull(),
-    email: varchar("email", { length: 320 }).notNull(),
+    personalEmail: varchar("personal_email", { length: 320 }).notNull(),
+    eduEmail: varchar("edu_email", { length: 320 }),
     displayName: varchar("display_name", { length: 120 }).notNull(),
     gender: genderEnum("gender").notNull(),
     role: memberRoleEnum("role").notNull(),
@@ -269,7 +271,8 @@ export const members = pgTable(
   },
   (table) => [
     uniqueIndex("members_army_no_idx").on(table.armyNo),
-    uniqueIndex("members_email_idx").on(table.email),
+    uniqueIndex("members_personal_email_idx").on(table.personalEmail),
+    uniqueIndex("members_edu_email_idx").on(table.eduEmail).where(sql`${table.eduEmail} is not null`),
     index("members_role_idx").on(table.role),
   ],
 );

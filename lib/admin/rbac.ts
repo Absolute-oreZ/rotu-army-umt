@@ -2,10 +2,11 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/db";
-import { adminUsers } from "@/db/schema";
+import { adminUsers, members } from "@/db/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   canAccessAdminModule,
+  canAccessRoleGroup,
   getDefaultAdminRoute,
   isFullAccessAdminRole,
   type AdminModule,
@@ -16,7 +17,9 @@ export type CurrentAdmin = {
   authUserId: string;
   email: string;
   fullName: string | null;
+  redBgPhotoPath: string | null;
   id: string;
+  blueBgPhotoPath: string | null;
   role: AdminRole;
 };
 
@@ -35,12 +38,15 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
     .select({
       authUserId: adminUsers.authUserId,
       email: adminUsers.email,
-      fullName: adminUsers.fullName,
+      fullName: members.name,
+      redBgPhotoPath: members.redBgPhotoPath,
+      blueBgPhotoPath: members.blueBgPhotoPath,
       id: adminUsers.id,
       isActive: adminUsers.isActive,
       role: adminUsers.role,
     })
     .from(adminUsers)
+    .innerJoin(members, eq(adminUsers.memberId, members.id))
     .where(eq(adminUsers.authUserId, user.id))
     .limit(1);
 
@@ -53,6 +59,8 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
     email: admin.email,
     fullName: admin.fullName,
     id: admin.id,
+    redBgPhotoPath: admin.redBgPhotoPath,
+    blueBgPhotoPath: admin.blueBgPhotoPath,
     role: admin.role,
   };
 }
@@ -85,4 +93,19 @@ export async function redirectAdminRoot() {
   }
 
   redirect(getDefaultAdminRoute(admin.role));
+}
+
+export type RoleGroupResult = {
+  admin: CurrentAdmin;
+  authorized: boolean;
+};
+
+export async function requireRoleGroup(group: string): Promise<RoleGroupResult> {
+  const admin = await requireCurrentAdmin();
+
+  if (!canAccessRoleGroup(admin.role, group)) {
+    return { admin, authorized: false };
+  }
+
+  return { admin, authorized: true };
 }

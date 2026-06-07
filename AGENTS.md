@@ -280,12 +280,12 @@ Admin routes are non-localized unless explicitly changed later.
 
 - `OFFICER` -> bento dashboard
 - `INSTRUCTOR` -> bento dashboard
-- `SECRETARY` -> `/admin/rank-holders`
-- `TREASURER` -> `/admin/collections`
-- `MULTIMEDIA` -> `/admin/portfolio`
-- `SPORTS` -> `/admin/activities`
-- `WELFARE` -> `/admin/health`
-- `ACADEMIC` -> `/admin/results`
+- `SECRETARY` -> `/admin/secretary/rank-holders`
+- `TREASURER` -> `/admin/treasurer/collections`
+- `MULTIMEDIA` -> `/admin/multimedia/portfolio`
+- `SPORTS` -> `/admin/sports/activities`
+- `WELFARE` -> `/admin/welfare/health`
+- `ACADEMIC` -> `/admin/academic/results`
 
 ---
 

@@ -99,12 +99,12 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 3. System shall map `/admin` default routing by role:
    - OFFICER -> `/admin`
    - INSTRUCTOR -> `/admin`
-   - SECRETARY -> `/admin/rank-holders`
-   - TREASURER -> `/admin/collections`
-   - MULTIMEDIA -> `/admin/portfolio`
-   - SPORTS -> `/admin/activities`
-   - WELFARE -> `/admin/health`
-   - ACADEMIC -> `/admin/results`
+   - SECRETARY -> `/admin/secretary/rank-holders`
+   - TREASURER -> `/admin/treasurer/collections`
+   - MULTIMEDIA -> `/admin/multimedia/portfolio`
+   - SPORTS -> `/admin/sports/activities`
+   - WELFARE -> `/admin/welfare/health`
+   - ACADEMIC -> `/admin/academic/results`
 4. OFFICER and INSTRUCTOR shall be separate roles with same highest permissions.
 5. OFFICER and INSTRUCTOR shall bypass module restrictions entirely and access all admin routes and content.
 6. Other roles shall see only paths and content under their assigned module access.
@@ -230,16 +230,14 @@ System data model shall include at minimum:
 - Newsletter double opt-in flow (subscription, confirmation, unsubscribe) with Resend integration.
 - Public content data access layer with DB fallbacks.
 - Root not-found page for invalid locales.
+- Admin sidebar shell with responsive navigation (collapsible to icons on desktop, drawer on mobile).
+- Module-scoped admin routes with per-group RBAC layouts and 403 Access Denied for unauthorized access.
+- Placeholder pages for all 15 admin modules across 6 role groups.
 
 ### 7.2 Pending
-- Dynamic `sitemap.xml` from DB with 1-hour cache.
-- Static `robots.txt`.
 - Per-page canonical/hreflang audit.
-- Localized page-level not-found pages.
 - Route-level error boundaries for admin surfaces.
-- Admin error boundaries.
-- Admin sidebar shell with role-aware navigation.
-- All admin module pages (rank-holders, intakes, cadets, collections, expenses, portfolio, stories, newsletters, activities, collaborations, health, accommodations, religion, results, timetables).
+- Officer/Instructor bento dashboard with cross-system statistics.
 - Admin CMS: Multimedia for `webapp_contents`, stories CRUD, newsletter management, application deadline config.
 - Secretary admin user management with delete+recreate role changes and audit logging.
 - Schema additions: application status enum, role audit log table, `adminUsers.cadetInfoId` nullable FK.

@@ -35,13 +35,25 @@ export type AdminModule =
 export const ADMIN_DEFAULT_ROUTES = {
   OFFICER: "/admin",
   INSTRUCTOR: "/admin",
-  SECRETARY: "/admin/rank-holders",
-  TREASURER: "/admin/collections",
-  MULTIMEDIA: "/admin/portfolio",
-  SPORTS: "/admin/activities",
-  WELFARE: "/admin/health",
-  ACADEMIC: "/admin/results",
+  SECRETARY: "/admin/secretary/rank-holders",
+  TREASURER: "/admin/treasurer/collections",
+  MULTIMEDIA: "/admin/multimedia/portfolio",
+  SPORTS: "/admin/sports/activities",
+  WELFARE: "/admin/welfare/health",
+  ACADEMIC: "/admin/academic/results",
 } satisfies Record<AdminRole, string>;
+
+export const ROLE_ROUTE_SEGMENTS: Record<
+  Exclude<AdminRole, "OFFICER" | "INSTRUCTOR">,
+  string
+> = {
+  SECRETARY: "secretary",
+  TREASURER: "treasurer",
+  MULTIMEDIA: "multimedia",
+  SPORTS: "sports",
+  WELFARE: "welfare",
+  ACADEMIC: "academic",
+};
 
 const roleModules = {
   OFFICER: ["dashboard"],
@@ -68,10 +80,27 @@ export function getDefaultAdminRoute(role: AdminRole) {
   return ADMIN_DEFAULT_ROUTES[role];
 }
 
+export function getAdminNotFoundBackLabel(role: AdminRole) {
+  if (isFullAccessAdminRole(role)) {
+    return "Back to dashboard";
+  }
+
+  return `Back to ${role.charAt(0)}${role.slice(1).toLowerCase()} dashboard`;
+}
+
 export function canAccessAdminModule(role: AdminRole, module: AdminModule) {
   if (isFullAccessAdminRole(role)) {
     return true;
   }
 
   return ROLE_MODULES[role].includes(module);
+}
+
+export function canAccessRoleGroup(role: AdminRole, group: string) {
+  if (isFullAccessAdminRole(role)) {
+    return true;
+  }
+
+  const segment = ROLE_ROUTE_SEGMENTS[role as keyof typeof ROLE_ROUTE_SEGMENTS];
+  return segment === group;
 }
