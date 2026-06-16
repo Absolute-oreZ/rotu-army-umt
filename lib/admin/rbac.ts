@@ -9,6 +9,7 @@ import {
   canAccessRoleGroup,
   getDefaultAdminRoute,
   isFullAccessAdminRole,
+  isIntakeScopedRole,
   type AdminModule,
   type AdminRole,
 } from "@/lib/admin/roles";
@@ -21,6 +22,7 @@ export type CurrentAdmin = {
   id: string;
   blueBgPhotoPath: string | null;
   role: AdminRole;
+  intakeId: number | null;
 };
 
 export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
@@ -42,15 +44,15 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
       redBgPhotoPath: members.redBgPhotoPath,
       blueBgPhotoPath: members.blueBgPhotoPath,
       id: adminUsers.id,
-      isActive: adminUsers.isActive,
       role: adminUsers.role,
+      intakeId: adminUsers.intakeId,
     })
     .from(adminUsers)
     .innerJoin(members, eq(adminUsers.memberId, members.id))
     .where(eq(adminUsers.authUserId, user.id))
     .limit(1);
 
-  if (!admin?.isActive) {
+  if (!admin) {
     return null;
   }
 
@@ -62,6 +64,7 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
     redBgPhotoPath: admin.redBgPhotoPath,
     blueBgPhotoPath: admin.blueBgPhotoPath,
     role: admin.role,
+    intakeId: admin.intakeId,
   };
 }
 
@@ -108,4 +111,11 @@ export async function requireRoleGroup(group: string): Promise<RoleGroupResult> 
   }
 
   return { admin, authorized: true };
+}
+
+export function getIntakeScope(admin: CurrentAdmin): number | null {
+  if (!isIntakeScopedRole(admin.role)) {
+    return null;
+  }
+  return admin.intakeId;
 }

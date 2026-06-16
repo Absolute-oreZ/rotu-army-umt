@@ -141,7 +141,7 @@ function Sidebar({
       data-state={state}
       data-mobile="false"
       className={cn(
-        "sticky top-0 hidden h-svh shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:flex",
+        "hidden h-svh shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:flex",
         className,
       )}
       style={{ width: mounted ? sidebarWidth : SIDEBAR_WIDTH }}
@@ -420,7 +420,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-inset"
-      className={cn("flex min-h-svh flex-1 flex-col", className)}
+      className={cn("flex flex-1 flex-col", className)}
       {...props}
     />
   );

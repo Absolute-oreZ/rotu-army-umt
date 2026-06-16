@@ -13,12 +13,18 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export const FULL_ACCESS_ADMIN_ROLES = ["OFFICER", "INSTRUCTOR"] as const;
 
+export const INTAKE_SCOPED_ROLES = [
+  "SECRETARY",
+  "TREASURER",
+  "WELFARE",
+  "ACADEMIC",
+] as const;
+
 export type AdminModule =
   | "dashboard"
   | "rank-holders"
   | "intakes"
   | "cadets"
-  | "admin-users"
   | "collections"
   | "expenses"
   | "portfolio"
@@ -58,7 +64,7 @@ export const ROLE_ROUTE_SEGMENTS: Record<
 const roleModules = {
   OFFICER: ["dashboard"],
   INSTRUCTOR: ["dashboard"],
-  SECRETARY: ["rank-holders", "intakes", "cadets", "admin-users"],
+  SECRETARY: ["rank-holders", "intakes", "cadets"],
   TREASURER: ["collections", "expenses"],
   MULTIMEDIA: ["portfolio", "stories", "newsletters"],
   SPORTS: ["activities", "collaborations"],
@@ -74,6 +80,10 @@ export function isAdminRole(value: string): value is AdminRole {
 
 export function isFullAccessAdminRole(role: AdminRole) {
   return FULL_ACCESS_ADMIN_ROLES.includes(role as (typeof FULL_ACCESS_ADMIN_ROLES)[number]);
+}
+
+export function isIntakeScopedRole(role: AdminRole) {
+  return INTAKE_SCOPED_ROLES.includes(role as (typeof INTAKE_SCOPED_ROLES)[number]);
 }
 
 export function getDefaultAdminRoute(role: AdminRole) {

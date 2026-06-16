@@ -1,11 +1,18 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
+import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
+
+const emptySubscribe = () => () => {};
+const useMounted = () =>
+  useSyncExternalStore(emptySubscribe, () => true, () => false);
 
 type TooltipContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  triggerRef: React.RefObject<HTMLDivElement | null>;
 };
 
 const TooltipContext = React.createContext<TooltipContextValue | null>(null);
@@ -19,6 +26,7 @@ function useTooltip() {
 function Tooltip({ children, delayDuration = 200 }: { children: React.ReactNode; delayDuration?: number }) {
   const [open, setOpen] = React.useState(false);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleSetOpen = React.useCallback(
     (next: boolean) => {
@@ -42,7 +50,7 @@ function Tooltip({ children, delayDuration = 200 }: { children: React.ReactNode;
   }, []);
 
   return (
-    <TooltipContext.Provider value={{ open, setOpen: handleSetOpen }}>
+    <TooltipContext.Provider value={{ open, setOpen: handleSetOpen, triggerRef }}>
       <div className="relative inline-flex justify-center">{children}</div>
     </TooltipContext.Provider>
   );
@@ -53,10 +61,11 @@ function TooltipTrigger({
   children,
   ...props
 }: React.ComponentProps<"div">) {
-  const { setOpen } = useTooltip();
+  const { setOpen, triggerRef } = useTooltip();
 
   return (
     <div
+      ref={triggerRef}
       data-slot="tooltip-trigger"
       className={className}
       onMouseEnter={() => setOpen(true)}
@@ -76,32 +85,46 @@ function TooltipContent({
   children,
   ...props
 }: React.ComponentProps<"div"> & { side?: "right" | "top" | "bottom" | "left" }) {
-  const { open } = useTooltip();
+  const { open, triggerRef } = useTooltip();
+  const mounted = useMounted();
+  const [pos, setPos] = React.useState<React.CSSProperties | null>(null);
 
-  if (!open) return null;
+  React.useEffect(() => {
+    if (!open || !mounted || !triggerRef.current) {
+      setPos(null);
+      return;
+    }
 
-  const positionClasses: Record<string, string> = {
-    right: "left-full top-1/2 -translate-y-1/2 ml-2",
-    left: "right-full top-1/2 -translate-y-1/2 mr-2",
-    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
-    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
-  };
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gap = 8;
 
-  return (
+    setPos({
+      position: "fixed",
+      ...(side === "top" && { bottom: window.innerHeight - rect.top + gap, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }),
+      ...(side === "bottom" && { top: rect.bottom + gap, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }),
+      ...(side === "left" && { top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + gap, transform: "translateY(-50%)" }),
+      ...(side === "right" && { top: rect.top + rect.height / 2, left: rect.right + gap, transform: "translateY(-50%)" }),
+    });
+  }, [open, mounted, side, triggerRef]);
+
+  if (!open || !pos) return null;
+
+  return createPortal(
     <div
       data-slot="tooltip-content"
-      data-state={open ? "open" : "closed"}
+      data-state="open"
       data-side={side}
       role="tooltip"
       className={cn(
-        "absolute z-50 overflow-hidden rounded-md bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md animate-in fade-in-0",
-        positionClasses[side],
+        "z-50 overflow-hidden rounded-md bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md animate-in fade-in-0",
         className,
       )}
+      style={pos}
       {...props}
     >
       {children}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -78,6 +78,7 @@ Do not print secrets in logs or responses.
 - Officer and Instructor can also invite/manage admins because they have full system access.
 - Invited admins log in only through Google using their UMT account.
 - Do not build public email/password registration for admins unless explicitly requested.
+- When an invited user signs in via Google for the first time, the auth callback (`app/auth/callback/route.ts`) checks for a pending invitation matching the user's email. If found, it creates the `adminUsers` record, marks the invitation as accepted, and logs an `ACCEPTED` audit event — all within a single database transaction. If no invitation exists and the user is not already an admin, they are redirected to login with a `not-authorized` error.
 
 ### Authorization
 
@@ -89,14 +90,39 @@ Do not print secrets in logs or responses.
 #### Role Changes
 
 - Admin roles can be changed after creation, but only by `OFFICER` or `INSTRUCTOR`.
-- Role changes are performed as **delete + recreate** (not direct update) to maintain clear audit trails.
-- All role changes must be logged/audited (who changed it, when, old role, new role).
+- Role changes are performed as **direct update** to the role column.
+- All admin management events must be logged/audited (INVITED, ACCEPTED, ROLE_CHANGED, DROPPED).
 - Multi-role assignments are not allowed. One admin user = one role, strictly.
 
 #### Full-Access Bypass
 
 - `OFFICER` and `INSTRUCTOR` bypass module restrictions entirely and can access all admin routes and content.
 - Other roles see only paths and content under their assigned module access.
+
+#### Intake-Scoped Access Control
+
+Some admin roles are restricted to managing data from their own intake only:
+
+- **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `WELFARE`, `ACADEMIC`
+- **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`, `SPORTS`
+
+Intake-scoped admins have an `intakeId` on their `adminUsers` record (set from the cadet's intake at invitation acceptance time). This restricts both reads (filtered queries) and writes (ownership validation) to their intake's data.
+
+Officer and Instructor bypass intake restrictions entirely and can access and manage data across all intakes.
+
+**Intake-scoped data:**
+- Cadets and admin users (Secretary module)
+- Collections, expenses (Treasurer module — future)
+- Health, accommodations (Welfare module — future)
+- Results, timetables (Academic module — future)
+
+**Non-intake-scoped data:**
+- Newsletter, stories, portfolio, `webapp_contents` (Multimedia)
+- Activities, collaborations (Sports)
+
+Helper functions in `lib/admin/rbac.ts`:
+- `isIntakeScopedRole(role)` — checks if a role is intake-scoped
+- `getIntakeScope(admin)` — returns `null` (no restriction) or the `intakeId` to filter by
 
 ---
 
@@ -287,6 +313,43 @@ Admin routes are non-localized unless explicitly changed later.
 - `WELFARE` -> `/admin/welfare/health`
 - `ACADEMIC` -> `/admin/academic/results`
 
+### Admin Data-Table Infrastructure
+
+Admin list pages (cadets, rank-holders, intakes, accounts, collections, payments) share a server-side filtering, sorting, and pagination system with URL-based state.
+
+**Shared components** (`components/admin/data-table/`):
+- `TableToolbar` — search input, result count, optional actions slot, reset button.
+- `GlobalFilterBar` — active filter pills + `FilterBuilder` ("Add filter" button) + `SortControl` popover.
+- `SortableHead` — clickable column header with sort direction indicator and multi-sort priority number.
+- `Pagination` — page size selector and prev/next navigation.
+- `FilterBuilder` — stepped UI for adding column/operator/value filters.
+- `FilterPill` — removable badge showing an active filter condition.
+- `SortControl` — popover for managing multi-column sort rules with drag reorder.
+
+**Server-side helpers** (`lib/admin/table-search-params.ts`):
+- `parseTableSearchParams(raw, config)` — parses URL search params into `TableState` (q, sortRules, page, pageSize, filters).
+- `buildEnumFilterClause(conditions, column)` — builds Drizzle SQL `inArray`/`notInArray` from filter conditions.
+- `buildSortOrderBy(sortRules, fieldMap)` — builds Drizzle `asc`/`desc` order-by array from sort rules and a column map.
+- `tableStateToQueryString(state, config)` — serializes `TableState` back to URL query string.
+- `isTableStateDefault(state, config)` — checks if state matches config defaults (for showing reset button).
+- `wrapLikePattern(input, mode)` — wraps search input for ILIKE queries (`%contains%` or `prefix%`).
+
+**Client-side hook** (`lib/admin/use-table-url.ts`):
+- `useTableURL({ searchParams, config, totalCount })` — manages URL-based table state with optimistic updates. Returns `{ state, update, reset, totalPages }`.
+
+**Table config pattern**:
+Each module defines a `TableConfig` with:
+- `defaults` — initial `TableState` (q, sortRules, page, pageSize, filters).
+- `sortKeys` — allowed sort column keys.
+- `sortLabels` — display labels for sort keys.
+- `filterColumns` — array of `FilterColumn` (enum with options, number, or string).
+- `pageSizeOptions` — allowed page sizes.
+- `prefix` — URL param prefix for pages with multiple tables.
+
+A companion `SORT_FIELD_MAP` maps sort keys to Drizzle column references for `buildSortOrderBy`.
+
+**When to use**: Any admin list/table page with filtering, sorting, and pagination. The pattern is: server page parses params → builds SQL → queries with WHERE/ORDER BY/LIMIT/OFFSET → passes rows + searchParams + totalCount to client → client renders with shared components.
+
 ---
 
 ## RBAC Roles And Modules
@@ -307,10 +370,10 @@ Each admin user has exactly one role.
 
 - Default: Rank Holders.
 - Access:
-  - Rank Holders
+  - Rank Holders (cadet admin users only)
   - Intakes
   - Cadets
-  - Admin invitations/user management
+  - Admin invitations/user management (cadets only)
 
 ### Treasurer
 
@@ -383,7 +446,10 @@ Baseline entities discussed:
 - Exam
 - Academic exam result
 - Member
-- Cadet info
+- Cadet
+- Officers and instructors
+- Admin invitation
+- Admin role audit log
 - Newsletter subscriber
 - Event
 - Event summaries
@@ -399,7 +465,11 @@ Enums discussed:
 - Application status: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`
 - Gender: `MALE`, `FEMALE`
 - Member role: `OFFICER`, `INSTRUCTOR`, `CADET`
-- Member rank: `PK`, `PKW`, `KPL_CADET`, `SJN_CADET`, `KPL`, `SJN`
+- Member rank: `MAJOR`, `CAPTAIN`, `LIEUTENANT`, `SECOND_LIEUTENANT`, `WARRANT_OFFICER`, `SERGEANT`, `KOPERAL`, `LANS_KOPERAL`, `SENIOR_UNDER_OFFICER`, `JUNIOR_UNDER_OFFICER`, `SERGEANT_CADET`, `KOPERAL_CADET`, `PK`, `PKW`
+- Cadet rank (subset of member rank, used for cadet filtering/sorting): `SENIOR_UNDER_OFFICER`, `JUNIOR_UNDER_OFFICER`, `SERGEANT_CADET`, `KOPERAL_CADET`, `PK`, `PKW`
+- Admin audit action: `ROLE_CHANGED`, `INVITED`, `ACCEPTED`, `DROPPED`
+- BMI classification: `UNDERWEIGHT`, `NORMAL`, `OVERWEIGHT`, `OBESE`
+- Rejimen and Kor: Malaysian Army regiment and corps names
 - Study events matching UMT event names
 
 Important modeling notes:
@@ -414,17 +484,18 @@ Important modeling notes:
 
 #### Member-Admin Linking
 
-- When a cadet becomes an admin (e.g., assigned Multimedia role), the `adminUsers` record should be linked to `cadetInfos.id` via a nullable FK.
-- This allows the system to associate admin actions with cadet identity when relevant.
+- When a cadet becomes an admin (e.g., assigned Multimedia role), the admin identity is linked through the shared `memberId` — `adminUsers.memberId` references `members.id`, and `cadets.memberId` also references `members.id`. No separate FK is needed.
+- Only cadets can be invited as admin users. The Secretary module (rank-holders, cadets page) operates exclusively on cadets, not officers or instructors.
 
 #### Role Audit Log
 
-- Add a role audit/audit log table to track:
-  - Who changed the role (auth user ID).
-  - When the change occurred.
-  - Old role and new role.
-  - Target admin user.
-- This supports the delete + recreate pattern for role changes.
+- The audit log table (`adminRoleAuditLogs`) tracks all admin management events:
+  - Action type: `INVITED`, `ACCEPTED`, `ROLE_CHANGED`, `DROPPED`.
+  - Who performed the action (auth user ID).
+  - Target member name (snapshot at event time).
+  - Old role and new role (nullable depending on event type).
+  - When the event occurred.
+- Pending invitations are tracked in `adminInvitations` with `acceptedAt` marking acceptance.
 
 ---
 
@@ -469,6 +540,13 @@ Conventions:
 - Do not access the database directly from client components.
 - Keep modules small and scalable.
 - Build UI primitives by hand in `components/ui/` when shared controls are useful.
+
+**Admin module structure and shared helpers (must-read before editing admin pages):**
+
+- Admin list/entity pages must be split into small components under `components/admin/<entity>/` — never place a monolithic `client.tsx` under `app/admin/.../`. See `docs/architecture.md` §3.6 for the canonical file layout, responsibility boundaries, and anti-patterns.
+- Before writing inline logic, check `lib/admin/*` and `lib/utils.ts` — the helper you need may already exist (e.g., `digitsOnly`, `takeNumber`, `isValidEduEmail`, `cn`). See `docs/architecture.md` §3.7 for the full catalog.
+- When adding a new helper to `lib/`, run the `update-helpers-doc` skill to refresh the §3.7 catalog in `docs/architecture.md`.
+
 
 ---
 
@@ -571,6 +649,7 @@ Admin pages must use the left sidebar described in the Admin Dashboard section.
 6. Use real ROTU assets/content only when supplied. Do not invent missing assets.
 7. Ask before introducing complex architecture, workflow, or schema changes.
 8. The `crypto` npm package is a deprecated shim — use Node.js built-in `node:crypto` instead.
+9. The Secretary module manages cadets only — rank-holders shows cadet admin users, and the cadets page queries from the `cadets` table. Officers and instructors are not managed through Secretary.
 
 ---
 

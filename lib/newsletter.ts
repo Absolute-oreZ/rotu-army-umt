@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterSubscribers } from "@/db/schema";
+import { escapeHtml } from "./utils";
 
 function sleep(ms: number) {
   return new Promise((res) => setTimeout(res, ms));
@@ -56,15 +57,6 @@ export function createNewsletterTokens() {
     unsubscribeToken,
     unsubscribeTokenHash: hashNewsletterToken(unsubscribeToken),
   };
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
 
 function buildNewsletterEmailHtml({

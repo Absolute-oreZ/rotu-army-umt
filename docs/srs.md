@@ -92,6 +92,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 1. System shall support admin sign-in using Google OAuth via Supabase Auth.
 2. System shall process OAuth callback and establish server session.
 3. System shall deny admin access when session is absent.
+4. System shall check for a pending invitation on first Google login. If a matching invitation exists, the system shall atomically create the admin record, accept the invitation, and log the event. Uninvited users shall be redirected with an authorization error.
 
 ### 3.6 Authorization (RBAC)
 1. System shall assign exactly one admin role per admin user.
@@ -109,13 +110,18 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 5. OFFICER and INSTRUCTOR shall bypass module restrictions entirely and access all admin routes and content.
 6. Other roles shall see only paths and content under their assigned module access.
 7. Admin roles can be changed after creation, but only by OFFICER or INSTRUCTOR.
-8. Role changes shall be performed as delete + recreate (not direct update).
-9. System shall log all role changes (who, when, old role, new role, target admin user).
+8. Adding an admin shall create an invitation and send an email. The admin record is created when the invitee signs in via Google.
+9. System shall log all admin management events (INVITED, ACCEPTED, ROLE_CHANGED, DROPPED) with actor, target, roles, and timestamp.
 10. Multi-role assignments are not allowed. One admin user = one role, strictly.
+11. System shall support intake-scoped access control for Secretary, Treasurer, Welfare, and Academic roles.
+12. Intake-scoped admins shall only read and write data belonging to their assigned intake.
+13. Officer and Instructor shall bypass intake restrictions and access all intakes.
+14. Multimedia and Sports roles shall remain unrestricted across all intakes.
+15. System shall validate intake ownership on all write operations in intake-scoped modules.
 
 ### 3.7 Admin Modules
 1. System shall provide role-aware module access:
-   - Secretary: rank holders, intakes, cadets, admin users.
+   - Secretary: rank holders (cadet admin users only), intakes, cadets (cadet management), admin invitations (cadets only).
    - Treasurer: collections, expenses.
    - Multimedia: portfolio, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed), application deadline configuration.
    - Sports: activities, collaborations.
@@ -153,19 +159,20 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 
 ### 4.1 Core Entities
 System data model shall include at minimum:
-- Admin users and roles.
+- Admin users and roles (with nullable `intake_id` for intake-scoped roles).
+- Admin invitations (pending invitations with acceptance tracking, nullable `intake_id`).
+- Admin role audit logs (INVITED, ACCEPTED, ROLE_CHANGED, DROPPED events).
 - Intakes and translations.
 - Intake patch explanations and translations.
 - Intake display photos.
 - Stories (events) and translations.
 - Events tags and tag translations.
-- Members and cadet information.
+- Members (with birthdate, age, regiment/kor) and cadet information (with physical metrics: height, weight, BMI, CGPA).
+- Officers and instructors.
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.
 - Homepage managed content (FAQ, see-more links, testimonials, webapp_contents).
 - Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
-- Role audit log table for tracking role changes.
-- Admin-cadet linking: nullable FK from `adminUsers` to `cadetInfos`.
 
 ### 4.2 Localization Data
 1. Managed content shall use translation tables where content varies by locale.
@@ -232,15 +239,17 @@ System data model shall include at minimum:
 - Root not-found page for invalid locales.
 - Admin sidebar shell with responsive navigation (collapsible to icons on desktop, drawer on mobile).
 - Module-scoped admin routes with per-group RBAC layouts and 403 Access Denied for unauthorized access.
-- Placeholder pages for all 15 admin modules across 6 role groups.
+- Secretary rank-holders: cadet admin user management with role changes, drop, audit logging, cadet-only filtering.
+- Secretary cadets: cadet management page with rank-based sorting, active/inactive toggle, filtering.
+- Intake-scoped RBAC: intakeId on adminUsers/adminInvitations, scope helpers, Secretary module enforcement (reads + writes).
+- Placeholder pages for remaining admin modules across other role groups.
 
 ### 7.2 Pending
 - Per-page canonical/hreflang audit.
 - Route-level error boundaries for admin surfaces.
 - Officer/Instructor bento dashboard with cross-system statistics.
 - Admin CMS: Multimedia for `webapp_contents`, stories CRUD, newsletter management, application deadline config.
-- Secretary admin user management with delete+recreate role changes and audit logging.
-- Schema additions: application status enum, role audit log table, `adminUsers.cadetInfoId` nullable FK.
+- Schema additions: application status enum, role audit log table.
 - Seasonal intake application workflow: form, document upload, status state machine, Secretary review UI, physical assessment email trigger.
 - Email templates: application confirmation, application status update.
 
@@ -250,8 +259,8 @@ System data model shall include at minimum:
 2. Required documents: IC copy, blue-background passport photo, SPM transcripts.
 3. Physical assessment email: manual trigger by Secretary after review.
 4. Application deadline: admin-configurable (not hardcoded).
-5. Role changes: delete + recreate pattern with audit logging, only by OFFICER/INSTRUCTOR.
-6. Member-admin linking: `adminUsers` can link to `cadetInfos.id` when a cadet becomes admin.
+5. Admin management: invitation-based flow with email, direct role updates, drop deletes record. All events audited (INVITED, ACCEPTED, ROLE_CHANGED, DROPPED).
+6. Member-admin linking: `adminUsers` and `cadets` both link to `members.id` — no separate FK needed. Only cadets can be invited as admin users.
 7. Sitemap: dynamic from DB with 1-hour cache; robots.txt: static file.
 8. Branding assets: current placeholder images are real ROTU assets and should be kept.
 9. Root not-found page: hardcoded English is acceptable (invalid locale case).

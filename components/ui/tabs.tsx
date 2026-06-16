@@ -69,8 +69,9 @@ export function TabsList({
 export function TabsTrigger({
   children,
   value,
+  disabled,
   className,
-}: React.PropsWithChildren<{ value: string; className?: string }>) {
+}: React.PropsWithChildren<{ value: string; disabled?: boolean; className?: string }>) {
   const { value: activeValue, setValue } = useTabsContext();
   const isActive = activeValue === value;
 
@@ -79,14 +80,21 @@ export function TabsTrigger({
       type="button"
       role="tab"
       aria-selected={isActive}
+      aria-disabled={disabled}
+      disabled={disabled}
       className={cn(
-        "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:cursor-pointer",
-        isActive
+        "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+        disabled
+          ? "cursor-not-allowed opacity-60"
+          : isActive
           ? "bg-background text-foreground shadow-sm"
-          : "hover:bg-background/60 hover:text-foreground",
+          : "hover:cursor-pointer hover:bg-background/60 hover:text-foreground",
         className,
       )}
-      onClick={() => setValue(value)}
+      onClick={() => {
+        if (disabled) return;
+        setValue(value);
+      }}
     >
       {children}
     </button>

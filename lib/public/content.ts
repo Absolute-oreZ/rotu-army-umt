@@ -9,7 +9,7 @@ import {
   frequentlyAskedQuestions,
   frequentlyAskedQuestionTranslations,
   members,
-  cadetInfos,
+  cadets,
   intakes,
   intakeTranslations,
   intakeDisplayPhotos,
@@ -237,9 +237,9 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
       .from(members)
       .where(eq(members.role, "INSTRUCTOR")),
     db
-      .select({ value: count(cadetInfos.id) })
-      .from(cadetInfos)
-      .where(eq(cadetInfos.isActive, true)),
+      .select({ value: count(cadets.id) })
+      .from(cadets)
+      .where(eq(cadets.isActive, true)),
     db
       .select({
         answer: frequentlyAskedQuestionTranslations.answer,
@@ -415,16 +415,16 @@ export async function getPublishedIntakeDetail(
     db
       .select({
         displayName: members.displayName,
-        displayPhotoPath: cadetInfos.displayPhotoPath,
-        id: cadetInfos.id,
-        quote: cadetInfos.quote,
+        displayPhotoPath: cadets.displayPhotoPath,
+        id: cadets.id,
+        quote: cadets.quote,
       })
-      .from(cadetInfos)
-      .innerJoin(members, eq(cadetInfos.memberId, members.id))
+      .from(cadets)
+      .innerJoin(members, eq(cadets.memberId, members.id))
       .where(
         and(
-          eq(cadetInfos.intakeId, intake.id),
-          eq(cadetInfos.isActive, true),
+          eq(cadets.intakeId, intake.id),
+          eq(cadets.isActive, true),
           eq(members.role, "CADET"),
         ),
       )

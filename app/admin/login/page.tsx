@@ -20,6 +20,7 @@ const errorMessages: Record<string, string> = {
   "auth-exchange-failed": "The login session could not be completed.",
   "missing-origin": "The login request could not determine this site URL.",
   "oauth-start-failed": "Google login could not be started.",
+  "not-authorized": "This Google account is not registered as an admin. Contact the Secretary to request access.",
 };
 
 export default async function AdminLoginPage({
@@ -36,7 +37,9 @@ export default async function AdminLoginPage({
   }
 
   const { error } = await searchParams;
-  const message = error ? errorMessages[error] : null;
+  const message = error
+    ? errorMessages[error] ?? "Something went wrong. Please try again."
+    : null;
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-12 text-foreground">
@@ -70,7 +73,7 @@ export default async function AdminLoginPage({
           </p>
 
           {message ? (
-            <p className="mt-5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p role="alert" className="mt-5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {message}
             </p>
           ) : null}

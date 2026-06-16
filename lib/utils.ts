@@ -2,15 +2,13 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { PROGRAM_TOTAL_YEARS, SESSION_START_MONTH_DAY, SESSIONS_PER_YEAR } from "./data";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EDU_DOMAIN = "umt.edu.my";
+
+export type BMIClassification = "UNDERWEIGHT" | "NORMAL" | "OVERWEIGHT" | "OBESE";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
-}
-
-export function computeNextIntakeNo(intakeCount: number) {
-  // const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(intakes);
-  const localSeq = intakeCount + 1;
-  const globalSeq = 42 + localSeq;
-  return `${localSeq}/${globalSeq}`;
 }
 
 export function utcDate(year: number, month: number, day: number): Date {
@@ -64,4 +62,53 @@ export function formatDateRange(start: Date, end: Date, locale: string): string 
   const s = formatDate(start, locale);
   const e = formatDate(end, locale);
   return s === e ? s : `${s} – ${e}`;
+}
+
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function calculateBMI(heightM: number, weightKg: number): number | null {
+  if (!Number.isFinite(heightM) || !Number.isFinite(weightKg)) return null;
+  if (heightM <= 0 || weightKg <= 0) return null;
+  const bmi = Math.round((weightKg / (heightM * heightM)) * 100) / 100;
+  if (bmi < 12 || bmi > 60) return null;
+  return bmi;
+}
+
+export function getBMIClassification(bmi: number | null): BMIClassification | null {
+  if (bmi === null) return null;
+  if (bmi < 18.5) return "UNDERWEIGHT";
+  if (bmi < 25) return "NORMAL";
+  if (bmi < 30) return "OVERWEIGHT";
+  return "OBESE";
+}
+
+export function calculateAge(birthdate: Date): number {
+  const today = new Date();
+  let age = today.getFullYear() - birthdate.getFullYear();
+  const monthDiff = today.getMonth() - birthdate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthdate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+export function isValidPersonalEmail(email: string): boolean {
+  const v = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(v)) return false;
+  const domain = v.split("@")[1];
+  return domain !== EDU_DOMAIN;
+}
+
+export function isValidEduEmail(email: string): boolean {
+  const v = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(v)) return false;
+  const domain = v.split("@")[1];
+  return domain === EDU_DOMAIN;
 }

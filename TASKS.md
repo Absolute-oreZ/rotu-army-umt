@@ -29,19 +29,35 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Build intake detail page at `/[locale]/intakes/[slug]`.
 - [x] Build stories page at `/[locale]/stories`.
 - [x] Build story detail page at `/[locale]/stories/[slug]`.
-- [x] Build stroy tags page at `/[locale]/stories/tags/[slug]`.
+- [x] Build story tags page at `/[locale]/stories/tags/[slug]`.
 - [x] Build contact page at `/[locale]/contact`.
 - [x] Add newsletter subscription form on Contact page.
 - [x] Add localized public `not-found.tsx` handling for missing pages/resources.
-- [x] Add global error boundarie for public surfaces (`app/error.tsx`).
+- [x] Add global error boundaries for public surfaces (`app/error.tsx`).
 - [x] Add SEO metadata, canonical URLs, and locale alternates for public pages.
 - [x] Add `sitemap.xml` and `robots.txt`.
 - [x] Draft Drizzle schema for intakes, members, cadets, stories, newsletters, and academic results.
 - [x] Use translation tables for managed localized content.
 - [x] Store Supabase Storage paths/keys for managed files and images.
 - [x] Build admin layout shell with responsive left sidebar navigation.
-- [ ] Build Secretary modules: Rank Holders, Intakes, Cadets.
-- [ ] Build Treasurer modules: Collections, Expenses.
+- [x] Build Secretary modules: Rank Holders, Intakes, Cadets.
+- [x] Build admin invitation acceptance flow in auth callback (first Google login creates admin record atomically).
+- [x] Build admin role audit logging (INVITED, ACCEPTED, ROLE_CHANGED, DROPPED events).
+- [x] Build admin management emails via Resend (invitation, role change, removal notifications).
+- [x] Add Resend configuration for admin and newsletter email sending.
+- [x] Build shared data-table infrastructure (filter/sort components, search params parser, URL state hook).
+- [x] Extend schema: cadet physical metrics (height, weight, BMI, CGPA), member fields (birthdate, age, regiment), officers and instructors table.
+- [x] Create newsletter confirmation email template.
+- [x] Create unsubscribe flow and email handling.
+- [x] Implement intake-scoped RBAC: add intakeId to adminUsers and adminInvitations, intake scope helpers, and Secretary module enforcement (reads + writes).
+- [x] Update auth callback to propagate intakeId from invitation to adminUsers on acceptance.
+- [x] Update documentation (AGENTS.md, architecture.md, srs.md) for intake-scoped access control.
+- [ ] Build Treasurer modules:
+- [ ] Treasury account management (`/admin/treasurer/accounts`)
+- [ ] Collection creation and management (`/admin/treasurer/collections`)
+- [ ] Payment ledger and detailed records (`/admin/treasurer/payments`)
+- [ ] Expenses management (`/admin/treasurer/expenses`)
+- [ ] Cadet self-service payment page (`/cadet/collections/[slug]`)
 - [ ] Build Multimedia modules: Portfolio, stories, Newsletters.
 - [ ] Build Sports modules: Activities, Collaborations.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.
@@ -50,8 +66,8 @@ Updated implementation direction: public pages should be built against reusable 
 - [ ] Add route-level error boundaries for admin surfaces.
 - [ ] Confirm required documents and fields for seasonal intake applications.
 - [ ] Build seasonal intake application form and submission flow.
-- [ ] Add Resend configuration when email sending is implemented.
 - [ ] Create intake physical assessment email template.
-- [ ] Create newsletter confirmation email template.
-- [ ] Create unsubscribe flow and email handling.
+- [ ] Create application confirmation email template.
+- [ ] Create application status update email template.
+- [ ] Audit per-page canonical URLs and hreflang alternates across all public routes.
 - [ ] Develop Retrieval-Augmented Generation (RAG).

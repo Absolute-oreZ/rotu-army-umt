@@ -58,6 +58,184 @@ Core platform choices:
 - PostgreSQL:
   - Accessed through `postgres` driver + Drizzle.
 
+### 3.5 Admin Data-Table Infrastructure
+A shared component system for admin list/table pages with server-side filtering, sorting, and pagination.
+
+**Server-side helpers** (`lib/admin/table-search-params.ts`):
+- `parseTableSearchParams(raw, config)` — parses URL search params into a typed `TableState` (query, sort rules, page, page size, filter conditions).
+- `buildEnumFilterClause(conditions, column)` — converts filter conditions to Drizzle `inArray`/`notInArray` SQL clauses.
+- `buildSortOrderBy(sortRules, fieldMap)` — maps sort rules to Drizzle `asc`/`desc` order-by expressions using a field map.
+- `wrapLikePattern(input, mode)` / `escapeLikeWildcards(input)` — safe ILIKE pattern builders.
+- `isTableStateDefault(state, config)` — checks if current state matches defaults (for reset button visibility).
+- Config types: `TableConfig`, `TableState`, `SortRule`, `FilterColumn`, `FilterCondition`, `RawSearchParams`.
+
+**Client-side hook** (`lib/admin/use-table-url.ts`):
+- `useTableURL({ searchParams, config, totalCount })` — manages table state via URL params with optimistic updates. Returns `{ state, update, reset, isPending, totalPages }`.
+- Preserves non-table URL params (e.g., `tab`, `collectionId`) when updating table state.
+- Uses a `prefix` from `TableConfig` to namespace params (e.g., `p_q`, `p_sort` for payments tab).
+
+**UI components** (`components/admin/data-table/*`):
+- `TableToolbar` — search input with debounce, shown/total count, actions slot, reset button.
+- `GlobalFilterBar` — active filter pills, filter builder trigger, sort control trigger.
+- `FilterBuilder` — stepped UI for adding column/operator/value filter conditions.
+- `FilterPill` — removable badge showing active filter with operator and values.
+- `SortControl` — popover for managing multi-column sort rules with drag-reorder.
+- `SortableHead` — table header cell with click-to-sort, direction indicator, and priority number.
+- `Pagination` — page size selector and prev/next navigation.
+
+**Config pattern**: Each table page defines a `buildXTableConfig(options?)` function returning a `TableConfig` with defaults, sort keys, filter columns, page size options, and optional prefix. A companion `X_SORT_FIELD_MAP` maps sort keys to Drizzle column references.
+
+**Data flow**: Server page reads `searchParams` → `parseTableSearchParams` → SQL WHERE/ORDER BY/LIMIT/OFFSET → passes rows + `RawSearchParams` + `totalCount` to client. Client uses `useTableURL` for URL-driven state and shared components for UI.
+
+**Usage**: Secretary rank-holders (admin users + audit log tabs), Secretary cadets, Treasurer accounts, Treasurer collections, Treasurer payments.
+
+### 3.6 Admin Module Component Structure Convention
+Admin list/entity pages must be split into small, single-purpose components under `components/admin/<module>/`. **Never** place a monolithic `client.tsx` directly under `app/admin/<role>/<page>/` — the server `page.tsx` is the only file that belongs there.
+
+**Why this exists:** Earlier sessions created monolithic `client.tsx` files under `app/admin/treasurer/<page>/client.tsx` bundling the table, every dialog, every sheet, and state orchestration into one 500+ line component. That pattern was rejected and refactored to match the Secretary module structure below. Do not repeat the monolithic pattern.
+
+**Canonical file layout per module** (every admin entity module follows this):
+
+```
+app/admin/<role>/<entity>/
+  page.tsx                      # Server Component ONLY. Queries, auth, SQL, passes props.
+  actions.ts                    # Server Actions (create/update/delete). Server-side only.
+
+components/admin/<entity>/
+  <entity>-page-client.tsx      # Orchestrator: manages dialog/sheet targets, error, etc.
+  <entity>-table.tsx            # Data table with TableToolbar/GlobalFilterBar/SortableHead/Pagination.
+  add-<entity>-dialog.tsx       # Self-contained create dialog (opens via trigger prop).
+  edit-<entity>-sheet.tsx       # Self-contained edit sheet (form state initialized from prop).
+  delete-<entity>-dialog.tsx    # Self-contained delete confirmation dialog.
+  <optional extras>.tsx         # e.g. qr-preview-dialog, change-role-dialog, toggle-active-dialog.
+  table-config.ts               # buildXTableConfig() + X_SORT_FIELD_MAP for that entity's table.
+```
+
+**Responsibility boundaries:**
+
+1. **`page.tsx` (Server Component)**
+   - Calls `requireCurrentAdmin()`, `getIntakeScope()`, `canAccessAdminModule()`.
+   - Builds filter/sort SQL with helpers from `lib/admin/table-search-params.ts`.
+   - Runs count + paginated data query + any auxiliary queries (e.g., intake options) in `Promise.all`.
+   - Serializes non-JSON-safe values (Date → ISO string) and passes them as props to the page-client.
+   - Does **not** import React hooks, dialogs, or any `"use client"` code except the page-client.
+
+2. **`<entity>-page-client.tsx` (Client Orchestrator)**
+   - Owns all interactive state: `editTarget`, `deleteTarget`, other dialog targets, `error`.
+   - Renders the table, all dialogs/sheets, and the page header with the "Add" button.
+   - Uses **key-based remounting** for edit sheets: `<EditSheet key={target?.id ?? "none"} account={target} />`. This forces form state to reset when the target changes — do not use `useEffect` (triggers `react-hooks/set-state-in-effect` lint error) or `useRef` during render (triggers `react-hooks/refs` lint error).
+   - Passes `onError={setError}` to delete dialogs so server errors propagate to the page-level error banner.
+
+3. **`<entity>-table.tsx` (Client)**
+   - Receives `accounts: Account[]`, `searchParams: RawSearchParams`, `totalCount: number`, and callback props (`onEdit`, `onDelete`, etc.).
+   - Exports the row type (e.g., `export type Account = {...}`) used by sibling components.
+   - Uses `useMemo(() => buildXTableConfig(...), [...deps])` + `useTableURL({ searchParams, config, totalCount })`.
+   - Renders `TableToolbar`, `GlobalFilterBar`, `<Table>` with `SortableHead` headers, and `Pagination`.
+
+4. **`add-<entity>-dialog.tsx` (Client, self-contained)**
+   - Takes a `trigger: ReactNode` prop, renders `<div onClick={() => setOpen(true)}>{trigger}</div>`.
+   - Owns its own form state, validation, `useTransition` for the server action call, and error display.
+   - Calls the server action from `actions.ts` directly via `FormData`.
+   - Resets form on close; does not lift state to the parent.
+
+5. **`edit-<entity>-sheet.tsx` (Client, self-contained)**
+   - Receives the entity as a prop (or `null` when closed) and an `onOpenChange` callback.
+   - Form state is initialized with `useState(entity?.field ?? "")` — works correctly because the parent uses `key={entity?.id ?? "none"}` to remount.
+   - Owns validation, transition, and error display.
+
+6. **`delete-<entity>-dialog.tsx` (Client, self-contained)**
+   - Receives the entity (or `null`), an `error` string for parent-managed error display, an `onError` callback, and `onOpenChange`.
+   - Calls `onError(result.error)` when the server action fails — never silently drops errors.
+   - Owns its own `useTransition`; the parent does not need to know about pending state.
+
+7. **`table-config.ts`**
+   - Exports `buildXTableConfig(options?): TableConfig` and `X_SORT_FIELD_MAP` (maps sort keys to Drizzle columns).
+   - Exports any format helpers specific to the module (e.g., `formatBank`).
+   - Uses a `prefix` (e.g., `p_`) when the page has multiple tables sharing URL params.
+
+**Server actions (`app/admin/<role>/<entity>/actions.ts`)** live next to the page, not in `components/`. They are `"use server"` and return `{ success: true } | { success: false; error: string }` so callers can branch on success/failure.
+
+**Shared form primitives** used across admin modules:
+- `components/admin/cadets/cadet-form-fields.tsx` — exports `Field`, `Input` (custom wrapper with `onChange: (v: string) => void`), `Dropdown`, `FileField`, and constants (`RANK_OPTIONS`, `GENDER_OPTIONS`, `RELIGION_OPTIONS`, `RACE_OPTIONS`, `MIN_AGE`, `MAX_AGE`, `formatLabel`). Despite the path name, this is used by **multiple modules** (cadets, treasurer accounts, intakes) — do not duplicate these primitives.
+- `components/ui/input.tsx` — the native `<input>` wrapper. Its `onChange` signature is the standard `React.ChangeEvent<HTMLInputElement>` (event-based, not string-based). When passing sanitizers like `digitsOnly` to this Input, wrap them: `onChange={(e) => setX(digitsOnly(e.target.value))}`. When passing to the custom `Input` from `cadet-form-fields`, pass directly: `onChange={(v) => setX(digitsOnly(v))}`.
+
+**Anti-patterns to avoid:**
+- Do not create `app/admin/<role>/<page>/client.tsx` monoliths.
+- Do not lift dialog/sheet form state into the page-client — keep it self-contained in the dialog.
+- Do not use `useEffect` to sync edit form state from props — use the key-remount pattern instead.
+- Do not use `useRef` to adjust state during render.
+- Do not silently drop `result.error` from server actions — always propagate via `onError` callback.
+- Do not duplicate `Field`/`Input`/`Dropdown`/`FileField` — reuse from `cadet-form-fields.tsx`.
+
+### 3.7 Shared Helper Functions (lib/)
+Helper functions are organized by domain. **Always check here before writing inline logic** — the pattern may already exist. When adding a new helper, also update this section and the registry below (or run the `update-helpers-doc` skill).
+
+**`lib/admin/form-helpers.ts`** — Form data extraction and input sanitization:
+- `takeString(value)` — extracts a trimmed string from `FormDataEntryValue`, or `null` if empty/missing.
+- `takeNumber(value)` — extracts a finite `number` from `FormDataEntryValue`, or `null`.
+- `takeFile(value)` — extracts a non-empty `File` from `FormDataEntryValue`, or `null`.
+- `getFileExtension(file)` — returns the lowercase extension (defaults to `"jpg"`).
+- `digitsOnly(value)` — strips every non-digit character. Use as an `onChange` sanitizer for numeric-only fields (army no, account no, DuitNow ID).
+
+**`lib/admin/table-search-params.ts`** — Server-side table state parsing (see §3.5).
+
+**`lib/admin/use-table-url.ts`** — Client-side URL-state hook (see §3.5).
+
+**`lib/admin/rbac.ts`** — Auth + authorization:
+- `CurrentAdmin` type — the shape returned by `getCurrentAdmin` / `requireCurrentAdmin`.
+- `getCurrentAdmin()` — non-throwing; returns `CurrentAdmin | null`.
+- `requireCurrentAdmin()` — returns `CurrentAdmin` or redirects to `/admin/login`.
+- `requireAdminModule(module)` — enforces module-level access; calls `notFound()` if denied.
+- `requireRoleGroup(group)` — enforces role-group-level access (used by layout shells).
+- `redirectAdminRoot()` — redirects to the current admin's default route.
+- `getIntakeScope(admin)` — returns `null` (unrestricted) or the `intakeId` filter for intake-scoped roles.
+
+**`lib/admin/roles.ts`** — Role definitions:
+- `ADMIN_ROLES` array and `AdminRole` union type.
+- `FULL_ACCESS_ADMIN_ROLES` — `["OFFICER", "INSTRUCTOR"]`.
+- `INTAKE_SCOPED_ROLES` — Secretary, Treasurer, Welfare, Academic.
+- `AdminModule` union type and `ADMIN_DEFAULT_ROUTES` / `ROLE_ROUTE_SEGMENTS` / `ROLE_MODULES` maps.
+- `canAccessAdminModule(role, module)` / `canAccessRoleGroup(role, group)` — access checks.
+- `isIntakeScopedRole(role)` / `isFullAccessAdminRole(role)` / `isAdminRole(value)` — type guards.
+- `getDefaultAdminRoute(role)` / `getAdminNotFoundBackLabel(role)` — per-role routing helpers.
+
+**`lib/admin/nav-config.ts`** — Sidebar navigation configuration, role-filtered menu items.
+
+**`lib/admin/email.ts`** — Resend email helpers.
+
+**`lib/auth/cadet.ts`** — Cadet auth:
+- `getCurrentCadet()` / `requireCurrentCadet()` — session helpers for the cadet surface.
+
+**`lib/cadet/collections.ts`** — Read model for published collections scoped to the current cadet's intake.
+
+**`lib/utils.ts`** — General-purpose utilities:
+- `cn(...inputs)` — Tailwind class merge (clsx + tailwind-merge).
+- `utcDate(year, month, day)` — builds a UTC `Date`.
+- `computeAcademicSchedule(startYear)` — returns the academic year's session/exam date ranges.
+- `formatDate(date, locale)` / `formatDateRange(start, end, locale)` — locale-aware date formatters.
+- `escapeHtml(str)` — HTML-entity escape for server-rendered strings.
+- `calculateBMI(heightM, weightKg)` / `getBMIClassification(bmi)` — BMI math and `BMIClassification` tagger.
+- `calculateAge(birthdate)` — years-from-birthdate calculation.
+- `isValidPersonalEmail(email)` — personal email validation (rejects `@umt.edu.my`).
+- `isValidEduEmail(email)` — validates `@umt.edu.my` domain.
+
+**`lib/supabase/storage.ts`** — Supabase Storage helpers:
+- `storageUrl(path)` — builds a public Supabase Storage URL from a relative path.
+- `uploadToStorage(supabase, path, file)` — uploads a `File` to a given path.
+- `getStoragePublicUrl(supabase, path)` — resolves a public URL.
+- `deleteFromStorage(supabase, path)` — deletes an object.
+- `extractStoragePath(publicUrl)` — reverse-engineers a storage path from a public URL.
+
+**`lib/slugify.ts`** — URL-slug generator.
+
+**`lib/server-utils.ts`** — Server-only utilities.
+
+**`lib/public/content.ts`** — Server-side read models for public pages (published intakes, events, homepage content) with fallback chains.
+
+**`lib/i18n/*`** — Locale configuration, dictionary loader, per-locale dictionaries, and error strings (see §5).
+
+**Adding a new helper**: create it in the most specific file that fits its domain, then either (a) run the `update-helpers-doc` skill to refresh this catalog, or (b) manually add a one-line bullet here with signature and purpose.
+
 ## 4. Route Architecture
 ### 4.1 Public Routes (Localized)
 Current implemented routes:
@@ -75,10 +253,9 @@ Current implemented routes:
 Current implemented routes:
 - `/admin` (role-aware root; full-access roles see dashboard, others redirect to their default module)
 - `/admin/login` (Google OAuth start, no sidebar shell)
-- `/admin/secretary/rank-holders` (Secretary: rank holders management)
+- `/admin/secretary/rank-holders` (Secretary: cadet admin user management)
 - `/admin/secretary/intakes` (Secretary: intake management)
 - `/admin/secretary/cadets` (Secretary: cadet management)
-- `/admin/secretary/admin-users` (Secretary: admin user management)
 - `/admin/treasurer/collections` (Treasurer: collections)
 - `/admin/treasurer/expenses` (Treasurer: expenses)
 - `/admin/multimedia/portfolio` (Multimedia: portfolio)
@@ -115,6 +292,7 @@ Routes are organized by role group (e.g., `/admin/secretary/*`, `/admin/treasure
 - Admin login uses Supabase OAuth provider `google` (`app/admin/login/actions.ts`).
 - Callback exchanges auth code for session (`app/auth/callback/route.ts`).
 - Session is read server-side via Supabase SSR client.
+- Invitation acceptance: on first Google login, the callback checks for a pending `adminInvitations` row matching the user's email. If found, it atomically (within a transaction) creates the `adminUsers` record, marks the invitation as accepted, and inserts an `ACCEPTED` audit log entry. Uninvited users are redirected to login with a `not-authorized` error.
 
 ### 6.2 Authorization (RBAC)
 - `admin_users` table links Supabase auth user to exactly one app role.
@@ -123,15 +301,34 @@ Routes are organized by role group (e.g., `/admin/secretary/*`, `/admin/treasure
 - Full-access roles: `OFFICER`, `INSTRUCTOR`.
 - Role default route map is centralized in `lib/admin/roles.ts`.
 
+### 6.3 Intake Scope Mechanism
+Certain roles are intake-scoped, meaning they can only read and write data belonging to their assigned intake.
+
+- **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `WELFARE`, `ACADEMIC`
+- **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`, `SPORTS`
+
+The `admin_users` table has a nullable `intake_id` column. Officer/Instructor have `null`; intake-scoped roles have their specific intake ID (set from the cadet's intake at invitation acceptance).
+
+The `admin_invitations` table also has a nullable `intake_id` column, which is set when the invitation is created and propagated to `admin_users` during the auth callback.
+
+Helper functions:
+- `isIntakeScopedRole(role)` in `lib/admin/roles.ts` — checks if a role is intake-scoped
+- `getIntakeScope(admin)` in `lib/admin/rbac.ts` — returns `null` (no restriction) or the `intakeId` to filter by
+
+All queries and mutations in intake-scoped modules apply the intake filter:
+- **Reads:** Filter queries by `intakeId` when scoped
+- **Writes:** Validate ownership before mutation; prevent cross-intake operations
+
 ## 7. Data Model Architecture
 Primary schema domains in `db/schema.ts`:
-- Admin identity and role mapping: `admin_users`.
+- Admin identity and role mapping: `admin_users` (with nullable `intake_id` for intake-scoped roles), `admin_invitations` (with nullable `intake_id`), `admin_role_audit_logs`.
 - Public intakes and translations:
   - `intakes`, `intake_translations`, `intake_patch_explanations`, `intake_patch_explanation_translations`, `intake_display_photos`.
 - Academic structure:
   - `academic_years`, `sessions`, `exams`, `academic_exam_results`.
 - Members and cadet data:
-  - `members`, `cadet_infos`, `study_programs`.
+  - `members` (with birthdate, age, kor/regiment fields), `cadets` (with physical metrics: height, weight, BMI, CGPA), `study_programs`, `officers_and_instructors`.
+  - Secretary module operates exclusively on cadets; rank-holders filters admin users to cadets only.
 - Newsletter:
   - `newsletter_subscribers` with status and token hash fields.
 - Stories and metadata:
@@ -147,10 +344,11 @@ Primary schema domains in `db/schema.ts`:
 - No separate `intakeApplications` table needed; intake status workflow is sufficient.
 
 ### 7.2 Role Management Architecture
-- Role changes: delete + recreate pattern (not direct update).
-- Only `OFFICER` or `INSTRUCTOR` can change roles.
-- Role audit log table tracks: who changed it, when, old role, new role, target admin user.
-- Member-admin linking: `adminUsers` can have nullable FK to `cadetInfos.id` when a cadet becomes an admin.
+- Adding an admin creates an invitation (`adminInvitations` table) and sends an email. The `adminUsers` record is created when the invitee signs in via Google.
+- Role changes: direct update to the role column. Only `OFFICER` or `INSTRUCTOR` can change roles.
+- Dropping an admin deletes the `adminUsers` record and the Supabase auth user.
+- Audit log (`adminRoleAuditLogs`) tracks all events: `INVITED`, `ACCEPTED`, `ROLE_CHANGED`, `DROPPED` — with actor, target name, roles, and timestamp.
+- Member-admin linking: `adminUsers` and `cadets` both reference `members.id` — no separate FK needed. Only cadets can be invited as admin users.
 
 ### 7.3 CMS Architecture (Planned)
 Multimedia role manages public content via admin dashboard:
@@ -201,6 +399,8 @@ This supports early public page delivery while admin-managed content modules are
   - Public env validation in `lib/env/public.ts`.
   - Server env validation in `lib/env/server.ts`.
 - Remote images currently allow Supabase storage host via `next.config.ts`.
+- Database connection pool: `postgres` driver with `max: 20` connections (supports concurrent queries via `Promise.all` in admin pages). Uses Supabase transaction-mode pooler. Lower to `max: 5` if deploying to serverless (Vercel/Lambda).
+- Server Actions body size limit: configured to `5mb` in `next.config.ts` for document uploads.
 
 ## 11. Current Gaps vs Target Architecture
 Based on `TASKS.md` and codebase review:
@@ -213,16 +413,18 @@ Based on `TASKS.md` and codebase review:
 - Route-level error boundaries for public surfaces (localized for all 4 locales).
 - Admin shell: responsive sidebar with collapsible icon mode (desktop) and drawer (mobile), role-aware navigation, active route highlighting.
 - Admin route structure: module-scoped routes under role groups (e.g., `/admin/secretary/rank-holders`), per-group RBAC layouts with 403 Access Denied for unauthorized access.
-- Placeholder pages for all 16 admin modules across 6 role groups.
+- Secretary rank-holders: cadet admin user management with role changes, drop, audit logging, and cadet-only filtering.
+- Secretary cadets page: cadet management with rank-based sorting, active/inactive toggle, and filtering.
+- Intake-scoped RBAC: Secretary, Treasurer, Welfare, and Academic roles restricted to their intake's data for reads and writes. Officer, Instructor, Multimedia, and Sports remain unrestricted.
+- Placeholder pages for remaining admin modules across other role groups.
 
 ### Pending
 - Public SEO completeness: per-page canonical/hreflang audit.
 - Error handling: route-level error boundaries for admin surfaces.
 - Admin CMS: Multimedia-managed `webapp_contents`, stories CRUD, newsletter management, application deadline config.
-- Secretary admin user management with role change (delete + recreate) and audit logging.
 - Seasonal intake application workflow: form, document upload, status transitions, physical assessment email trigger.
 - Email templates: application confirmation, application status update.
-- Schema additions: application status enum, role audit log table, admin-cadet linking FK.
+- Schema additions: application status enum.
 - Officer/Instructor bento dashboard with cross-system statistics.
 
 ## 12. Key Risks and Considerations
@@ -233,9 +435,9 @@ Based on `TASKS.md` and codebase review:
 
 ## 13. Recommended Next Architectural Steps
 1. Build Officer/Instructor bento dashboard with cross-system statistics and summary cards.
-2. Build schema additions: application status enum, role audit log table, `adminUsers.cadetInfoId` nullable FK.
+2. Build schema additions: application status enum.
 3. Build intake application workflow: form, document upload, status state machine, Secretary review UI, physical assessment email trigger.
 4. Build email templates for application confirmation and status update notifications.
-5. Implement admin CMS modules: Multimedia for `webapp_contents`, stories CRUD, newsletter management; Secretary for admin user management with delete+recreate role changes and audit logging.
+5. Implement admin CMS modules: Multimedia for `webapp_contents`, stories CRUD, newsletter management.
 6. Add route-level error boundaries for admin surfaces.
 7. Audit per-page canonical URLs and `hreflang` alternates across all public routes.

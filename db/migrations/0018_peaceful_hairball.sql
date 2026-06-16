@@ -1,0 +1,1 @@
+ALTER TABLE "intakes" ALTER COLUMN "color" DROP NOT NULL;

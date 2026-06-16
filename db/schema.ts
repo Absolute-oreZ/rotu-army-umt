@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   numeric,
@@ -20,6 +21,33 @@ import { ADMIN_ROLES } from "@/lib/admin/roles";
 export const localeEnum = pgEnum("locale", ["en", "ms", "zh", "ta"]);
 
 export const adminRoleEnum = pgEnum("admin_role", ADMIN_ROLES);
+
+export const adminAuditActionEnum = pgEnum("admin_audit_action", [
+  "ROLE_CHANGED",
+  "INVITED",
+  "ACCEPTED",
+  "DROPPED",
+]);
+
+export const rejimenAndKorEnum = pgEnum("rejimen_and_kor", [
+  "Rejimen Askar Melayu Diraja (RAMD)",
+  "Rejimen Renjer Diraja (RRD)",
+  "Rejimen Sempadan (RS)",
+  "Kor Armor Diraja (KAD)",
+  "Rejimen Artileri Diraja (RAD)",
+  "Rejimen Semboyan Diraja (RSD)",
+  "Rejimen Askar Jurutera Diraja (RAJD)",
+  "Kor Polis Tentera Diraja (KPTD)",
+  "Kor Risik Diraja (KRD)",
+  "Grup Gerak Khas (GGK)",
+  "Kor Perkhidmatan Am (KPA)",
+  "Kor Perkhidmatan Diraja (KPD)",
+  "Kor Jurutera Letrik dan Jentera Diraja (KJLJD)",
+  "Kor Kesihatan Diraja (KKD)",
+  "Kor Agama Angkatan Tentera (KAGAT)",
+  "Kor Ordnans Diraja (KOD)",
+  "Rejimen Askar Wataniah (RAW)",
+]);
 
 export const intakeExplanationKeyEnum = pgEnum("intake_explanation_key", [
   "ANIMAL",
@@ -40,6 +68,13 @@ export const publicationStatusEnum = pgEnum("publication_status", [
 ]);
 
 export const genderEnum = pgEnum("gender", ["MALE", "FEMALE"]);
+
+export const bmiClassificationEnum = pgEnum("bmi_classification", [
+  "UNDERWEIGHT",
+  "NORMAL",
+  "OVERWEIGHT",
+  "OBESE",
+]);
 
 export const memberRoleEnum = pgEnum("member_role", [
   "OFFICER",
@@ -63,6 +98,17 @@ export const memberRankEnum = pgEnum("member_rank", [
   "PK",
   "PKW",
 ]);
+
+export const CADET_RANKS = [
+  "SENIOR_UNDER_OFFICER",
+  "JUNIOR_UNDER_OFFICER",
+  "SERGEANT_CADET",
+  "KOPERAL_CADET",
+  "PK",
+  "PKW",
+] as const satisfies readonly (typeof memberRankEnum.enumValues)[number][];
+
+export type CadetRank = (typeof CADET_RANKS)[number];
 
 export const religionEnum = pgEnum("religion", [
   "ISLAM",
@@ -92,7 +138,7 @@ export const adminUsers = pgTable(
     memberId: integer("member_id").notNull().references(() => members.id),
     email: varchar("email", { length: 320 }).notNull(),
     role: adminRoleEnum("role").notNull(),
-    isActive: boolean("is_active").default(true).notNull(),
+    intakeId: integer("intake_id").references(() => intakes.id),
     invitedByAuthUserId: uuid("invited_by_auth_user_id"),
     ...timestamps,
   },
@@ -101,6 +147,42 @@ export const adminUsers = pgTable(
     uniqueIndex("admin_users_member_id_idx").on(table.memberId),
     uniqueIndex("admin_users_email_idx").on(table.email),
     index("admin_users_role_idx").on(table.role),
+    index("admin_users_intake_id_idx").on(table.intakeId),
+  ],
+);
+
+export const adminRoleAuditLogs = pgTable(
+  "admin_role_audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    action: adminAuditActionEnum("action").notNull().default("ROLE_CHANGED"),
+    changedByAdminUserId: uuid("changed_by_admin_user_id").notNull(),
+    targetAdminUserId: uuid("target_admin_user_id"),
+    targetMemberName: text("target_member_name").notNull(),
+    oldRole: adminRoleEnum("old_role"),
+    newRole: adminRoleEnum("new_role"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("admin_role_audit_logs_changed_by_idx").on(table.changedByAdminUserId),
+    index("admin_role_audit_logs_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const adminInvitations = pgTable(
+  "admin_invitations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    memberId: integer("member_id").notNull().references(() => members.id),
+    email: varchar("email", { length: 320 }).notNull(),
+    role: adminRoleEnum("role").notNull(),
+    intakeId: integer("intake_id").references(() => intakes.id),
+    invitedByAuthUserId: uuid("invited_by_auth_user_id").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("admin_invitations_email_idx").on(table.email),
   ],
 );
 
@@ -113,7 +195,7 @@ export const intakes = pgTable(
     slug: varchar("slug", { length: 140 }).notNull(),
     status: publicationStatusEnum("status").default("DRAFT").notNull(),
     startYear: integer("start_year").notNull(),
-    color: varchar("color", { length: 80 }).notNull(),
+    color: varchar("color", { length: 80 }),
     tagLine: text("tag_line"),
     coverPhotoPath: text("cover_photo_path"),
     patchPhotoPath: text("patch_photo_path"),
@@ -265,6 +347,9 @@ export const members = pgTable(
     religion: religionEnum("religion").notNull(),
     race: raceEnum("race").notNull(),
     address: text("address").notNull(),
+    birthdate: date("birthdate").notNull(),
+    age: integer("age").notNull(),
+    kor: rejimenAndKorEnum("kor").notNull(),
     redBgPhotoPath: text("red_bg_photo_path"),
     blueBgPhotoPath: text("blue_bg_photo_path"),
     ...timestamps,
@@ -274,6 +359,7 @@ export const members = pgTable(
     uniqueIndex("members_personal_email_idx").on(table.personalEmail),
     uniqueIndex("members_edu_email_idx").on(table.eduEmail).where(sql`${table.eduEmail} is not null`),
     index("members_role_idx").on(table.role),
+    index("members_name_idx").on(table.name),
   ],
 );
 
@@ -293,16 +379,20 @@ export const studyPrograms = pgTable(
   ],
 );
 
-export const cadetInfos = pgTable(
-  "cadet_infos",
+export const cadets = pgTable(
+  "cadets",
   {
     id: serial("id").primaryKey(),
     matricNo: varchar("matric_no", { length: 80 }).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     quote: text("quote"),
     displayPhotoPath: text("display_photo_path"),
+    cgpa: numeric("cgpa", { precision: 3, scale: 2 }),
+    height: numeric("height", { precision: 4, scale: 2 }),
+    weight: numeric("weight", { precision: 5, scale: 2 }),
+    bmi: numeric("bmi", { precision: 4, scale: 2 }),
+    bmiClassification: bmiClassificationEnum("bmi_classification"),
     studyProgramId: integer("study_program_id")
-      .notNull()
       .references(() => studyPrograms.id),
     intakeId: integer("intake_id")
       .notNull()
@@ -313,10 +403,11 @@ export const cadetInfos = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("cadet_infos_matric_no_idx").on(table.matricNo),
-    uniqueIndex("cadet_infos_member_id_idx").on(table.memberId),
-    index("cadet_infos_intake_id_idx").on(table.intakeId),
-    index("cadet_infos_study_program_id_idx").on(table.studyProgramId),
+    uniqueIndex("cadets_matric_no_idx").on(table.matricNo),
+    uniqueIndex("cadets_member_id_idx").on(table.memberId),
+    index("cadets_intake_id_idx").on(table.intakeId),
+    index("cadets_study_program_id_idx").on(table.studyProgramId),
+    index("cadets_is_active_idx").on(table.isActive).where(sql`${table.isActive} = true`),
   ],
 );
 
@@ -327,9 +418,9 @@ export const academicExamResults = pgTable(
     examId: integer("exam_id")
       .notNull()
       .references(() => exams.id, { onDelete: "cascade" }),
-    cadetInfoId: integer("cadet_info_id")
+    cadetId: integer("cadet_id")
       .notNull()
-      .references(() => cadetInfos.id, { onDelete: "cascade" }),
+      .references(() => cadets.id, { onDelete: "cascade" }),
     score: numeric("score", { precision: 5, scale: 2 }),
     grade: varchar("grade", { length: 20 }),
     ...timestamps,
@@ -337,9 +428,25 @@ export const academicExamResults = pgTable(
   (table) => [
     uniqueIndex("academic_exam_results_exam_cadet_idx").on(
       table.examId,
-      table.cadetInfoId,
+      table.cadetId,
     ),
-    index("academic_exam_results_cadet_info_id_idx").on(table.cadetInfoId),
+    index("academic_exam_results_cadet_id_idx").on(table.cadetId),
+  ],
+);
+
+export const officersAndInstructors = pgTable(
+  "officers_and_instructors",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    isActive: boolean("is_active").default(true).notNull(),
+    yearOfExperience: integer("year_of_experience").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("officers_and_instructors_member_id_idx").on(table.memberId),
   ],
 );
 
@@ -486,6 +593,7 @@ export const webappContents = pgTable(
     xUrl: text("x_url"),
     updatedByAdminUserId: uuid("updated_by_admin_user_id").references(
       () => adminUsers.id,
+      { onDelete: "set null" },
     ),
     ...timestamps,
   },

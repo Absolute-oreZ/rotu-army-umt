@@ -14,6 +14,8 @@ import {
   DEFAULT_CADET_QUOTES,
   DEFAULT_CADET_DISPLAY_PHOTO_URL,
   DEFAULT_CADETS_INFO,
+  DEFAULT_CADET_PHYSICAL,
+  DEFAULT_OFFICERS_AND_INSTRUCTORS,
   DEFAULT_STUDY_PROGRAMS,
   DEFAULT_TESTIMONIAL_ARMY_NOS,
   DEFAULT_EVENTS,
@@ -26,7 +28,7 @@ import {
   DEFAULT_X_URL,
   DEFAULT_BLUE_BG_PHOTO_URL,
 } from "../lib/data";
-import { computeAcademicSchedule } from "@/lib/utils";
+import { calculateBMI, computeAcademicSchedule } from "@/lib/utils";
 
 function loadDotEnv() {
   const envPath = resolve(process.cwd(), ".env");
@@ -68,7 +70,8 @@ async function seed() {
     TRUNCATE TABLE
       testimonial_translations,
       testimonials,
-      cadet_infos,
+      officers_and_instructors,
+      cadets,
       members,
       sessions,
       academic_years,
@@ -91,7 +94,8 @@ async function seed() {
       events,
       contact_reasons,
       contact_reason_translations,
-      newsletter_subscribers
+      newsletter_subscribers,
+      admin_role_audit_logs
     RESTART IDENTITY CASCADE
   `;
 
@@ -119,6 +123,9 @@ async function seed() {
       religion,
       race,
       address,
+      birthdate,
+      age,
+      kor,
       red_bg_photo_path,
       blue_bg_photo_path
     )
@@ -126,13 +133,16 @@ async function seed() {
       2099,
       'MAJOR',
       ${DEFAULT_ADMIN.fullName},
-      ${DEFAULT_ADMIN.email},
+      ${DEFAULT_ADMIN.personalEmail},
       'Yong',
       'MALE',
       'OFFICER',
       'CHRISTIAN',
       'CHINESE',
       'Kuala Lumpur',
+      '2000-01-01',
+      26,
+      'Rejimen Askar Wataniah (RAW)',
       ${DEFAULT_CADET_DISPLAY_PHOTO_URL},
       ${DEFAULT_BLUE_BG_PHOTO_URL}
     )
@@ -144,15 +154,13 @@ async function seed() {
       auth_user_id,
       member_id,
       email,
-      role,
-      is_active
+      role
     )
     values (
       ${DEFAULT_ADMIN.authUserId},
       ${adminMemberRow.id},
-      ${DEFAULT_ADMIN.email},
-      ${DEFAULT_ADMIN.role},
-      true
+      ${DEFAULT_ADMIN.personalEmail},
+      ${DEFAULT_ADMIN.role}
     )
   `;
 
@@ -419,6 +427,9 @@ async function seed() {
         religion,
         race,
         address,
+        birthdate,
+        age,
+        kor,
         red_bg_photo_path,
         blue_bg_photo_path
       )
@@ -426,13 +437,16 @@ async function seed() {
         ${m.armyNo},
         ${m.rank},
         ${m.name},
-        ${m.email},
+        ${m.personalEmail},
         ${m.displayName},
         ${m.gender},
         ${m.role},
         ${m.religion},
         ${m.race},
         ${m.address},
+        ${m.birthdate},
+        ${m.age},
+        ${m.kor},
         ${m.redBgPhotoPath},
         ${m.blueBgPhotoPath}
       )
@@ -441,6 +455,7 @@ async function seed() {
 
   for (let i = 0; i < DEFAULT_CADETS_INFO.length; i += 1) {
     const c = DEFAULT_CADETS_INFO[i];
+    const physical = DEFAULT_CADET_PHYSICAL[i % DEFAULT_CADET_PHYSICAL.length];
 
     const [memberRow] = await sql<[{ id: number }]>`
       select id from members
@@ -451,13 +466,18 @@ async function seed() {
 
     const intakeId = intakeIds[i % intakeIds.length];
     const studyProgramId = studyProgramIds[i % studyProgramIds.length];
+    const bmi = calculateBMI(physical.height, physical.weight) ?? 0;
 
     await sql`
-      insert into cadet_infos (
+      insert into cadets (
         matric_no,
         is_active,
         quote,
         display_photo_path,
+        cgpa,
+        height,
+        weight,
+        bmi,
         study_program_id,
         intake_id,
         member_id
@@ -467,9 +487,35 @@ async function seed() {
         true,
         ${DEFAULT_CADET_QUOTES[i % DEFAULT_CADET_QUOTES.length]},
         ${DEFAULT_CADET_DISPLAY_PHOTO_URL},
+        ${physical.cgpa},
+        ${physical.height},
+        ${physical.weight},
+        ${bmi},
         ${studyProgramId},
         ${intakeId},
         ${memberRow.id}
+      )
+    `;
+  }
+
+  for (const oi of DEFAULT_OFFICERS_AND_INSTRUCTORS) {
+    const [memberRow] = await sql<[{ id: number }]>`
+      select id from members
+      where army_no = ${oi.armyNo}
+    `;
+
+    if (!memberRow) continue;
+
+    await sql`
+      insert into officers_and_instructors (
+        member_id,
+        is_active,
+        year_of_experience
+      )
+      values (
+        ${memberRow.id},
+        ${oi.isActive},
+        ${oi.yearOfExperience}
       )
     `;
   }
