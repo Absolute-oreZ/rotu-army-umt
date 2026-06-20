@@ -583,19 +583,16 @@ export function IntakeDetailClient({
           onClick={() => setExpandedPhoto(null)}
           role="presentation"
         >
-          <div
-            className="relative flex h-[80vh] w-[80vw] max-h-225 max-w-300 overflow-hidden"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="relative h-full w-full">
-              <Image
-                src={expandedPhoto}
-                alt={`${intake.displayName} expanded display photo`}
-                fill
-                sizes="(max-width: 1280px) 80vw, 1200px"
-                className="object-contain"
-              />
-            </div>
+          <div className="flex h-[80vh] w-[80vw] max-h-225 max-w-300 items-center justify-center">
+            <Image
+              src={expandedPhoto}
+              alt={`${intake.displayName} expanded display photo`}
+              width={1200}
+              height={900}
+              sizes="(max-width: 1280px) 80vw, 1200px"
+              className="max-h-full max-w-full object-contain"
+              onClick={(event: React.MouseEvent) => event.stopPropagation()}
+            />
           </div>
         </div>
       ) : null}
