@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetFooter,
   SheetTitle,
+  SheetSkeleton,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -101,14 +102,7 @@ function SheetInner({
 
   if (loading) {
     return (
-      <>
-        <SheetHeader>
-          <SheetTitle>Loading...</SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-1 items-center justify-center px-6 py-12 text-sm text-muted-foreground">
-          Fetching cadet details...
-        </div>
-      </>
+      <SheetSkeleton />
     );
   }
 

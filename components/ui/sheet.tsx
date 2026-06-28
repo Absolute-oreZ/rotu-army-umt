@@ -157,6 +157,52 @@ function SheetTitle({ className, ...props }: React.ComponentProps<"h2">) {
   );
 }
 
+function SheetSkeleton({
+  side = "left",
+  className,
+}: {
+  side?: "left" | "right";
+  className?: string;
+}) {
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/50" />
+
+      <div
+        className={cn(
+          "fixed inset-y-0 z-50 flex w-[18rem] flex-col bg-background shadow-lg",
+          side === "left" ? "left-0" : "right-0",
+          className,
+        )}
+      >
+        <div className="space-y-3 border-b px-6 py-4">
+          <div className="h-6 w-32 animate-pulse rounded-md bg-muted" />
+          <div className="h-4 w-48 animate-pulse rounded-md bg-muted" />
+        </div>
+
+        <div className="flex-1 space-y-4 px-6 py-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3"
+            >
+              <div className="h-10 w-10 animate-pulse rounded-md bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t px-6 py-4">
+          <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+        </div>
+      </div>
+    </>
+  );
+}
+
 export {
   Sheet,
   SheetOverlay,
@@ -164,4 +210,5 @@ export {
   SheetHeader,
   SheetFooter,
   SheetTitle,
+  SheetSkeleton
 };
