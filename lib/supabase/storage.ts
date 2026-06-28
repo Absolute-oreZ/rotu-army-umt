@@ -1,14 +1,35 @@
+import "server-only";
 import { getPublicEnv } from "@/lib/env/public";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { storageUrl, extractStoragePath } from "./storage-client";
 
-export function storageUrl(path: string | null): string | null {
-  if (!path) return null;
-  const { supabaseUrl, supabaseStorageRootPath } = getPublicEnv();
-  return `${supabaseUrl}/storage/v1/object/public/${supabaseStorageRootPath}/${path}`;
-}
+export { storageUrl, extractStoragePath };
 
 function bucket() {
   return getPublicEnv().supabaseStorageRootPath;
+}
+
+/**
+ * Generate a short-lived signed URL for a private/sensitive object. Use this
+ * instead of storageUrl for documents that must not be world-readable (receipts,
+ * claims). Requires the service-role admin client and must run server-side only.
+ */
+export async function signedStorageUrl(
+  supabase: SupabaseClient,
+  path: string | null,
+  expiresIn = 60,
+): Promise<string | null> {
+  if (!path) return null;
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from(bucket())
+      .createSignedUrl(path, expiresIn);
+    if (error || !data?.signedUrl) return null;
+    return data.signedUrl;
+  } catch {
+    return null;
+  }
 }
 
 export async function uploadToStorage(
@@ -42,14 +63,5 @@ export async function deleteFromStorage(supabase: SupabaseClient, path: string):
   try {
     await supabase.storage.from(bucket()).remove([path]);
   } catch {
-    // silent
   }
-}
-
-export function extractStoragePath(publicUrl: string): string | null {
-  const rootPath = bucket();
-  const marker = `/${rootPath}/`;
-  const idx = publicUrl.indexOf(marker);
-  if (idx === -1) return null;
-  return publicUrl.slice(idx + marker.length);
 }

@@ -7,6 +7,7 @@ import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
+  IntakeOption,
   parseTableSearchParams,
   takeString,
   wrapLikePattern,
@@ -15,13 +16,12 @@ import {
 import {
   buildRankHoldersTableConfig,
   RANK_HOLDERS_SORT_FIELD_MAP,
-  type IntakeOption,
-} from "@/components/admin/rank-holders/table-config";
+} from "@/components/admin/secretary/rank-holders/table-config";
 import {
   AUDIT_LOG_TABLE_CONFIG,
   AUDIT_LOG_SORT_FIELD_MAP,
-} from "@/components/admin/rank-holders/audit-log-config";
-import { RankHoldersPageClient, type EligibleMember } from "@/components/admin/rank-holders/rank-holders-page-client";
+} from "@/components/admin/secretary/rank-holders/audit-log-config";
+import { RankHoldersPageClient, type EligibleMember } from "@/components/admin/secretary/rank-holders/rank-holders-page-client";
 import { CADET_RANKS } from "@/db/schema";
 
 function buildAdminFilters(state: { q: string; filters: Record<string, FilterCondition[]> }, intakeScope: number | null): SQL[] {

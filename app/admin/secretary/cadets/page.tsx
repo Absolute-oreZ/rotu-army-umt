@@ -14,8 +14,8 @@ import {
 import {
   CADETS_SORT_FIELD_MAP,
   buildCadetsTableConfig,
-} from "@/components/admin/cadets/table-config";
-import { CadetsPageClient } from "@/components/admin/cadets/cadets-page-client";
+} from "@/components/admin/secretary/cadets/table-config";
+import { CadetsPageClient } from "@/components/admin/secretary/cadets/cadets-page-client";
 
 function buildFilters(state: { q: string; filters: Record<string, FilterCondition[]> }, isActive?: boolean, intakeScope?: number | null): SQL[] {
   const clauses: SQL[] = [];

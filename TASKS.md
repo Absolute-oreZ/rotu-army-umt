@@ -52,12 +52,14 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Implement intake-scoped RBAC: add intakeId to adminUsers and adminInvitations, intake scope helpers, and Secretary module enforcement (reads + writes).
 - [x] Update auth callback to propagate intakeId from invitation to adminUsers on acceptance.
 - [x] Update documentation (AGENTS.md, architecture.md, srs.md) for intake-scoped access control.
-- [ ] Build Treasurer modules:
-- [ ] Treasury account management (`/admin/treasurer/accounts`)
-- [ ] Collection creation and management (`/admin/treasurer/collections`)
-- [ ] Payment ledger and detailed records (`/admin/treasurer/payments`)
-- [ ] Expenses management (`/admin/treasurer/expenses`)
-- [ ] Cadet self-service payment page (`/cadet/collections/[slug]`)
+- [x] Build Treasurer modules:
+- [x] Treasury account management (`/admin/treasurer/accounts`)
+- [x] Collection creation and management (`/admin/treasurer/collections`)
+- [x] Payment ledger and detailed records (`/admin/treasurer/payments`)
+- [x] Expenses management (`/admin/treasurer/expenses`)
+- [x] Cadet self-service payment page (`/cadet/collections/[slug]`)
+- [x] Cadet authentication via Google OAuth (`/cadet/login`, `lib/auth/cadet.ts`)
+- [x] Treasurer lifecycle cleanup: delete treasury accounts when role changes away from Treasurer
 - [ ] Build Multimedia modules: Portfolio, stories, Newsletters.
 - [ ] Build Sports modules: Activities, Collaborations.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.

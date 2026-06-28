@@ -1,1 +1,0 @@
-ALTER TABLE "event_tag_translations" DROP COLUMN "description";

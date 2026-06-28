@@ -1,9 +1,9 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { PROGRAM_TOTAL_YEARS, SESSION_START_MONTH_DAY, SESSIONS_PER_YEAR } from "./data";
+import { DEFAULT_AGE, PROGRAM_TOTAL_YEARS, SESSION_START_MONTH_DAY, SESSIONS_PER_YEAR } from "./data";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EDU_DOMAIN = "umt.edu.my";
+const EDU_DOMAIN = "ocean.umt.edu.my";
 
 export type BMIClassification = "UNDERWEIGHT" | "NORMAL" | "OVERWEIGHT" | "OBESE";
 
@@ -111,4 +111,14 @@ export function isValidEduEmail(email: string): boolean {
   if (!EMAIL_RE.test(v)) return false;
   const domain = v.split("@")[1];
   return domain === EDU_DOMAIN;
+}
+
+export function defaultBirthdate(): Date {
+  const d = new Date();
+  return new Date(d.getFullYear() - DEFAULT_AGE, 0, 1);
+}
+
+
+export function formatLabel(value: string) {
+  return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, " ");
 }

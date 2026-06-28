@@ -1,1 +1,0 @@
-ALTER TABLE "cadets" ALTER COLUMN "matric_no" SET NOT NULL;

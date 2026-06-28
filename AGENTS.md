@@ -112,7 +112,7 @@ Officer and Instructor bypass intake restrictions entirely and can access and ma
 
 **Intake-scoped data:**
 - Cadets and admin users (Secretary module)
-- Collections, expenses (Treasurer module — future)
+- Treasury accounts, collections, payments (Treasurer module)
 - Health, accommodations (Welfare module — future)
 - Results, timetables (Academic module — future)
 
@@ -123,6 +123,29 @@ Officer and Instructor bypass intake restrictions entirely and can access and ma
 Helper functions in `lib/admin/rbac.ts`:
 - `isIntakeScopedRole(role)` — checks if a role is intake-scoped
 - `getIntakeScope(admin)` — returns `null` (no restriction) or the `intakeId` to filter by
+
+#### Cadet Authentication
+
+Cadets authenticate separately from admins using the same Supabase project:
+
+- Login page at `/cadet/login` with Google OAuth.
+- OAuth callback at `/auth/callback/cadet` — verifies `@ocean.umt.edu.my` email, looks up `members` by `eduEmail`, checks role is `CADET`, verifies `cadets` record exists.
+- Auth helper at `lib/auth/cadet.ts` provides `getCurrentCadet()` and `requireCurrentCadet()`.
+- Cadet pages enforce auth per-page (not in the layout, to avoid redirect loops with `/cadet/login`).
+- Cadets access their intake's published collections at `/cadet/collections/[slug]`.
+- Payment recording: cadets submit amount (if flexible) and receipt (if required), stored via Supabase Storage. Duplicate payments prevented by unique constraint on `(collectionId, memberId)`.
+
+#### Treasurer Payment System
+
+Trust-based payment recording system:
+
+- **Treasury Accounts** (`/admin/treasurer/accounts`): Treasurers manage bank accounts with optional QR code upload to Supabase Storage. Intake-scoped.
+- **Collections** (`/admin/treasurer/collections`): Treasurers create collection events with purpose, amount (fixed/flexible), receipt requirement, and linked payment account. Lifecycle: DRAFT ↔ PUBLISHED → ARCHIVED.
+- **Cadet Payment Page** (`/cadet/collections/[slug]`): Cadets view collection details, bank info, QR code, and submit payment with optional receipt upload.
+- **Payments Ledger** (`/admin/treasurer/payments`): Treasurers view all payments across collections, filter by collection, see summary stats, and track unpaid cadets.
+- **Lifecycle cleanup**: When a Treasurer's role is changed to non-Treasurer, their `treasury_accounts` are deleted. Collections with `onDelete: "set null"` on `paymentAccountId` survive but lose the account link. Payment records are never deleted through cascade.
+- Schema: `treasury_accounts`, `collections`, `collection_payments` tables with `bank` and `collection_purpose` enums.
+- Storage: QR codes at `treasury/{intakeId}/accounts/{accountId}/qr.{ext}`, receipts at `payments/{collectionId}/{memberId}/receipt.{ext}`.
 
 ---
 
@@ -379,7 +402,9 @@ Each admin user has exactly one role.
 
 - Default: Collections.
 - Access:
-  - Collections
+  - Accounts (treasury bank account & QR management)
+  - Collections (create, publish, archive collection events)
+  - Payments (payment ledger, receipt review, unpaid tracking)
   - Expenses
 
 ### Multimedia

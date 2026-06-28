@@ -17,6 +17,14 @@ export const DEFAULT_EVENT_DISPLAY_PHOTOS = [
   "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-3.jpg",
 ] as const;
 
+export const GENDER_OPTIONS = ["MALE", "FEMALE"] as const;
+export const RELIGION_OPTIONS = ["ISLAM", "CHRISTIAN", "HINDU", "BUDDHIST", "OTHER"] as const;
+export const RACE_OPTIONS = ["MALAY", "CHINESE", "INDIAN", "OTHER"] as const;
+
+export const MIN_AGE = 18;
+export const MAX_AGE = 24;
+export const DEFAULT_AGE = 21;
+
 export const PROGRAM_TOTAL_YEARS = 3;
 export const SESSIONS_PER_YEAR = 2;
 
@@ -73,6 +81,21 @@ export const DEFAULT_ADMIN = {
   fullName: "YONG CHUN HAO",
   role: "OFFICER",
 } as const;
+
+export const BANKS = [
+  "MAYBANK",
+  "CIMB",
+  "RHB",
+  "BANK_ISLAM",
+  "BSN",
+  "PUBLIC_BANK",
+  "HONG_LEONG",
+  "AMBANK",
+  "AFFIN",
+  "OCBC",
+  "UOB",
+  "OTHER",
+] as const;
 
 export const DEFAULT_TESTIMONIAL_ARMY_NOS = [4001, 4002, 4003];
 

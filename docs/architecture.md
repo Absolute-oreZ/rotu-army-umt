@@ -27,10 +27,12 @@ Core platform choices:
   - `app/[locale]` provides locale-aware root document, metadata base, and hosts all public pages directly (no intermediate `(public)` route group).
   - `app/admin` hosts admin pages with conditional sidebar shell (renders when authenticated, bare layout for login).
   - `app/admin/[role-group]` provides per-group RBAC-enforced layouts (secretary, treasurer, multimedia, sports, welfare, academic).
+  - `app/cadet` hosts cadet pages with conditional sidebar shell (`CadetShell`). Login page renders bare; all other cadet routes get the authenticated shell with sidebar navigation and breadcrumbs.
 - UI components:
   - Public components under `components/public`.
   - Shared primitives under `components/ui` (button, tabs, accordion, breadcrumb, separator, sheet, tooltip, sidebar).
   - Admin components under `components/admin` (admin-shell, admin-sidebar, admin-sidebar-nav, access-denied).
+  - Cadet components under `components/cadet` (cadet-shell, cadet-sidebar, cadet-user-menu, claim-form, claims-list, payment-form).
   - Root theme/font document in `components/root-document.tsx`.
 
 ### 3.2 Application Layer
@@ -59,7 +61,7 @@ Core platform choices:
   - Accessed through `postgres` driver + Drizzle.
 
 ### 3.5 Admin Data-Table Infrastructure
-A shared component system for admin list/table pages with server-side filtering, sorting, and pagination.
+A shared component system for admin list/table pages with server-side filtering, sorting, copy support and pagination.
 
 **Server-side helpers** (`lib/admin/table-search-params.ts`):
 - `parseTableSearchParams(raw, config)` — parses URL search params into a typed `TableState` (query, sort rules, page, page size, filter conditions).
@@ -81,6 +83,7 @@ A shared component system for admin list/table pages with server-side filtering,
 - `FilterPill` — removable badge showing active filter with operator and values.
 - `SortControl` — popover for managing multi-column sort rules with drag-reorder.
 - `SortableHead` — table header cell with click-to-sort, direction indicator, and priority number.
+- `CopyableColumn` — table value cell with click-to-copy
 - `Pagination` — page size selector and prev/next navigation.
 
 **Config pattern**: Each table page defines a `buildXTableConfig(options?)` function returning a `TableConfig` with defaults, sort keys, filter columns, page size options, and optional prefix. A companion `X_SORT_FIELD_MAP` maps sort keys to Drizzle column references.
@@ -101,11 +104,11 @@ app/admin/<role>/<entity>/
   page.tsx                      # Server Component ONLY. Queries, auth, SQL, passes props.
   actions.ts                    # Server Actions (create/update/delete). Server-side only.
 
-components/admin/<entity>/
+components/admin/<role>/<entity>/
   <entity>-page-client.tsx      # Orchestrator: manages dialog/sheet targets, error, etc.
-  <entity>-table.tsx            # Data table with TableToolbar/GlobalFilterBar/SortableHead/Pagination.
+  <entity>-table.tsx            # Data table with TableToolbar/GlobalFilterBar/SortableHead/CopyableColumn/Pagination.
   add-<entity>-dialog.tsx       # Self-contained create dialog (opens via trigger prop).
-  edit-<entity>-sheet.tsx       # Self-contained edit sheet (form state initialized from prop).
+  <entity>-details-sheet.tsx    # Self-contained view & edit sheet (form state initialized from prop).
   delete-<entity>-dialog.tsx    # Self-contained delete confirmation dialog.
   <optional extras>.tsx         # e.g. qr-preview-dialog, change-role-dialog, toggle-active-dialog.
   table-config.ts               # buildXTableConfig() + X_SORT_FIELD_MAP for that entity's table.
@@ -176,6 +179,7 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `takeFile(value)` — extracts a non-empty `File` from `FormDataEntryValue`, or `null`.
 - `getFileExtension(file)` — returns the lowercase extension (defaults to `"jpg"`).
 - `digitsOnly(value)` — strips every non-digit character. Use as an `onChange` sanitizer for numeric-only fields (army no, account no, DuitNow ID).
+- `currencyOnly(value)` — keeps digits and at most one decimal point, stripping everything else and dropping leading zeros (e.g. `"007.5"` → `"7.5"`). Use as an `onChange` sanitizer for money/price fields instead of `digitsOnly`, which would strip the decimal and prevent entering cents.
 
 **`lib/admin/table-search-params.ts`** — Server-side table state parsing (see §3.5).
 
@@ -208,6 +212,10 @@ Helper functions are organized by domain. **Always check here before writing inl
 
 **`lib/cadet/collections.ts`** — Read model for published collections scoped to the current cadet's intake.
 
+**`lib/cadet/account-types.ts`** — TypeScript type `CadetAccountRecord` for serialized cadet account data.
+
+**`lib/cadet/accounts.ts`** — Server-only helper: `getCadetAccountByMemberId(memberId)` queries `cadetAccounts` by memberId, returns a `CadetAccountRecord` (with `qrCodeUrl` and ISO dates) or null.
+
 **`lib/utils.ts`** — General-purpose utilities:
 - `cn(...inputs)` — Tailwind class merge (clsx + tailwind-merge).
 - `utcDate(year, month, day)` — builds a UTC `Date`.
@@ -216,8 +224,8 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `escapeHtml(str)` — HTML-entity escape for server-rendered strings.
 - `calculateBMI(heightM, weightKg)` / `getBMIClassification(bmi)` — BMI math and `BMIClassification` tagger.
 - `calculateAge(birthdate)` — years-from-birthdate calculation.
-- `isValidPersonalEmail(email)` — personal email validation (rejects `@umt.edu.my`).
-- `isValidEduEmail(email)` — validates `@umt.edu.my` domain.
+- `isValidPersonalEmail(email)` — personal email validation (rejects `@ocean.umt.edu.my`).
+- `isValidEduEmail(email)` — validates `@ocean.umt.edu.my` domain.
 
 **`lib/supabase/storage.ts`** — Supabase Storage helpers:
 - `storageUrl(path)` — builds a public Supabase Storage URL from a relative path.
@@ -256,7 +264,9 @@ Current implemented routes:
 - `/admin/secretary/rank-holders` (Secretary: cadet admin user management)
 - `/admin/secretary/intakes` (Secretary: intake management)
 - `/admin/secretary/cadets` (Secretary: cadet management)
-- `/admin/treasurer/collections` (Treasurer: collections)
+- `/admin/treasurer/accounts` (Treasurer: bank account & QR management)
+- `/admin/treasurer/collections` (Treasurer: collection event management)
+- `/admin/treasurer/payments` (Treasurer: payment ledger and records)
 - `/admin/treasurer/expenses` (Treasurer: expenses)
 - `/admin/multimedia/portfolio` (Multimedia: portfolio)
 - `/admin/multimedia/stories` (Multimedia: stories CRUD)
@@ -269,6 +279,14 @@ Current implemented routes:
 - `/admin/academic/results` (Academic: results)
 - `/admin/academic/timetables` (Academic: timetables)
 - `/auth/callback` (OAuth code exchange)
+
+### 4.3 Cadet Routes (Non-localized, Auth-Guarded)
+- `/cadet` (index; redirects to `/cadet/collections`)
+- `/cadet/login` (Google OAuth start for cadets)
+- `/cadet/collections` (card grid of published collections for the cadet's intake)
+- `/cadet/collections/[slug]` (collection detail and payment form)
+- `/cadet/claims` (list of cadet's claims with dialog-based new claim creation)
+- `/auth/callback/cadet` (OAuth code exchange for cadet auth)
 
 Routes are organized by role group (e.g., `/admin/secretary/*`, `/admin/treasurer/*`). Each role group has its own layout that enforces RBAC via `requireRoleGroup()`. Unauthorized access returns a 403 Access Denied page. Officer and Instructor bypass all group restrictions.
 
@@ -319,6 +337,32 @@ All queries and mutations in intake-scoped modules apply the intake filter:
 - **Reads:** Filter queries by `intakeId` when scoped
 - **Writes:** Validate ownership before mutation; prevent cross-intake operations
 
+### 6.4 Cadet Authentication
+Cadets authenticate separately from admins using the same Supabase project:
+
+- Login page at `/cadet/login` with Google OAuth (`app/cadet/login/actions.ts`).
+- OAuth callback at `app/auth/callback/cadet/route.ts` — verifies `@ocean.umt.edu.my` email domain, looks up member by `eduEmail`, checks role is `CADET`, verifies cadet record exists.
+- Auth helper at `lib/auth/cadet.ts` provides `getCurrentCadet()` and `requireCurrentCadet()`.
+- `CurrentCadet` type includes `authUserId`, `email`, `memberId`, `name`, and `intakeId` (from `cadets` table).
+- Auth is enforced per-page (not in the cadet layout) to avoid redirect loops with `/cadet/login`.
+
+### 6.5 Treasurer Payment System
+Trust-based payment recording system with four components:
+
+- **Treasury Accounts** (`/admin/treasurer/accounts`): Bank account management with optional QR code upload. Intake-scoped.
+- **Collections** (`/admin/treasurer/collections`): Collection event management with DRAFT ↔ PUBLISHED → ARCHIVED lifecycle. Linked to a treasury account for payment details.
+- **Cadet Payment Page** (`/cadet/collections/[slug]`): Slug-based public-facing payment page where cadets view collection details, submit payment amount (if flexible), and upload receipt (if required).
+- **Payments Ledger** (`/admin/treasurer/payments`): Cross-collection payment view with filtering, summary stats, and unpaid cadet tracking.
+
+Key design decisions:
+- Duplicate payment prevention via unique constraint on `collection_payments(collection_id, member_id)`.
+- `collections.paymentAccountId` uses `onDelete: "set null"` — collections survive account deletion but lose the payment link.
+- `collection_payments.collectionId` uses `onDelete: "cascade"` — payment records follow collection deletion.
+- `treasury_accounts.treasurerId` uses `onDelete: "cascade"` — accounts are deleted when the admin user is dropped.
+- Role change cleanup: when a Treasurer's role is changed to non-Treasurer, their `treasury_accounts` are deleted in the same transaction.
+- Storage paths: QR codes at `treasury/{intakeId}/accounts/{accountId}/qr.{ext}`, receipts at `payments/{collectionId}/{memberId}/receipt.{ext}`.
+- Read model at `lib/cadet/collections.ts` fetches published collections with treasury account details, intake-scoped to the cadet's intake.
+
 ## 7. Data Model Architecture
 Primary schema domains in `db/schema.ts`:
 - Admin identity and role mapping: `admin_users` (with nullable `intake_id` for intake-scoped roles), `admin_invitations` (with nullable `intake_id`), `admin_role_audit_logs`.
@@ -331,6 +375,16 @@ Primary schema domains in `db/schema.ts`:
   - Secretary module operates exclusively on cadets; rank-holders filters admin users to cadets only.
 - Newsletter:
   - `newsletter_subscribers` with status and token hash fields.
+- Treasurer payment system:
+  - `treasury_accounts` (bank name, account number, QR code path, DuitNow ID, intake-scoped).
+  - `collections` (title, slug, purpose, amount, fixed/flexible, receipt required, payment account link, publication status).
+  - `collection_payments` (amount paid, receipt path, paid timestamp, unique per collection+member).
+  - Enums: `bank` (Malaysian banks), `collection_purpose` (MONTHLY, WELFARE, GOODS, FEAST, OTHERS).
+- Cadet portal data:
+  - `cadet_accounts` (one-to-one by memberId: bank name, account number, DuitNow ID, QR code path). Auto-saved during claim submission if cadet opts in.
+  - `claims` (reimbursement claims: title, amount, description, receipt path, QR code path, status PENDING/FULFILLED/REJECTED, intake-scoped).
+  - Claims are created via dialog from the claims list page (`/cadet/claims`), not a separate form page.
+  - Enum: `claim_status` (PENDING, FULFILLED, REJECTED).
 - Stories and metadata:
   - `events`, `event_translations`, `event_tags`, `event_tag_translations`, `events_to_tags`, `event_display_photos`.
 - Homepage-managed content:
@@ -416,6 +470,12 @@ Based on `TASKS.md` and codebase review:
 - Secretary rank-holders: cadet admin user management with role changes, drop, audit logging, and cadet-only filtering.
 - Secretary cadets page: cadet management with rank-based sorting, active/inactive toggle, and filtering.
 - Intake-scoped RBAC: Secretary, Treasurer, Welfare, and Academic roles restricted to their intake's data for reads and writes. Officer, Instructor, Multimedia, and Sports remain unrestricted.
+- Treasurer payment system: treasury accounts, collections (DRAFT ↔ PUBLISHED/ARCHIVED lifecycle), cadet self-service payment page, and payments ledger with filtering and unpaid tracking.
+- Cadet authentication: separate Google OAuth flow at `/cadet/login` with `@ocean.umt.edu.my` domain verification and member/cadet record lookup.
+- Cadet portal shell: mobile-first responsive sidebar layout (`CadetShell`) with collections and claims navigation, breadcrumbs, user menu, theme switcher, and sign-out.
+- Cadet collections page: card-based grid of published collections scoped to the cadet's intake, with detail/payment pages.
+- Cadet claims system: dialog-based reimbursement claim creation with receipt and QR upload, bank detail pre-fill from `cadet_accounts`, and claim list with status badges.
+- Treasurer lifecycle cleanup: treasury accounts deleted when role changes away from Treasurer.
 - Placeholder pages for remaining admin modules across other role groups.
 
 ### Pending

@@ -39,8 +39,6 @@ async function uploadImage(file: File, path: string): Promise<string | null> {
 
 const INTAKE_NO_RE = /^\d+\/\d+$/;
 
-// ─── GET DETAILS ──────────────────────────────────────────────
-
 export type IntakeDetails = {
   id: number;
   intakeNo: string;
@@ -140,8 +138,6 @@ export async function getIntakeDetails(intakeId: number): Promise<{ data: Intake
     error: null,
   };
 }
-
-// ─── CREATE ───────────────────────────────────────────────────
 
 export async function createIntake(formData: FormData) {
   const admin = await requireCurrentAdmin();
@@ -307,8 +303,6 @@ export async function createIntake(formData: FormData) {
   revalidatePath("/admin/secretary/intakes");
   return { success: true };
 }
-
-// ─── UPDATE ───────────────────────────────────────────────────
 
 export async function updateIntake(formData: FormData) {
   const admin = await requireCurrentAdmin();
@@ -549,8 +543,6 @@ export async function updateIntake(formData: FormData) {
   revalidatePath("/admin/secretary/intakes");
   return { success: true };
 }
-
-// ─── UPDATE STATUS ────────────────────────────────────────────
 
 export async function updateIntakeStatus(formData: FormData) {
   const admin = await requireCurrentAdmin();

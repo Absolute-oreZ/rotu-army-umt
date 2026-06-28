@@ -1,9 +1,11 @@
-import { asc, desc, inArray, notInArray } from "drizzle-orm";
+import { asc, desc, inArray, notInArray, sql } from "drizzle-orm";
 import type { Column, SQL } from "drizzle-orm";
 
 export type FilterCondition = { operator: string; value: string };
 
 export type SortRule = { columnKey: string; direction: "asc" | "desc" };
+
+export type IntakeOption = { value: string; label: string };
 
 export type FilterColumn =
   | { key: string; label: string; type: "enum"; options: { value: string; label: string }[] }
@@ -23,6 +25,7 @@ export type TableConfig = {
   sortKeys: string[];
   sortLabels?: Record<string, string>;
   filterColumns: FilterColumn[];
+  copyableColumns?: string[];
   pageSizeOptions?: number[];
   prefix?: string;
 };
@@ -70,6 +73,42 @@ export function buildEnumFilterClause(
   const notInValues = conditions.filter((c) => c.operator === "notIn").map((c) => c.value);
   if (inValues.length > 0) clauses.push(inArray(column, inValues));
   if (notInValues.length > 0) clauses.push(notInArray(column, notInValues));
+  return clauses;
+}
+
+export function buildNumberFilterClause(
+  conditions: FilterCondition[] | undefined,
+  column: Column,
+): SQL[] {
+  if (!conditions?.length) return [];
+  const clauses: SQL[] = [];
+
+  for (const condition of conditions) {
+    const value = Number(condition.value);
+    if (!Number.isFinite(value)) continue;
+
+    switch (condition.operator) {
+      case "eq":
+        clauses.push(sql`${column} = ${value}`);
+        break;
+      case "neq":
+        clauses.push(sql`${column} != ${value}`);
+        break;
+      case "gt":
+        clauses.push(sql`${column} > ${value}`);
+        break;
+      case "gte":
+        clauses.push(sql`${column} >= ${value}`);
+        break;
+      case "lt":
+        clauses.push(sql`${column} < ${value}`);
+        break;
+      case "lte":
+        clauses.push(sql`${column} <= ${value}`);
+        break;
+    }
+  }
+
   return clauses;
 }
 

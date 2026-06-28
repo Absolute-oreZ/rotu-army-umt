@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -67,6 +68,12 @@ export const publicationStatusEnum = pgEnum("publication_status", [
   "ARCHIVED",
 ]);
 
+export const claimStatusEnum = pgEnum("claim_status", [
+  "PENDING",
+  "FULFILLED",
+  "REJECTED",
+]);
+
 export const genderEnum = pgEnum("gender", ["MALE", "FEMALE"]);
 
 export const bmiClassificationEnum = pgEnum("bmi_classification", [
@@ -124,6 +131,30 @@ export const raceEnum = pgEnum("race", [
   "INDIAN",
   "OTHER",
 ]);
+
+export const bankEnum = pgEnum("bank", [
+  "MAYBANK",
+  "CIMB",
+  "RHB",
+  "BANK_ISLAM",
+  "BSN",
+  "PUBLIC_BANK",
+  "HONG_LEONG",
+  "AMBANK",
+  "AFFIN",
+  "OCBC",
+  "UOB",
+  "OTHER",
+]);
+
+export const collectionPurposeEnum = pgEnum("collection_purpose", [
+  "MONTHLY_COLLECTION",
+  "WELFARE",
+  "GOODS",
+  "FEAST",
+  "OTHERS",
+]);
+
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -408,6 +439,24 @@ export const cadets = pgTable(
     index("cadets_intake_id_idx").on(table.intakeId),
     index("cadets_study_program_id_idx").on(table.studyProgramId),
     index("cadets_is_active_idx").on(table.isActive).where(sql`${table.isActive} = true`),
+  ],
+);
+
+export const cadetAccounts = pgTable(
+  "cadet_accounts",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    bankName: bankEnum("bank_name").notNull(),
+    accountNumber: bigint("account_number", { mode: "number" }).notNull(),
+    duitNowId: bigint("duitnow_id", { mode: "number" }),
+    qrCodePath: text("qr_code_path"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("cadet_accounts_member_id_idx").on(table.memberId),
   ],
 );
 
@@ -722,5 +771,146 @@ export const contactReasonTranslations = pgTable(
       table.reasonId,
       table.locale,
     ),
+  ],
+);
+
+export const treasuryAccounts = pgTable(
+  "treasury_accounts",
+  {
+    id: serial("id").primaryKey(),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id),
+    treasurerId: uuid("treasurer_id")
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: "cascade" }),
+    bankName: bankEnum("bank_name").notNull(),
+    accountNumber: bigint("account_number", { mode: "number" }).notNull(),
+    qrCodePath: text("qr_code_path"),
+    duitNowId: bigint("duitnow_id", { mode: "number" }),
+    ...timestamps,
+  },
+  (table) => [
+    index("treasury_accounts_intake_id_idx").on(table.intakeId),
+    index("treasury_accounts_treasurer_id_idx").on(table.treasurerId),
+  ],
+);
+
+export const collections = pgTable(
+  "collections",
+  {
+    id: serial("id").primaryKey(),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id),
+    treasurerId: uuid("treasurer_id")
+      .notNull()
+      .references(() => adminUsers.id),
+    title: varchar("title", { length: 200 }).notNull(),
+    slug: varchar("slug", { length: 200 }).notNull(),
+    purpose: collectionPurposeEnum("purpose").notNull(),
+    description: text("description"),
+    amount: numeric("amount", { precision: 10, scale: 2 }),
+    isFixedAmount: boolean("is_fixed_amount").default(true).notNull(),
+    isReceiptRequired: boolean("is_receipt_required").default(true).notNull(),
+    paymentAccountId: integer("payment_account_id")
+      .references(() => treasuryAccounts.id, { onDelete: "set null" }),
+    status: publicationStatusEnum("status").default("DRAFT").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("collections_slug_idx").on(table.slug),
+    index("collections_intake_id_status_idx").on(table.intakeId, table.status),
+    index("collections_treasurer_id_idx").on(table.treasurerId),
+  ],
+);
+
+export const collectionPayments = pgTable(
+  "collection_payments",
+  {
+    id: serial("id").primaryKey(),
+    collectionId: integer("collection_id")
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    amountPaid: numeric("amount_paid", { precision: 10, scale: 2 }).notNull(),
+    receiptPath: text("receipt_path"),
+    paidAt: timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("collection_payments_collection_member_idx").on(
+      table.collectionId,
+      table.memberId,
+    ),
+    index("collection_payments_collection_id_idx").on(table.collectionId),
+    index("collection_payments_member_id_idx").on(table.memberId),
+  ],
+);
+
+export const expenses = pgTable(
+  "expenses",
+  {
+    id: serial("id").primaryKey(),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id),
+    treasurerId: uuid("treasurer_id")
+      .notNull()
+      .references(() => adminUsers.id),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description"),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("expenses_intake_id_idx").on(table.intakeId),
+    index("expenses_treasurer_id_idx").on(table.treasurerId),
+    index("expenses_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const expenseReceipts = pgTable(
+  "expense_receipts",
+  {
+    id: serial("id").primaryKey(),
+    expenseId: integer("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    filePath: text("file_path").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("expense_receipts_expense_id_idx").on(table.expenseId),
+    index("expense_receipts_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const claims = pgTable(
+  "claims",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id),
+    title: varchar("title", { length: 200 }).notNull(),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    receiptPath: text("receipt_path").notNull(),
+    qrCodePath: text("qr_code_path").notNull(),
+    description: text("description"),
+    status: claimStatusEnum("status").default("PENDING").notNull(),
+    fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+    rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    index("claims_member_id_idx").on(table.memberId),
+    index("claims_intake_id_idx").on(table.intakeId),
+    index("claims_status_idx").on(table.status),
   ],
 );

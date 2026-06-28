@@ -13,8 +13,8 @@ import {
 import {
   buildIntakesTableConfig,
   INTAKES_SORT_FIELD_MAP,
-} from "@/components/admin/intakes/table-config";
-import { IntakesPageClient } from "@/components/admin/intakes/intakes-page-client";
+} from "@/components/admin/secretary/intakes/table-config";
+import { IntakesPageClient } from "@/components/admin/secretary/intakes/intakes-page-client";
 
 function buildFilters(
   state: { q: string; filters: Record<string, FilterCondition[]> },

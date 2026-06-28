@@ -117,9 +117,9 @@ export async function addCadet(formData: FormData) {
   }
   if (!personalEmail) return { error: "Personal email is required." };
   if (personalEmail.length > 320) return { error: "Personal email is too long." };
-  if (!isValidPersonalEmail(personalEmail)) return { error: "Personal email is invalid or cannot be umt.edu.my." };
+  if (!isValidPersonalEmail(personalEmail)) return { error: "Personal email is invalid or cannot be ocean.umt.edu.my." };
   if (eduEmail && eduEmail.length > 320) return { error: "Edu email is too long." };
-  if (eduEmail && !isValidEduEmail(eduEmail)) return { error: "Edu email must be from umt.edu.my." };
+  if (eduEmail && !isValidEduEmail(eduEmail)) return { error: "Edu email must be from ocean.umt.edu.my." };
   if (!gender || !genderEnum.enumValues.includes(gender as "MALE" | "FEMALE")) {
     return { error: "Valid gender is required." };
   }
@@ -382,9 +382,9 @@ export async function updateCadet(formData: FormData) {
   }
   if (!personalEmail) return { error: "Personal email is required." };
   if (personalEmail.length > 320) return { error: "Personal email is too long." };
-  if (!isValidPersonalEmail(personalEmail)) return { error: "Personal email is invalid or cannot be umt.edu.my." };
+  if (!isValidPersonalEmail(personalEmail)) return { error: "Personal email is invalid or cannot be ocean.umt.edu.my." };
   if (eduEmail && eduEmail.length > 320) return { error: "Edu email is too long." };
-  if (eduEmail && !isValidEduEmail(eduEmail)) return { error: "Edu email must be from umt.edu.my." };
+  if (eduEmail && !isValidEduEmail(eduEmail)) return { error: "Edu email must be from ocean.umt.edu.my." };
   if (!gender || !genderEnum.enumValues.includes(gender as "MALE" | "FEMALE")) {
     return { error: "Valid gender is required." };
   }
@@ -402,9 +402,6 @@ export async function updateCadet(formData: FormData) {
   const age = calculateAge(birthdate);
   if (age < 18 || age > 24) return { error: "Age must be between 18 and 24." };
 
-  if (!rank || (rank !== "PK" && rank !== "PKW")) {
-    return { error: "Valid cadet rank is required (PK or PKW)." };
-  }
   if (!matricNo) return { error: "Matric number is required." };
   if (matricNo.length > 80) return { error: "Matric number is too long." };
   if (rawIntakeId === null || !Number.isInteger(rawIntakeId) || rawIntakeId <= 0) {

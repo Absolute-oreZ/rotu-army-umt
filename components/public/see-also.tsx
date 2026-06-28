@@ -29,7 +29,6 @@ export function SeeAlso({ items, dictionary }: SeeAlsoProps) {
 
   return (
     <div className="w-full">
-      {/* Desktop View: Flowing Menu */}
       <div className="hidden lg:block w-full py-8">
         <div className="min-h-176">
           <FlowingMenu
@@ -42,7 +41,6 @@ export function SeeAlso({ items, dictionary }: SeeAlsoProps) {
         </div>
       </div>
 
-      {/* Mobile View: Structured Grid */}
       <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 sm:px-6 lg:px-8 py-8">
         {items.map((item, idx) => (
           <Link

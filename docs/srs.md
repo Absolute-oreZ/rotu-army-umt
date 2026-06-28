@@ -122,7 +122,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 ### 3.7 Admin Modules
 1. System shall provide role-aware module access:
    - Secretary: rank holders (cadet admin users only), intakes, cadets (cadet management), admin invitations (cadets only).
-   - Treasurer: collections, expenses.
+   - Treasurer: account management (bank/QR), collection creation and management, payment ledger, expenses.
    - Multimedia: portfolio, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed), application deadline configuration.
    - Sports: activities, collaborations.
    - Welfare: health, accommodations, religion.
@@ -155,6 +155,42 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 3. System shall generate `robots.txt` as a static file.
 4. System shall exclude from sitemap: `/admin/*`, `/newsletter/confirm/*`, `/newsletter/unsubscribe/*`.
 
+### 3.12 Cadet Authentication
+1. System shall support cadet sign-in using Google OAuth via the same Supabase project.
+2. System shall verify the cadet's email ends with `@ocean.umt.edu.my`.
+3. System shall look up the cadet's member record by `eduEmail` matching the authenticated email.
+4. System shall verify the member role is `CADET` and a cadet record exists.
+5. System shall redirect unauthorized users to the cadet login page with an appropriate error message.
+6. System shall enforce cadet auth per-page (not in the layout) to avoid redirect loops.
+
+### 3.13 Treasurer Payment System
+1. System shall allow Treasurers to manage treasury accounts (bank name, account number, QR code, DuitNow ID) scoped to their intake.
+2. System shall allow Treasurers to create collections with title, purpose, description, amount (fixed or flexible), receipt requirement, and linked payment account.
+3. Collections shall follow a DRAFT ↔ PUBLISHED → ARCHIVED lifecycle.
+4. System shall generate a unique slug for each collection for cadet-facing URLs.
+5. System shall provide a cadet self-service payment page at `/cadet/collections/[slug]` showing collection details, payment account info, and QR code.
+6. System shall allow cadets to record payments with amount (if flexible) and receipt upload (if required).
+7. System shall prevent duplicate payments per cadet per collection via a unique constraint.
+8. System shall store payment receipts in Supabase Storage at structured paths.
+9. System shall provide a payments ledger for Treasurers showing all payments across collections, filterable by collection.
+10. System shall show summary statistics (total collected, paid count vs. expected count) for selected collections.
+11. System shall track and display unpaid cadets for each collection.
+12. System shall allow Treasurers to delete payment records for corrections.
+13. System shall delete a Treasurer's treasury accounts when their role is changed to non-Treasurer.
+14. Collections shall survive treasury account deletion but lose the payment account link (`onDelete: set null`).
+15. Payment records shall never be deleted through cascade.
+
+### 3.14 Cadet Portal and Claims
+1. System shall provide a mobile-first responsive cadet portal with sidebar navigation and authenticated layout shell.
+2. Cadet portal shall include collections view (card grid of published collections for the cadet's intake) and claims management.
+3. System shall allow cadets to submit reimbursement claims via dialog-based form from the claims list page.
+4. Claims shall include title, amount, description, receipt upload, and QR code upload.
+5. System shall pre-fill bank details from the cadet's saved account (`cadet_accounts`) when creating a claim.
+6. System shall allow cadets to save bank details for future claims (auto-save via `cadet_accounts` upsert during claim submission).
+7. Claim status shall progress through: `PENDING`, `FULFILLED`, `REJECTED`.
+8. System shall display claims list with status badges and empty state.
+9. System shall scope claims to the cadet's intake via `intakeId`.
+
 ## 4. Data Requirements
 
 ### 4.1 Core Entities
@@ -172,6 +208,10 @@ System data model shall include at minimum:
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.
 - Homepage managed content (FAQ, see-more links, testimonials, webapp_contents).
+- Treasury accounts, collections, collection payments (Treasurer module).
+- Cadet accounts (one-to-one by memberId: bank name, account number, DuitNow ID, QR code path) for pre-filling claim bank details.
+- Claims (reimbursement claims: title, amount, description, receipt path, QR code path, status, intake-scoped).
+- Claim status enum: `PENDING`, `FULFILLED`, `REJECTED`.
 - Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
 
 ### 4.2 Localization Data
@@ -242,6 +282,12 @@ System data model shall include at minimum:
 - Secretary rank-holders: cadet admin user management with role changes, drop, audit logging, cadet-only filtering.
 - Secretary cadets: cadet management page with rank-based sorting, active/inactive toggle, filtering.
 - Intake-scoped RBAC: intakeId on adminUsers/adminInvitations, scope helpers, Secretary module enforcement (reads + writes).
+- Treasurer payment system: treasury accounts, collections (DRAFT ↔ PUBLISHED/ARCHIVED lifecycle), cadet self-service payment page, and payments ledger.
+- Cadet authentication: separate Google OAuth flow with `@ocean.umt.edu.my` domain verification and member/cadet record lookup.
+- Cadet portal shell: mobile-first responsive sidebar layout with collections and claims navigation, breadcrumbs, user menu, and theme switcher.
+- Cadet collections: card-based grid of published collections scoped to the cadet's intake, with detail/payment pages.
+- Cadet claims system: dialog-based reimbursement claim creation with receipt and QR upload, bank detail pre-fill from `cadet_accounts`, and claim list with status badges.
+- Treasurer lifecycle cleanup: treasury accounts deleted when role changes away from Treasurer.
 - Placeholder pages for remaining admin modules across other role groups.
 
 ### 7.2 Pending

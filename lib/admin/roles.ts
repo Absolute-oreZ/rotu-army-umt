@@ -25,8 +25,11 @@ export type AdminModule =
   | "rank-holders"
   | "intakes"
   | "cadets"
+  | "accounts"
   | "collections"
+  | "payments"
   | "expenses"
+  | "claims"
   | "portfolio"
   | "stories"
   | "newsletters"
@@ -65,7 +68,7 @@ const roleModules = {
   OFFICER: ["dashboard"],
   INSTRUCTOR: ["dashboard"],
   SECRETARY: ["rank-holders", "intakes", "cadets"],
-  TREASURER: ["collections", "expenses"],
+  TREASURER: ["accounts", "collections", "payments", "expenses", "claims"],
   MULTIMEDIA: ["portfolio", "stories", "newsletters"],
   SPORTS: ["activities", "collaborations"],
   WELFARE: ["health", "accommodations", "religion"],

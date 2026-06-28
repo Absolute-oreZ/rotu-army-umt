@@ -126,7 +126,6 @@ export async function addAdminUser(formData: FormData) {
       loginUrl: `${origin}/admin/login`,
     });
   } catch {
-    // Email failure doesn't block — invitation record exists, email can be retried.
   }
 
   revalidatePath("/admin/secretary/rank-holders");
@@ -216,7 +215,6 @@ export async function changeAdminRole(formData: FormData) {
       newRole,
     });
   } catch {
-    // Email failure doesn't block — role change is already persisted.
   }
 
   revalidatePath("/admin/secretary/rank-holders");
@@ -294,14 +292,12 @@ export async function dropAdminUser(formData: FormData) {
       role: target.role,
     });
   } catch {
-    // Email failure doesn't block — admin record is already removed.
   }
 
   try {
     const supabaseAdmin = createSupabaseAdminClient();
     await supabaseAdmin.auth.admin.deleteUser(target.authUserId);
   } catch {
-    // Auth deletion failure doesn't block — the admin record is already removed.
   }
 
   revalidatePath("/admin/secretary/rank-holders");
