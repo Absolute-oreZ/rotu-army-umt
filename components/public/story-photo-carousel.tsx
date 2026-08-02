@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform } from "motion/react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import type { PublicStoryDisplayPhoto } from "@/lib/public/content";
 
 const GAP = 12;
@@ -46,7 +47,7 @@ function CarouselPhoto({
     >
       <div className="relative aspect-square w-full">
         <Image
-          src={photo.photoPath}
+          src={storageUrl(photo.photoPath)}
           alt={`${alt} – ${index + 1}`}
           fill
           draggable={false}

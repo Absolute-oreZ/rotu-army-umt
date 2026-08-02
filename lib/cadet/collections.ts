@@ -2,7 +2,8 @@ import "server-only";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { collections, treasuryAccounts } from "@/db/schema";
-import { storageUrl } from "@/lib/supabase/storage";
+import { signedStorageUrl } from "@/lib/supabase/storage";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function getPublishedCollectionBySlug(
   slug: string,
@@ -39,6 +40,6 @@ export async function getPublishedCollectionBySlug(
 
   return {
     ...row,
-    qrCodeUrl: storageUrl(row.qrCodePath),
+    qrCodePath: await signedStorageUrl(createSupabaseAdminClient(), row.qrCodePath),
   };
 }

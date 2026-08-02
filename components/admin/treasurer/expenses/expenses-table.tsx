@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { EyeIcon, PencilIcon, Trash2Icon, ReceiptIcon } from "lucide-react";
+import Image from "next/image";
 import {
   Table,
   TableHeader,
@@ -24,7 +25,7 @@ import { buildExpensesTableConfig } from "@/components/admin/treasurer/expenses/
 
 export type ExpenseReceipt = {
   id: number;
-  filePath: string;
+  fileUrl: string;
   createdAt: string;
 };
 
@@ -132,7 +133,7 @@ export function ExpensesTable({
           <TableBody>
             {expenses.map((expense) => {
               const firstReceipt = expense.receipts[0];
-              const firstReceiptUrl = firstReceipt?.filePath ?? null;
+              const firstReceiptUrl = firstReceipt?.fileUrl ?? null;
 
               return (
                 <TableRow key={expense.id}>
@@ -156,10 +157,11 @@ export function ExpensesTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {firstReceiptUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <Image
                           src={firstReceiptUrl}
                           alt=""
+                          width={40}
+                          height={40}
                           className="size-10 rounded-md border border-border object-cover"
                         />
                       ) : (

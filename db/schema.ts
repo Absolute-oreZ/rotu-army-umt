@@ -251,8 +251,6 @@ export const intakeTranslations = pgTable(
       .references(() => intakes.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
     summary: text("summary"),
-    seoTitle: varchar("seo_title", { length: 180 }),
-    seoDescription: text("seo_description"),
     ...timestamps,
   },
   (table) => [
@@ -524,6 +522,95 @@ export const newsletterSubscribers = pgTable(
   ],
 );
 
+export const newsletterCampaignStatusEnum = pgEnum("newsletter_campaign_status", [
+  "DRAFT",
+  "SENT",
+  "SCHEDULED",
+  "SENDING",
+  "FAILED",
+]);
+
+export const newsletterDeliveryStatusEnum = pgEnum("newsletter_delivery_status", [
+  "QUEUED",
+  "SENT",
+  "FAILED",
+]);
+
+export const newsletterCampaigns = pgTable(
+  "newsletter_campaigns",
+  {
+    id: serial("id").primaryKey(),
+    subject: varchar("subject", { length: 200 }).notNull(),
+    previewText: varchar("preview_text", { length: 200 }),
+    contentHtml: text("content_html").notNull(),
+    contentText: text("content_text"),
+    status: newsletterCampaignStatusEnum("status").default("DRAFT").notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    recipientCount: integer("recipient_count").default(0).notNull(),
+    sentByAdminUserId: uuid("sent_by_admin_user_id").references(() => adminUsers.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (table) => [
+    index("newsletter_campaigns_status_idx").on(table.status),
+    index("newsletter_campaigns_scheduled_at_idx").on(table.scheduledAt),
+    index("newsletter_campaigns_sent_by_idx").on(table.sentByAdminUserId),
+  ],
+);
+
+export const newsletterCampaignTranslations = pgTable(
+  "newsletter_campaign_translations",
+  {
+    id: serial("id").primaryKey(),
+    campaignId: integer("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
+    locale: localeEnum("locale").notNull(),
+    subject: varchar("subject", { length: 200 }).notNull(),
+    previewText: varchar("preview_text", { length: 200 }),
+    contentHtml: text("content_html").notNull(),
+    contentText: text("content_text"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("newsletter_campaign_translations_campaign_locale_idx").on(table.campaignId, table.locale),
+    index("newsletter_campaign_translations_campaign_idx").on(table.campaignId),
+  ],
+);
+
+export const newsletterCampaignAttachments = pgTable(
+  "newsletter_campaign_attachments",
+  {
+    id: serial("id").primaryKey(),
+    campaignId: integer("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
+    fileName: varchar("file_name", { length: 255 }).notNull(),
+    storagePath: text("storage_path").notNull(),
+    contentType: varchar("content_type", { length: 150 }).notNull(),
+    fileSize: integer("file_size").notNull(),
+    ...timestamps,
+  },
+  (table) => [index("newsletter_campaign_attachments_campaign_idx").on(table.campaignId)],
+);
+
+export const newsletterCampaignDeliveries = pgTable(
+  "newsletter_campaign_deliveries",
+  {
+    id: serial("id").primaryKey(),
+    campaignId: integer("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
+    subscriberId: uuid("subscriber_id").notNull().references(() => newsletterSubscribers.id, { onDelete: "restrict" }),
+    email: varchar("email", { length: 320 }).notNull(),
+    locale: localeEnum("locale").notNull(),
+    status: newsletterDeliveryStatusEnum("status").default("QUEUED").notNull(),
+    providerMessageId: text("provider_message_id"),
+    errorMessage: text("error_message"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("newsletter_campaign_deliveries_campaign_subscriber_idx").on(table.campaignId, table.subscriberId),
+    index("newsletter_campaign_deliveries_campaign_status_idx").on(table.campaignId, table.status),
+    index("newsletter_campaign_deliveries_subscriber_idx").on(table.subscriberId),
+  ],
+);
+
 export const events = pgTable(
   "events",
   {
@@ -537,7 +624,7 @@ export const events = pgTable(
     coverPhotoPath: text("cover_photo_path"),
     coverPhotoWidth: integer("cover_photo_width"),
     coverPhotoHeight: integer("cover_photo_height"),
-    videoUrl: text("video_url"),
+    videoPath: text("video_path"),
     status: publicationStatusEnum("status").default("DRAFT").notNull(),
     ...timestamps,
   },
@@ -557,8 +644,6 @@ export const eventTranslations = pgTable(
     locale: localeEnum("locale").notNull(),
     title: varchar("title", { length: 180 }).notNull(),
     summary: text("summary"),
-    seoTitle: varchar("seo_title", { length: 180 }),
-    seoDescription: text("seo_description"),
     ...timestamps,
   },
   (table) => [
@@ -632,7 +717,7 @@ export const webappContents = pgTable(
   {
     id: serial("id").primaryKey(),
     singletonKey: boolean("singleton_key").default(true).notNull(),
-    heroImageUrl: text("hero_image_url"),
+    heroImagePath: text("hero_image_path"),
     googleMapLocationUrl: text("google_map_location_url"),
     officialEmail: varchar("official_email", { length: 320 }),
     facebookUrl: text("facebook_url"),
@@ -700,7 +785,7 @@ export const seeMoreLinks = pgTable(
       .references(() => webappContents.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 180 }).notNull(),
     link: text("link").notNull(),
-    imageUrl: text("image_url"),
+    imagePath: text("image_path"),
     sortOrder: integer("sort_order").default(0).notNull(),
     status: publicationStatusEnum("status").default("PUBLISHED").notNull(),
     ...timestamps,

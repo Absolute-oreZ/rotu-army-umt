@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { format } from "date-fns";
 import { PencilIcon, Loader2Icon, AlertCircleIcon } from "lucide-react";
+import Image from "next/image";
 import {
   Sheet,
   SheetContent,
@@ -20,7 +21,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Field } from "@/components/ui/field";
-import { storageUrl } from "@/lib/supabase/storage-client";
 import { digitsOnly } from "@/lib/admin/form-helpers";
 import { formatBank } from "@/components/admin/treasurer/accounts/table-config";
 import {
@@ -90,7 +90,7 @@ function SheetInner({
 
   if (loading) {
     return (
-      <SheetSkeleton />
+      <SheetSkeleton className="w-140 max-w-[calc(100vw-2rem)] p-0" />
     );
   }
 
@@ -133,7 +133,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 function ViewMode({ details, onEdit }: { details: AccountDetails; onEdit: () => void }) {
   const d = details;
-  const qrUrl = storageUrl(d.qrCodePath);
+  const qrUrl = d.qrCodeUrl;
   return (
     <>
       <SheetHeader>
@@ -164,10 +164,11 @@ function ViewMode({ details, onEdit }: { details: AccountDetails; onEdit: () => 
               QR Code
             </h3>
             {qrUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={qrUrl}
                 alt="QR code"
+                width={192}
+                height={192}
                 className="w-48 rounded-lg border border-border object-contain"
               />
             ) : (
@@ -271,20 +272,21 @@ function EditMode({
             />
           </Field>
 
-          <SingleFileField
-            label="QR Code"
-            file={qrFile}
-            onChange={(f) => {
-              setQrFile(f);
-              if (!f && details.qrCodePath) {
-                setRemoveQr(true);
-              } else {
-                setRemoveQr(false);
-              }
-            }}
-            existingUrl={removeQr ? null : storageUrl(details.qrCodePath)}
-            className="max-w-40"
-          />
+          <Field label="QR Code">
+            <SingleFileField
+              file={qrFile}
+              onChange={(f) => {
+                setQrFile(f);
+                if (!f && details.qrCodePath) {
+                  setRemoveQr(true);
+                } else {
+                  setRemoveQr(false);
+                }
+              }}
+              existingUrl={removeQr ? null : details.qrCodeUrl}
+              className="max-w-40"
+            />
+          </Field>
         </div>
       </div>
 

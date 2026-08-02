@@ -18,6 +18,8 @@ import {
   ACCOUNTS_SORT_FIELD_MAP,
 } from "@/components/admin/treasurer/accounts/table-config";
 import { AccountsPageClient } from "@/components/admin/treasurer/accounts/accounts-page-client";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { signedStorageUrl } from "@/lib/supabase/storage";
 
 function buildFilters(
   state: { q: string; filters: Record<string, FilterCondition[]> },
@@ -123,14 +125,16 @@ export default async function AccountsPage({
   ]);
 
   const totalCount = countRow[0]?.count ?? 0;
+  const supabase = createSupabaseAdminClient();
 
   return (
     <AccountsPageClient
       searchParams={raw}
-      accounts={accountRows.map((a) => ({
+      accounts={await Promise.all(accountRows.map(async (a) => ({
         ...a,
+        qrCodeUrl: await signedStorageUrl(supabase, a.qrCodePath),
         createdAt: a.createdAt.toISOString(),
-      }))}
+      })))}
       totalCount={totalCount}
       intakeOptions={intakeDialogOptions}
       isAdminIntakeScoped={intakeScope !== null}

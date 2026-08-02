@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterSubscribers } from "@/db/schema";
@@ -13,21 +12,8 @@ import {
   sendNewsletterConfirmationEmail,
 } from "@/lib/newsletter";
 
-async function getRequestOrigin() {
-  const headerStore = await headers();
-  const forwardedProto = headerStore.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const forwardedHost = headerStore.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost ?? headerStore.get("host");
-  const protocol = forwardedProto ?? "http";
-
-  if (!host) {
-    return "http://localhost:3000";
-  }
-
-  return `${protocol}://${host}`;
-}
-
 export async function subscribeToNewsletter(formData: FormData) {
+  if (typeof formData.get("website") === "string" && String(formData.get("website")).trim()) return { error: "Unable to subscribe at this time." };
   const rawEmail = formData.get("email");
   const rawLocale = formData.get("locale");
   const preferredLocale: Locale =
@@ -65,7 +51,7 @@ export async function subscribeToNewsletter(formData: FormData) {
 
     const existingSubscriber = existingSubscriberRows[0] ?? null;
     const tokens = createNewsletterTokens();
-    const origin = await getRequestOrigin();
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     const confirmationUrl = new URL(
       `/${preferredLocale}/newsletter/confirm/${tokens.confirmationToken}`,
       origin,
@@ -79,6 +65,8 @@ export async function subscribeToNewsletter(formData: FormData) {
       return { error: d.newsletterDuplicateError };
     }
 
+    const previousSubscriber = existingSubscriber ? await db.select().from(newsletterSubscribers).where(eq(newsletterSubscribers.id, existingSubscriber.id)).limit(1).then((rows) => rows[0]) : null;
+    if (previousSubscriber?.status === "PENDING" && previousSubscriber.updatedAt.getTime() > Date.now() - 15 * 60 * 1000) return { error: d.newsletterSendFailedError };
     if (existingSubscriber) {
       await db
         .update(newsletterSubscribers)
@@ -122,6 +110,9 @@ export async function subscribeToNewsletter(formData: FormData) {
         await db
           .delete(newsletterSubscribers)
           .where(eq(newsletterSubscribers.id, insertedSubscriberId));
+      }
+      else if (previousSubscriber) {
+        await db.update(newsletterSubscribers).set({ status: previousSubscriber.status, confirmedAt: previousSubscriber.confirmedAt, confirmationTokenHash: previousSubscriber.confirmationTokenHash, unsubscribeTokenHash: previousSubscriber.unsubscribeTokenHash, unsubscribedAt: previousSubscriber.unsubscribedAt, preferredLocale: previousSubscriber.preferredLocale }).where(eq(newsletterSubscribers.id, previousSubscriber.id));
       }
 
       return { error: d.newsletterSendFailedError };

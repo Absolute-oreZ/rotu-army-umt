@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import FlowingMenu from "./flowing-menu";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 interface SeeAlsoItem {
   title: string;
   link: string;
-  imageUrl: string | null;
+  imagePath: string | null;
 }
 
 interface SeeAlsoProps {
@@ -33,7 +34,7 @@ export function SeeAlso({ items, dictionary }: SeeAlsoProps) {
         <div className="min-h-176">
           <FlowingMenu
             items={items.map((item) => ({
-              image: item.imageUrl ?? "/images/default-hero-image.jpg",
+              image: item.imagePath ? storageUrl(item.imagePath) : undefined,
               link: item.link,
               text: item.title,
             }))}
@@ -50,13 +51,15 @@ export function SeeAlso({ items, dictionary }: SeeAlsoProps) {
           >
             <div className="flex items-center gap-4 p-4">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md">
-                <Image
-                  src={item.imageUrl ?? "/images/war-fist.png"}
-                  alt={item.title}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
+                {item.imagePath ? (
+                  <Image
+                    src={storageUrl(item.imagePath)}
+                    alt={item.title}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                ) : null}
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold uppercase tracking-wide text-foreground transition-colors">

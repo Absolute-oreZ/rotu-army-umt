@@ -8,6 +8,7 @@ import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { uploadToStorage } from "@/lib/supabase/storage";
+import { signedStorageUrl } from "@/lib/supabase/storage";
 import { bankEnum } from "@/db/schema";
 import {
   assertIntakeOwnership,
@@ -24,6 +25,7 @@ export type AccountDetails = {
   bankName: string;
   accountNumber: number;
   qrCodePath: string | null;
+  qrCodeUrl: string | null;
   duitNowId: number | null;
   treasurerName: string;
   createdAt: string;
@@ -72,6 +74,7 @@ export async function getAccountDetails(accountId: number): Promise<{ data: Acco
   return {
     data: {
       ...row,
+      qrCodeUrl: await signedStorageUrl(createSupabaseAdminClient(), row.qrCodePath),
       createdAt: row.createdAt.toISOString(),
     },
     error: null,

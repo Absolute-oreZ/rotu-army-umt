@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { EyeIcon, PencilIcon, Trash2Icon, WalletIcon } from "lucide-react";
+import Image from "next/image";
 import {
   Table,
   TableHeader,
@@ -20,7 +21,6 @@ import { CopyableValue } from "@/components/admin/data-table/copyable-value";
 import { useTableURL } from "@/lib/admin/use-table-url";
 import { isTableStateDefault, type RawSearchParams } from "@/lib/admin/table-search-params";
 import { Empty } from "@/components/ui/empty";
-import { storageUrl } from "@/lib/supabase/storage-client";
 import {
   buildAccountsTableConfig,
   formatBank,
@@ -33,6 +33,7 @@ export type Account = {
   bankName: string;
   accountNumber: number;
   qrCodePath: string | null;
+  qrCodeUrl: string | null;
   duitNowId: number | null;
   treasurerName: string;
   createdAt: string;
@@ -150,17 +151,20 @@ export function AccountsTable({
                   </CopyableValue>
                 </TableCell>
                 <TableCell>
-                  {account.qrCodePath ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={storageUrl(account.qrCodePath)!}
-                      alt="QR code"
-                      className="size-10 rounded border border-border object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => onQrPreview(storageUrl(account.qrCodePath)!)}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  {account.qrCodeUrl ? (
+                    <Image
+                                      src={account.qrCodeUrl}
+                                      alt="QR code"
+                                      width={40}
+                                      height={40}
+                                      className="size-10 rounded border border-border object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        if (account.qrCodeUrl) onQrPreview(account.qrCodeUrl);
+                      }}
+                                    />
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
                 </TableCell>
                 <TableCell className="pr-5">
                   <div className="flex items-center justify-end gap-0.5">

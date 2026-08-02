@@ -31,7 +31,7 @@ export async function getCadetAccountByMemberId(
 
   return {
     ...row,
-    qrCodeUrl: await signedStorageUrl(supabase, row.qrCodePath),
+    qrCodePath: await signedStorageUrl(supabase, row.qrCodePath),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

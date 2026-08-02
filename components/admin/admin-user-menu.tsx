@@ -10,6 +10,7 @@ import { signOutAdmin } from "@/app/admin/actions";
 import type { CurrentAdmin } from "@/lib/admin/rbac";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ChevronUpIcon, ChevronDownIcon, LogOutIcon, MoonIcon, SunIcon, LaptopIcon } from "lucide-react";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 const THEME_OPTIONS = [
   { value: "light" as const, label: "Light", icon: SunIcon },
@@ -53,9 +54,23 @@ function AdminAvatar({
     );
   }
 
+  const imageSrc = storageUrl(currentSource);
+  if (!imageSrc) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-xl bg-primary text-xs font-bold uppercase text-primary-foreground",
+          className,
+        )}
+      >
+        {fallback}
+      </div>
+    );
+  }
+
   return (
     <Image
-      src={currentSource}
+      src={imageSrc}
       alt=""
       fill
       sizes="40px"

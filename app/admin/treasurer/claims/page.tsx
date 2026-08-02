@@ -109,7 +109,7 @@ export default async function ClaimsPage({
   const claimsWithUrls = await Promise.all(
     rows.map(async (r) => ({
       ...r,
-      avatarUrl: r.avatarPath,
+      avatarPath: r.avatarPath,
       receiptUrl: await signedStorageUrl(supabase, r.receiptPath),
       qrCodeUrl: await signedStorageUrl(supabase, r.qrCodePath),
       fulfilledAt: r.fulfilledAt ? r.fulfilledAt.toISOString() : null,

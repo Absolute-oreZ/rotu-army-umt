@@ -42,7 +42,7 @@ export default async function CadetClaimsPage() {
   const accountRecord = accountRow
     ? {
         ...accountRow,
-        qrCodeUrl: await signedStorageUrl(supabase, accountRow.qrCodePath),
+        qrCodePath: await signedStorageUrl(supabase, accountRow.qrCodePath),
         createdAt: accountRow.createdAt.toISOString(),
         updatedAt: accountRow.updatedAt.toISOString(),
       }

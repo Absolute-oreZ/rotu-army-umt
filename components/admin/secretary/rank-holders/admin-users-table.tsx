@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { ArrowRightLeftIcon, Trash2Icon, SearchIcon } from "lucide-react";
 import type { AdminRole } from "@/lib/admin/roles";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import {
   Table,
   TableHeader,
@@ -36,7 +37,7 @@ export type AdminUserRow = {
   memberName: string;
   memberRank: string;
   memberArmyNo: number;
-  memberAvatarUrl: string | null;
+  memberAvatarPath: string | null;
   intakeNo: string | null;
 };
 
@@ -156,13 +157,14 @@ export function AdminUsersTable({
               <TableBody>
                 {admins.map((admin) => {
                   const isSelf = admin.id === currentAdminId;
+                  const avatarUrl = admin.memberAvatarPath ? storageUrl(admin.memberAvatarPath) : null;
                   return (
                     <TableRow key={admin.id}>
                       <TableCell>
                         <span className="relative inline-flex size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                          {admin.memberAvatarUrl ? (
+                          {avatarUrl ? (
                             <Image
-                              src={admin.memberAvatarUrl}
+                              src={avatarUrl}
                               alt=""
                               width={36}
                               height={36}
@@ -236,6 +238,7 @@ export function AdminUsersTable({
           <div className="flex flex-col gap-3 md:hidden">
             {admins.map((admin) => {
               const isSelf = admin.id === currentAdminId;
+              const avatarUrl = admin.memberAvatarPath ? storageUrl(admin.memberAvatarPath) : null;
               return (
                 <div
                   key={admin.id}
@@ -243,9 +246,9 @@ export function AdminUsersTable({
                 >
                   <div className="flex items-start gap-3">
                     <span className="relative inline-flex size-11 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                      {admin.memberAvatarUrl ? (
+                      {avatarUrl ? (
                         <Image
-                          src={admin.memberAvatarUrl}
+                          src={avatarUrl}
                           alt=""
                           width={44}
                           height={44}

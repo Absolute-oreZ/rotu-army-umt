@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Sheet,
   SheetContent,
@@ -93,41 +94,55 @@ export function ClaimDetailSheet({
                   <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Receipt
                   </span>
-                  {claim.receiptUrl ? (
-                    <button
-                      type="button"
-                      onClick={() => setImagePreview(claim.receiptUrl)}
-                      className="relative aspect-square w-full overflow-hidden rounded-lg border border-border"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={claim.receiptUrl}
-                        alt="Receipt"
-                        className="size-full object-cover"
-                      />
-                    </button>
-                  ) : (
-                    <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted-foreground">
-                      No receipt
-                    </div>
-                  )}
+                  {claim.receiptPath ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagePreview(claim.receiptUrl);
+                        }}
+                        className="relative aspect-square w-full overflow-hidden rounded-lg border border-border"
+                      >
+                        {(() => {
+                          const url = claim.receiptUrl;
+                          return url ? (
+                            <Image
+                              src={url}
+                              alt="Receipt"
+                              fill
+                              className="object-cover"
+                            />
+                          ) : null;
+                        })()}
+                      </button>
+                    ) : (
+                      <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted-foreground">
+                        No receipt
+                      </div>
+                    )}
                 </div>
                 <div>
                   <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Bank QR
                   </span>
-                  {claim.qrCodeUrl ? (
+                  {claim.qrCodePath ? (
                     <button
                       type="button"
-                      onClick={() => setImagePreview(claim.qrCodeUrl)}
+                      onClick={() => {
+                        setImagePreview(claim.qrCodeUrl);
+                      }}
                       className="relative aspect-square w-full overflow-hidden rounded-lg border border-border"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={claim.qrCodeUrl}
-                        alt="Bank QR code"
-                        className="size-full object-cover"
-                      />
+                      {(() => {
+                        const url = claim.qrCodeUrl;
+                        return url ? (
+                          <Image
+                            src={url}
+                            alt="Bank QR code"
+                            fill
+                            className="object-cover"
+                          />
+                        ) : null;
+                      })()}
                     </button>
                   ) : (
                     <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted-foreground">

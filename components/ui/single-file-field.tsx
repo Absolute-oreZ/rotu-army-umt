@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { PencilLineIcon, Trash2Icon, UploadIcon } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function SingleFileField({
-  label,
   file,
   existingUrl,
   onChange,
@@ -15,8 +15,8 @@ export function SingleFileField({
   buttonLabel = "Choose file",
   className,
   caption,
+  previewType = "image",
 }: {
-  label?: string;
   file: File | null;
   existingUrl?: string | null;
   onChange: (file: File | null) => void;
@@ -26,6 +26,7 @@ export function SingleFileField({
   buttonLabel?: string;
   className?: string;
   caption?: ReactNode;
+  previewType?: "image" | "video";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const objectUrl = useMemo(() => {
@@ -45,9 +46,11 @@ export function SingleFileField({
   }, [objectUrl]);
 
   const isImageFile = file?.type.startsWith("image/") ?? false;
-  const previewUrl = (file && isImageFile ? objectUrl : null) ?? existingUrl ?? null;
+  const isVideoFile = file?.type.startsWith("video/") ?? false;
+  const isImageOrVideoPreview = isImageFile || isVideoFile;
+  const previewUrl = (file && isImageOrVideoPreview ? objectUrl : null) ?? existingUrl ?? null;
   const hasSelection = file !== null || (existingUrl !== null && existingUrl !== undefined);
-  const showImagePreview = previewUrl !== null && (file ? isImageFile : true);
+  const showImagePreview = previewUrl !== null && (file ? isImageOrVideoPreview : true);
 
   function triggerFilePicker() {
     inputRef.current?.click();
@@ -69,12 +72,6 @@ export function SingleFileField({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      {label ? (
-        <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {label}
-        </label>
-      ) : null}
-
       <input
         ref={inputRef}
         type="file"
@@ -87,8 +84,17 @@ export function SingleFileField({
         showImagePreview ? (
           <div className="grid gap-2">
             <div className="relative overflow-hidden rounded-lg border border-border bg-muted aspect-square">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={previewUrl} alt={file?.name ?? "Selected file"} className="h-full w-full object-cover" />
+              {previewType === "video" ? (
+                <video src={previewUrl} controls className="size-full object-cover" />
+              ) : (
+                <Image
+                  src={previewUrl}
+                  alt={file?.name ?? "Selected file"}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              )}
             </div>
 
             {caption ? (

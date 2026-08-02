@@ -49,8 +49,8 @@ export function ClaimForm({ trigger, account }: ClaimDialogProps) {
   const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
   const [saveAccount, setSaveAccount] = useState(!account);
 
-  const existingQrCodeUrl = account?.qrCodeUrl ?? null;
-  const hasQrCode = qrCodeFile !== null || existingQrCodeUrl !== null;
+  const existingQrCodePath = account?.qrCodePath ?? null;
+  const hasQrCode = qrCodeFile !== null || existingQrCodePath !== null;
 
   const formValid = useMemo(() => {
     return (
@@ -243,12 +243,12 @@ export function ClaimForm({ trigger, account }: ClaimDialogProps) {
             <Field label="QR Code" required>
               <SingleFileField
                 file={qrCodeFile}
-                existingUrl={existingQrCodeUrl}
+                existingUrl={existingQrCodePath}
                 onChange={setQrCodeFile}
                 accept="image/*"
                 buttonLabel="Choose QR code"
                 helperText={
-                  existingQrCodeUrl
+                  existingQrCodePath
                     ? "Your saved QR code will be reused unless you upload a replacement."
                     : "Upload the QR code used for receiving the reimbursement."
                 }

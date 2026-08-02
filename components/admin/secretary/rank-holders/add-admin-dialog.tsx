@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { addAdminUser } from "@/app/admin/secretary/rank-holders/actions";
 import { Field } from "@/components/ui/field";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 const ROLE_LABELS: Record<AdminRole, string> = {
   OFFICER: "Officer",
@@ -169,7 +170,7 @@ export function AddAdminDialog({
                     {selectedMember ? (
                       <>
                         <MemberAvatar
-                          avatarUrl={selectedMember.avatarUrl}
+                          avatarPath={selectedMember.avatarPath}
                           name={selectedMember.name}
                           size={20}
                           textSize="text-[8px]"
@@ -220,7 +221,7 @@ export function AddAdminDialog({
                             )}
                           >
                             <MemberAvatar
-                              avatarUrl={member.avatarUrl}
+                              avatarPath={member.avatarPath}
                               name={member.name}
                               size={28}
                               textSize="text-[9px]"
@@ -325,25 +326,27 @@ export function AddAdminDialog({
   );
 }
 
-function MemberAvatar({
-  avatarUrl,
-  name,
-  size,
-  textSize,
-}: {
-  avatarUrl: string | null;
+interface MemberAvatarProps {
+  avatarPath: string | null;
   name: string;
   size: number;
   textSize: string;
-}) {
+}
+
+function MemberAvatar({
+  avatarPath,
+  name,
+  size,
+  textSize,
+}: MemberAvatarProps) {
   return (
     <span
       className="relative inline-flex shrink-0 overflow-hidden rounded-full border border-border bg-muted"
       style={{ width: size, height: size }}
     >
-      {avatarUrl ? (
+      {avatarPath ? (
         <Image
-          src={avatarUrl}
+          src={storageUrl(avatarPath)}
           alt=""
           width={size}
           height={size}

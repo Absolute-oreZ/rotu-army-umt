@@ -1,4 +1,3 @@
-export const DEFAULT_HERO_IMAGE_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/hero-images/default-hero-image.jpg";
 export const DEFAULT_GOOGLE_MAP_LOCATION_URL = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3972.0307093423557!2d103.0855613748609!3d5.412293794566897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31b7bd9170fb4525%3A0x95ae1a9651800784!2sMarkas%20PALAPES%20Darat%20UMT!5e0!3m2!1sen!2smy!4v1766609697968!5m2!1sen!2smy";
 export const DEFAULT_OFFICIAL_EMAIL = "";
 export const DEFAULT_INSTAGRAM_URL = "https://www.instagram.com/palapesdaratumt_2019";
@@ -6,15 +5,16 @@ export const DEFAULT_FACEBOOK_URL = "https://facebook.com/palapesumt.darat";
 export const DEFAULT_YOUTUBE_URL = "";
 export const DEFAULT_TIKTOK_URL = "";
 export const DEFAULT_X_URL = "";
-export const DEFAULT_RED_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-red-bg.jpg";
-export const DEFAULT_BLUE_BG_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-blue-bg.jpg";
-export const DEFAULT_CADET_DISPLAY_PHOTO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/default-display.jpg";
-export const DEFAULT_EVENT_COVER_PHOTO = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-cover-photo.jpg";
-export const DEFAULT_EVENT_VIDEO_URL = "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-video.mp4";
+export const DEFAULT_HERO_IMAGE_PATH = "hero-images/default-hero-image.jpg";
+export const DEFAULT_RED_BG_PHOTO_PATH = "placeholder/default-red-bg.jpg";
+export const DEFAULT_BLUE_BG_PHOTO_PATH = "placeholder/default-blue-bg.jpg";
+export const DEFAULT_CADET_DISPLAY_PHOTO_PATH = "placeholder/default-display.jpg";
+export const DEFAULT_EVENT_COVER_PHOTO = "placeholder/event-cover-photo.jpg";
+export const DEFAULT_EVENT_VIDEO_PATH = "placeholder/event-video.mp4";
 export const DEFAULT_EVENT_DISPLAY_PHOTOS = [
-  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-1.jpg",
-  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-2.jpg",
-  "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/placeholder/event-photo-3.jpg",
+  "placeholder/event-photo-1.jpg",
+  "placeholder/event-photo-2.jpg",
+  "placeholder/event-photo-3.jpg",
 ] as const;
 
 export const GENDER_OPTIONS = ["MALE", "FEMALE"] as const;
@@ -103,7 +103,7 @@ export const DEFAULT_TESTIMONIAL_ENTRIES = [
   {
     authorName: "Ahmad Fauzi",
     authorRank: "SJN Cadet",
-    authorImageUrl: "/images/testimonials/testimonial-1.jpg",
+    authorImagePath: "images/testimonials/testimonial-1.jpg",
     translations: {
       en: "Joining ROTU was the best decision of my university life. It taught me discipline and leadership like nowhere else.",
       ms: "Menyertai ROTU adalah keputusan terbaik dalam kehidupan universiti saya. Ia mengajar saya disiplin dan kepimpinan yang tidak dapat diperolehi di tempat lain.",
@@ -114,7 +114,7 @@ export const DEFAULT_TESTIMONIAL_ENTRIES = [
   {
     authorName: "Siti Aminah",
     authorRank: "KPL Cadet",
-    authorImageUrl: "/images/testimonials/testimonial-2.jpg",
+    authorImagePath: "images/testimonials/testimonial-2.jpg",
     translations: {
       en: "The physical challenges were tough, but the camaraderie and support from my peers made every moment worth it.",
       ms: "Cabaran fizikal memang sukar, tetapi semangat setiakawan dan sokongan daripada rakan sebaya menjadikan setiap saat berbaloi.",
@@ -125,7 +125,7 @@ export const DEFAULT_TESTIMONIAL_ENTRIES = [
   {
     authorName: "Wei Lun",
     authorRank: "SJN Cadet",
-    authorImageUrl: "/images/testimonials/testimonial-3.jpg",
+    authorImagePath: "images/testimonials/testimonial-3.jpg",
     translations: {
       en: "I've grown so much as a person. The training prepares you for the real world, not just military service.",
       ms: "Saya telah berkembang pesat sebagai seorang insan. Latihan ini menyediakan anda untuk dunia sebenar, bukan sekadar perkhidmatan tentera.",
@@ -252,22 +252,22 @@ export const DEFAULT_SEE_MORE_LINKS = [
   {
     title: "Angkatan Tentera Malaysia",
     link: "https://www.mafhq.mil.my/",
-    imageUrl: "/images/see-also-atm.svg",
+    imagePath: "placeholder/see-also-atm.svg",
   },
   {
     title: "Tentera Udara Malaysia",
     link: "https://airforce.mil.my/",
-    imageUrl: "/images/see-also-airforce.jpeg",
+    imagePath: "placeholder/see-also-airforce.jpeg",
   },
   {
     title: "Tentera Laut Malaysia",
     link: "https://www.navy.mil.my/",
-    imageUrl: "/images/see-also-navy.jpg",
+    imagePath: "placeholder/see-also-navy.jpg",
   },
   {
     title: "Tentera Darat Malaysia",
     link: "https://army.mil.my/",
-    imageUrl: "/images/see-also-army.jpg",
+    imagePath: "placeholder/see-also-army.jpg",
   },
 ] as const;
 
@@ -289,8 +289,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1985-03-15",
     age: 41,
     kor: "Rejimen Askar Melayu Diraja (RAMD)",
-    redBgPhotoPath: DEFAULT_RED_BG_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_RED_BG_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "Nur Aisyah",
@@ -306,8 +306,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1988-07-22",
     age: 38,
     kor: "Kor Perkhidmatan Am (KPA)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "Daniel Tan",
@@ -323,8 +323,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1990-01-10",
     age: 36,
     kor: "Rejimen Semboyan Diraja (RSD)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "Hafiz Rahman",
@@ -340,8 +340,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1992-11-05",
     age: 34,
     kor: "Kor Armor Diraja (KAD)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "Suresh Kumar",
@@ -357,8 +357,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1991-05-18",
     age: 35,
     kor: "Rejimen Artileri Diraja (RAD)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "Lim Jia Hui",
@@ -374,8 +374,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1993-09-30",
     age: 33,
     kor: "Kor Kesihatan Diraja (KKD)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "Farhana Aziz",
@@ -391,8 +391,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1994-02-14",
     age: 32,
     kor: "Kor Agama Angkatan Tentera (KAGAT)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
 
   // =========================
@@ -412,8 +412,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "1982-06-20",
     age: 44,
     kor: "Rejimen Askar Melayu Diraja (RAMD)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
 
   ...Array.from({ length: 3 }, (_, i) => ({
@@ -430,8 +430,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `199${5 + i}-0${3 + i}-10`,
     age: 31 - i,
     kor: ["Rejimen Renjer Diraja (RRD)", "Kor Armor Diraja (KAD)", "Rejimen Sempadan (RS)"][i],
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   ...Array.from({ length: 3 }, (_, i) => ({
@@ -448,8 +448,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `199${7 + i}-0${6 + i}-22`,
     age: 29 - i,
     kor: ["Rejimen Artileri Diraja (RAD)", "Kor Polis Tentera Diraja (KPTD)", "Rejimen Semboyan Diraja (RSD)"][i],
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   ...Array.from({ length: 3 }, (_, i) => ({
@@ -466,8 +466,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `200${0 + i}-0${2 + i}-15`,
     age: 26 - i,
     kor: ["Rejimen Askar Jurutera Diraja (RAJD)", "Kor Risik Diraja (KRD)", "Kor Ordnans Diraja (KOD)"][i],
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   // SUO
@@ -485,8 +485,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "2001-04-12",
     age: 25,
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
   {
     name: "CADET",
@@ -502,8 +502,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: "2001-04-12",
     age: 25,
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   },
 
   // JUO
@@ -521,8 +521,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `200${2 + i}-0${5 + i}-20`,
     age: 24 - i,
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   // SERGEANT CADETS
@@ -540,8 +540,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `200${3 + (i % 3)}-0${1 + (i % 9)}-15`,
     age: 23 - (i % 3),
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   // KOPERAL CADETS
@@ -559,8 +559,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `200${3 + (i % 3)}-0${1 + (i % 9)}-20`,
     age: 23 - (i % 3),
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   // PK
@@ -578,8 +578,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `200${4 + (i % 2)}-0${3 + i}-10`,
     age: 22 - (i % 2),
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 
   // PKW
@@ -597,8 +597,8 @@ export const DEFAULT_MEMBERS = [
     birthdate: `200${4 + (i % 2)}-0${3 + i}-25`,
     age: 22 - (i % 2),
     kor: "Rejimen Askar Wataniah (RAW)",
-    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_URL,
-    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_URL,
+    redBgPhotoPath: DEFAULT_CADET_DISPLAY_PHOTO_PATH,
+    blueBgPhotoPath: DEFAULT_BLUE_BG_PHOTO_PATH,
   })),
 ];
 
@@ -666,45 +666,33 @@ export const DEFAULT_INTAKES = [
     color: "#e8e84f",
     tagLine: "You Choose You Get",
     coverPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/1/cover/1772553232433-pn2rsavrvb-photo_2026-03-03_23-17-29.jpg",
+      "intakes/1/cover/1772553232433-pn2rsavrvb-photo_2026-03-03_23-17-29.jpg",
     patchPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/1/patch/photo_2025-08-12_09-46-31.jpg",
+      "intakes/1/patch/photo_2025-08-12_09-46-31.jpg",
     innerPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/1/inner/1772553232908-hprv1opjma8-489374817_18092673943571295_392734238668008862_n.jpg",
+      "intakes/1/inner/1772553232908-hprv1opjma8-489374817_18092673943571295_392734238668008862_n.jpg",
     tshirtPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/1/tshirt/1772553233100-t6adjay5ae-420124908_17986793711615418_6074924214528914305_n.jpg",
+      "intakes/1/tshirt/1772553233100-t6adjay5ae-420124908_17986793711615418_6074924214528914305_n.jpg",
     displayPhotos: [
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/1/display/photo_2025-04-11_12-10-20.jpg",
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/1/display/photo_2025-09-03_18-25-25.jpg",
+      "intakes/1/display/photo_2025-04-11_12-10-20.jpg",
+      "intakes/1/display/photo_2025-09-03_18-25-25.jpg",
     ],
     translations: {
       en: {
         summary:
           "Alpha Wolves was the pioneering intake known for resilience, teamwork, and leadership excellence.",
-        seoTitle: "Alpha Wolves Intake",
-        seoDescription:
-          "Learn more about Alpha Wolves, the first intake focused on discipline and leadership.",
       },
       ms: {
         summary:
           "Alpha Wolves merupakan pengambilan perintis yang terkenal dengan ketahanan, kerja berpasukan dan kepimpinan.",
-        seoTitle: "Pengambilan Alpha Wolves",
-        seoDescription:
-          "Ketahui lebih lanjut mengenai Alpha Wolves yang menekankan disiplin dan kepimpinan.",
       },
       zh: {
         summary:
           "Alpha Wolves 是以坚韧、团队合作和领导力闻名的先锋队伍。",
-        seoTitle: "Alpha Wolves 招生",
-        seoDescription:
-          "了解更多关于 Alpha Wolves 的纪律与领导精神。",
       },
       ta: {
         summary:
           "Alpha Wolves என்பது ஒற்றுமை மற்றும் தலைமைத்துவத்திற்காக அறியப்பட்ட முதல் அணியாகும்.",
-        seoTitle: "Alpha Wolves சேர்க்கை",
-        seoDescription:
-          "Alpha Wolves அணியின் ஒழுக்கம் மற்றும் தலைமைப்பண்புகளை அறிக.",
       },
     },
     patchExplanations: {
@@ -736,45 +724,33 @@ export const DEFAULT_INTAKES = [
     color: "#b80416",
     tagLine: "Middle is middle",
     coverPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/2/cover/1772732852560-xszm9j7w47a-photo_2025-08-12_09-46-29.jpg",
+      "intakes/2/cover/1772732852560-xszm9j7w47a-photo_2025-08-12_09-46-29.jpg",
     patchPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/2/patch/photo_2025-08-12_09-46-29.jpg",
+      "intakes/2/patch/photo_2025-08-12_09-46-29.jpg",
     innerPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/2/inner/1772642387601-f1g5p00l0o8-420124908_17986793711615418_6074924214528914305_n.jpg",
+      "intakes/2/inner/1772642387601-f1g5p00l0o8-420124908_17986793711615418_6074924214528914305_n.jpg",
     tshirtPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/2/tshirt/1772683766655-qhc1lap4log-489374817_18092673943571295_392734238668008862_n.jpg",
+      "intakes/2/tshirt/1772683766655-qhc1lap4log-489374817_18092673943571295_392734238668008862_n.jpg",
     displayPhotos: [
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/2/display/1772730368051-cfj0shfals-WhatsApp%20Image%202025-12-26%20at%2001.40.11.jpeg",
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/2/display/1772730368358-hz8l88zsrll-beret+hackle.jpeg",
+      "intakes/2/display/1772730368051-cfj0shfals-WhatsApp%20Image%202025-12-26%20at%2001.40.11.jpeg",
+      "intakes/2/display/1772730368358-hz8l88zsrll-beret+hackle.jpeg",
     ],
     translations: {
       en: {
         summary:
           "Iron Eagles became known for strategic thinking and aerial-inspired discipline.",
-        seoTitle: "Iron Eagles Intake",
-        seoDescription:
-          "Discover the legacy of Iron Eagles and their pursuit of excellence.",
       },
       ms: {
         summary:
           "Iron Eagles terkenal dengan pemikiran strategik dan disiplin tinggi.",
-        seoTitle: "Pengambilan Iron Eagles",
-        seoDescription:
-          "Kenali legasi Iron Eagles dan usaha mereka mencapai kecemerlangan.",
       },
       zh: {
         summary:
           "Iron Eagles 以战略思维和高纪律性闻名。",
-        seoTitle: "Iron Eagles 招生",
-        seoDescription:
-          "探索 Iron Eagles 的卓越精神与传统。",
       },
       ta: {
         summary:
           "Iron Eagles அணியினர் திட்டமிடல் மற்றும் ஒழுக்கத்திற்காக அறியப்பட்டனர்.",
-        seoTitle: "Iron Eagles சேர்க்கை",
-        seoDescription:
-          "Iron Eagles அணியின் பாரம்பரியம் மற்றும் சாதனைகளை அறிக.",
       },
     },
     patchExplanations: {
@@ -806,45 +782,33 @@ export const DEFAULT_INTAKES = [
     color: "#065c07",
     tagLine: "Silent But Fearless",
     coverPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/3/cover/1772684792124-wkotlzpimg-beret+hackle.jpeg",
+      "intakes/3/cover/1772684792124-wkotlzpimg-beret+hackle.jpeg",
     patchPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/3/patch/photo_2025-08-12_09-46-26.jpg",
+      "intakes/3/patch/photo_2025-08-12_09-46-26.jpg",
     innerPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/3/inner/1772684792124-zu4jtdp35p-489374817_18092673943571295_392734238668008862_n.jpg",
+      "intakes/3/inner/1772684792124-zu4jtdp35p-489374817_18092673943571295_392734238668008862_n.jpg",
     tshirtPhotoPath:
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/3/tshirt/1772684792124-lww791zrgf-420124908_17986793711615418_6074924214528914305_n.jpg",
+      "intakes/3/tshirt/1772684792124-lww791zrgf-420124908_17986793711615418_6074924214528914305_n.jpg",
     displayPhotos: [
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/3/display/1772684792394-bryyz23mwc-420124908_17986793711615418_6074924214528914305_n.jpg",
-      "https://uiifoirxbqkdzppbvour.supabase.co/storage/v1/object/public/rotu-army-umt/intakes/3/display/1772684792954-fn88t411ya-photo_2026-03-03_23-17-29.jpg",
+      "intakes/3/display/1772684792394-bryyz23mwc-420124908_17986793711615418_6074924214528914305_n.jpg",
+      "intakes/3/display/1772684792954-fn88t411ya-photo_2026-03-03_23-17-29.jpg",
     ],
     translations: {
       en: {
         summary:
           "Shadow Panthers are recognized for stealth, adaptability, and mental resilience.",
-        seoTitle: "Shadow Panthers Intake",
-        seoDescription:
-          "Explore the elite Shadow Panthers intake and their fearless philosophy.",
       },
       ms: {
         summary:
           "Shadow Panthers dikenali kerana ketangkasan, adaptasi dan daya tahan mental.",
-        seoTitle: "Pengambilan Shadow Panthers",
-        seoDescription:
-          "Terokai falsafah berani Shadow Panthers.",
       },
       zh: {
         summary:
           "Shadow Panthers 以敏捷、适应能力和心理韧性著称。",
-        seoTitle: "Shadow Panthers 招生",
-        seoDescription:
-          "探索 Shadow Panthers 无畏精神。",
       },
       ta: {
         summary:
           "Shadow Panthers அணியினர் தன்னம்பிக்கை மற்றும் மன உறுதியால் அறியப்படுகின்றனர்.",
-        seoTitle: "Shadow Panthers சேர்க்கை",
-        seoDescription:
-          "Shadow Panthers அணியின் அச்சமற்ற தத்துவத்தை அறிக.",
       },
     },
     patchExplanations: {
@@ -1064,7 +1028,7 @@ export const DEFAULT_EVENTS = Array.from(
       coverPhotoPath: DEFAULT_EVENT_COVER_PHOTO,
       coverPhotoWidth: 1280,
       coverPhotoHeight: 720,
-      videoUrl: DEFAULT_EVENT_VIDEO_URL,
+      videoPath: DEFAULT_EVENT_VIDEO_PATH,
       displayPhotos: [...DEFAULT_EVENT_DISPLAY_PHOTOS],
       tags: [
         DEFAULT_EVENT_TAGS[index % DEFAULT_EVENT_TAGS.length].slug,
@@ -1074,26 +1038,18 @@ export const DEFAULT_EVENTS = Array.from(
         en: {
           title: name,
           summary: LONG_EN_EVENT_SUMMARY,
-          seoTitle: `${name} | PALAPES UMT`,
-          seoDescription: `Learn more about ${name} organised by PALAPES UMT.`,
         },
         ms: {
           title: name,
           summary: LONG_MS_EVENT_SUMMARY,
-          seoTitle: `${name} | PALAPES UMT`,
-          seoDescription: `Ketahui lebih lanjut mengenai ${name} anjuran PALAPES UMT.`,
         },
         zh: {
           title: name,
           summary: LONG_ZH_EVENT_SUMMARY,
-          seoTitle: `${name} | PALAPES UMT`,
-          seoDescription: `了解 PALAPES UMT 举办的 ${name}。`,
         },
         ta: {
           title: name,
           summary: LONG_TA_EVENT_SUMMARY,
-          seoTitle: `${name} | PALAPES UMT`,
-          seoDescription: `${name} பற்றிய தகவல்களை அறிக.`,
         },
       },
     };

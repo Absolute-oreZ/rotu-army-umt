@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 export function ReceiptPreviewDialog({
   url,
@@ -32,10 +33,11 @@ export function ReceiptPreviewDialog({
       role="presentation"
     >
       <div className="flex h-[80vh] w-[80vw] max-h-225 max-w-300 items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={url}
           alt="Receipt preview"
+          width={600}
+          height={600}
           className="max-h-full max-w-full object-contain"
           onClick={(event) => event.stopPropagation()}
         />

@@ -3,6 +3,7 @@
 import { useState, useTransition, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { ChevronDownIcon, PencilIcon } from "lucide-react";
+import Image from "next/image";
 import {
   Sheet,
   SheetContent,
@@ -37,6 +38,7 @@ import { SingleFileField } from "@/components/ui/single-file-field";
 import { CADET_RANKS } from "@/db/schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown";
 import { Field } from "@/components/ui/field";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 type IntakeOption = { id: number; intakeNo: string };
 
@@ -102,7 +104,7 @@ function SheetInner({
 
   if (loading) {
     return (
-      <SheetSkeleton />
+      <SheetSkeleton className="w-140 max-w-[calc(100vw-2rem)] p-0" />
     );
   }
 
@@ -311,9 +313,9 @@ function EditMode({
     else { setDisplayFile(null); }
   }
 
-  const redBgExisting = removeRedBg ? null : details.redBgPhotoPath;
-  const blueBgExisting = removeBlueBg ? null : details.blueBgPhotoPath;
-  const displayExisting = removeDisplay ? null : details.displayPhotoPath;
+  const redBgExisting = removeRedBg || !details.redBgPhotoPath ? null : storageUrl(details.redBgPhotoPath);
+  const blueBgExisting = removeBlueBg || !details.blueBgPhotoPath ? null : storageUrl(details.blueBgPhotoPath);
+  const displayExisting = removeDisplay || !details.displayPhotoPath ? null : storageUrl(details.displayPhotoPath);
 
   function handleSubmit() {
     if (!formValid) {
@@ -582,9 +584,15 @@ function EditMode({
               Images
             </h3>
             <div className="grid grid-cols-3 gap-3">
-              <SingleFileField label="Red BG Photo" file={redBgFile} onChange={handleRedBgChange} onRemove={() => { setRedBgFile(null); setRemoveRedBg(true); }} existingUrl={redBgExisting} />
-              <SingleFileField label="Blue BG Photo" file={blueBgFile} onChange={handleBlueBgChange} onRemove={() => { setBlueBgFile(null); setRemoveBlueBg(true); }} existingUrl={blueBgExisting} />
-              <SingleFileField label="Display Photo" file={displayFile} onChange={handleDisplayChange} onRemove={() => { setDisplayFile(null); setRemoveDisplay(true); }} existingUrl={displayExisting} />
+              <Field label="Red BG Photo">
+                <SingleFileField file={redBgFile} onChange={handleRedBgChange} onRemove={() => { setRedBgFile(null); setRemoveRedBg(true); }} existingUrl={redBgExisting} />
+              </Field>
+              <Field label="Blue BG Photo">
+                <SingleFileField file={blueBgFile} onChange={handleBlueBgChange} onRemove={() => { setBlueBgFile(null); setRemoveBlueBg(true); }} existingUrl={blueBgExisting} />
+              </Field>
+              <Field label="Display Photo">
+                <SingleFileField file={displayFile} onChange={handleDisplayChange} onRemove={() => { setDisplayFile(null); setRemoveDisplay(true); }} existingUrl={displayExisting} />
+              </Field>
             </div>
           </section>
         </div>
@@ -618,13 +626,19 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 function ImagePreview({ label, url }: { label: string; url: string | null }) {
+  const resolvedUrl = url ? storageUrl(url) : undefined;
+
   return (
     <div className="flex flex-col gap-1">
       <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</span>
-      {url ? (
-        <div className="aspect-square overflow-hidden rounded-lg border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt={label} className="size-full object-cover" />
+      {resolvedUrl ? (
+        <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border">
+          <Image
+            src={resolvedUrl}
+            alt={label}
+            fill
+            className="object-cover"
+          />
         </div>
       ) : (
         <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-border text-[10px] text-muted-foreground">

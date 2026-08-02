@@ -37,6 +37,8 @@ export default async function CadetCollectionPage({ params }: PageProps) {
     return bank.split("_").join(" ");
   }
 
+  const qrCodeUrl = collection.qrCodePath;
+
   return (
     <main className="bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -125,14 +127,14 @@ export default async function CadetCollectionPage({ params }: PageProps) {
                     </div>
                   )}
                 </div>
-                {collection.qrCodeUrl && (
+                {qrCodeUrl && (
                   <div className="rounded-2xl border border-border bg-background p-4">
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">
                       QR Code
                     </p>
                     <div className="mt-3 flex justify-center">
                       <Image
-                        src={collection.qrCodeUrl}
+                        src={qrCodeUrl}
                         alt="Payment QR code"
                         width={240}
                         height={240}

@@ -8,7 +8,7 @@ import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { calculateAge, isValidPersonalEmail, isValidEduEmail } from "@/lib/utils";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage, getStoragePublicUrl } from "@/lib/supabase/storage";
+import { uploadToStorage } from "@/lib/supabase/storage";
 import { takeString, takeNumber, takeFile, getFileExtension } from "@/lib/admin/form-helpers";
 import {
   genderEnum,
@@ -76,9 +76,7 @@ async function uploadImage(
 ): Promise<string | null> {
   try {
     const supabase = createSupabaseAdminClient();
-    const uploaded = await uploadToStorage(supabase, file, path);
-    if (!uploaded) return null;
-    return getStoragePublicUrl(supabase, path);
+    return await uploadToStorage(supabase, file, path);
   } catch {
     return null;
   }
@@ -458,18 +456,18 @@ export async function updateCadet(formData: FormData) {
 
     if (redBgFile) {
       const ext = getFileExtension(redBgFile);
-      const url = await uploadImage(redBgFile, `${storageBase}/red-bg.${ext}`);
-      if (url) await db.update(members).set({ redBgPhotoPath: url }).where(eq(members.id, rawMemberId));
+      const path = await uploadImage(redBgFile, `${storageBase}/red-bg.${ext}`);
+      if (path) await db.update(members).set({ redBgPhotoPath: path }).where(eq(members.id, rawMemberId));
     }
     if (blueBgFile) {
       const ext = getFileExtension(blueBgFile);
-      const url = await uploadImage(blueBgFile, `${storageBase}/blue-bg.${ext}`);
-      if (url) await db.update(members).set({ blueBgPhotoPath: url }).where(eq(members.id, rawMemberId));
+      const path = await uploadImage(blueBgFile, `${storageBase}/blue-bg.${ext}`);
+      if (path) await db.update(members).set({ blueBgPhotoPath: path }).where(eq(members.id, rawMemberId));
     }
     if (displayFile) {
       const ext = getFileExtension(displayFile);
-      const url = await uploadImage(displayFile, `${storageBase}/display.${ext}`);
-      if (url) await db.update(cadets).set({ displayPhotoPath: url }).where(eq(cadets.id, rawCadetInfoId));
+      const path = await uploadImage(displayFile, `${storageBase}/display.${ext}`);
+      if (path) await db.update(cadets).set({ displayPhotoPath: path }).where(eq(cadets.id, rawCadetInfoId));
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

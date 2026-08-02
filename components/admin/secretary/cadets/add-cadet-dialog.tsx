@@ -417,9 +417,15 @@ export function AddCadetDialog({
                 Images
               </h3>
               <div className="grid grid-cols-3 gap-3">
-                <SingleFileField label="Red BG Photo" file={redBgFile} onChange={setRedBgFile} onRemove={() => setRedBgFile(null)} />
-                <SingleFileField label="Blue BG Photo" file={blueBgFile} onChange={setBlueBgFile} onRemove={() => setBlueBgFile(null)} />
-                <SingleFileField label="Display Photo" file={displayFile} onChange={setDisplayFile} onRemove={() => setDisplayFile(null)} />
+                <Field label="Red BG Photo">
+                  <SingleFileField file={redBgFile} onChange={setRedBgFile} onRemove={() => setRedBgFile(null)} />
+                </Field>
+                <Field label="Blue BG Photo">
+                  <SingleFileField file={blueBgFile} onChange={setBlueBgFile} onRemove={() => setBlueBgFile(null)} />
+                </Field>
+                <Field label="Display Photo">
+                  <SingleFileField file={displayFile} onChange={setDisplayFile} onRemove={() => setDisplayFile(null)} />
+                </Field>
               </div>
             </section>
           </div>

@@ -22,6 +22,7 @@ import { isTableStateDefault } from "@/lib/admin/table-search-params";
 import { Empty } from "@/components/ui/empty";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { buildIntakesTableConfig, formatStatus } from "@/components/admin/secretary/intakes/table-config";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import { IntakeDetailsSheet } from "./intake-details-sheet";
 import { ChangeIntakeStatusDialog } from "./change-intake-status-dialog";
 
@@ -155,7 +156,7 @@ export function IntakesTable({
                       {intake.patchPhotoPath ? (
                         <div className="relative size-8 overflow-hidden rounded-full border border-border">
                           <Image
-                            src={intake.patchPhotoPath}
+                            src={storageUrl(intake.patchPhotoPath)}
                             alt=""
                             fill
                             sizes="32px"
@@ -240,7 +241,7 @@ export function IntakesTable({
               <div key={intake.id} className="flex gap-3 rounded-lg border border-border p-4">
                 {intake.patchPhotoPath ? (
                   <div className="relative size-10 shrink-0 overflow-hidden rounded-full border border-border">
-                    <Image src={intake.patchPhotoPath} alt="" fill sizes="40px" className="object-cover" />
+                    <Image src={storageUrl(intake.patchPhotoPath)} alt="" fill sizes="40px" className="object-cover" />
                   </div>
                 ) : (
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-sm font-semibold text-muted-foreground">

@@ -16,6 +16,7 @@ import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getHomePageContent } from "@/lib/public/content";
 import { StatCard } from "@/components/public/stat-card";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 export async function generateMetadata({
   params,
@@ -54,15 +55,18 @@ export default async function HomePage({
   
   const dictionary = await getDictionary(locale);
   const content = await getHomePageContent(locale);
+  const heroImageSrc = content.heroImagePath ? storageUrl(content.heroImagePath) : null;
 
   return (
     <main className="flex-1 overflow-y-auto bg-background text-foreground">
       <section className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden">
-        <HeroImage
-          src={content.heroImageUrl}
-          fallbackSrc="/images/default-hero-image.jpg"
-          alt={dictionary.home.heroImageAlt}
-        />
+        {heroImageSrc ? (
+          <HeroImage
+            src={heroImageSrc}
+            fallbackSrc="/images/default-hero-image.jpg"
+            alt={dictionary.home.heroImageAlt}
+          />
+        ) : null}
         <div className="absolute inset-0 bg-white/42 dark:bg-black/58" />
         <div className="absolute inset-0 bg-linear-to-r from-background/74 via-background/35 to-transparent dark:from-background/82 dark:via-background/56 dark:to-transparent" />
         <div className="absolute inset-0 bg-linear-to-t from-background/66 to-transparent dark:from-background/74" />

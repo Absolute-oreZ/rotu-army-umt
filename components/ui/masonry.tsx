@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { cn } from "@/lib/utils";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 export type MasonryItem = {
   id: string;
@@ -221,7 +222,7 @@ export default function Masonry({
             className="group relative block h-full w-full overflow-hidden rounded-xl"
           >
             <Image
-              src={item.img}
+              src={storageUrl(item.img)}
               alt={item.title}
               fill
               sizes="(max-width: 600px) 100vw, (max-width: 1000px) 50vw, 33vw"

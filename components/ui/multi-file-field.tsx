@@ -2,6 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import { PencilLineIcon, UploadIcon, Trash2Icon } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export type MultiFileFieldItem = {
@@ -92,10 +93,11 @@ export function MultiFileField({
               {items.map((item) => (
                 <div key={item.id} className="rounded-xl border border-border bg-background p-2 shadow-sm">
                   <div className="relative overflow-hidden rounded-lg border border-border bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={item.url}
                       alt={item.file.name}
+                      width={320}
+                      height={128}
                       className="h-32 w-full object-cover"
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/20 to-transparent p-2">

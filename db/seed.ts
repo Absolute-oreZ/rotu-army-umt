@@ -5,14 +5,14 @@ import {
   DEFAULT_ADMIN,
   DEFAULT_FACEBOOK_URL,
   DEFAULT_FAQ_ENTRIES,
-  DEFAULT_HERO_IMAGE_URL,
+  DEFAULT_HERO_IMAGE_PATH,
   DEFAULT_INSTAGRAM_URL,
   DEFAULT_SEE_MORE_LINKS,
   DEFAULT_TESTIMONIAL_ENTRIES,
   DEFAULT_INTAKES,
   DEFAULT_MEMBERS,
   DEFAULT_CADET_QUOTES,
-  DEFAULT_CADET_DISPLAY_PHOTO_URL,
+  DEFAULT_CADET_DISPLAY_PHOTO_PATH,
   DEFAULT_CADETS_INFO,
   DEFAULT_CADET_PHYSICAL,
   DEFAULT_OFFICERS_AND_INSTRUCTORS,
@@ -26,7 +26,7 @@ import {
   DEFAULT_YOUTUBE_URL,
   DEFAULT_TIKTOK_URL,
   DEFAULT_X_URL,
-  DEFAULT_BLUE_BG_PHOTO_URL,
+  DEFAULT_BLUE_BG_PHOTO_PATH,
 } from "../lib/data";
 import { calculateBMI, computeAcademicSchedule } from "@/lib/utils";
 
@@ -145,8 +145,8 @@ async function seed() {
       '2000-01-01',
       26,
       'Rejimen Askar Wataniah (RAW)',
-      ${DEFAULT_CADET_DISPLAY_PHOTO_URL},
-      ${DEFAULT_BLUE_BG_PHOTO_URL}
+      ${DEFAULT_CADET_DISPLAY_PHOTO_PATH},
+      ${DEFAULT_BLUE_BG_PHOTO_PATH}
     )
     returning id
   `;
@@ -169,7 +169,7 @@ async function seed() {
   const [webappContent] = await sql<[{ id: number }]>`
     insert into webapp_contents (
       singleton_key,
-      hero_image_url,
+      hero_image_path,
       facebook_url,
       instagram_url,
       youtube_url,
@@ -180,7 +180,7 @@ async function seed() {
     )
     values (
       true,
-      ${DEFAULT_HERO_IMAGE_URL},
+      ${DEFAULT_HERO_IMAGE_PATH},
       ${DEFAULT_FACEBOOK_URL},
       ${DEFAULT_INSTAGRAM_URL},
       ${DEFAULT_YOUTUBE_URL},
@@ -269,7 +269,7 @@ async function seed() {
         webapp_content_id,
         title,
         link,
-        image_url,
+        image_path,
         sort_order,
         status
       )
@@ -277,7 +277,7 @@ async function seed() {
         ${webappContent.id},
         ${entry.title},
         ${entry.link},
-        ${entry.imageUrl},
+        ${entry.imagePath},
         ${i + 1},
         'PUBLISHED'
       )
@@ -323,21 +323,17 @@ async function seed() {
       const translation = intake.translations[locale];
 
       await sql`
-        insert into intake_translations (
-          intake_id,
-          locale,
-          summary,
-          seo_title,
-          seo_description
-        )
-        values (
-          ${intakeRow.id},
-          ${locale},
-          ${translation.summary},
-          ${translation.seoTitle},
-          ${translation.seoDescription}
-        )
-      `;
+          insert into intake_translations (
+            intake_id,
+            locale,
+            summary
+          )
+          values (
+            ${intakeRow.id},
+            ${locale},
+            ${translation.summary}
+          )
+        `;
     }
 
     for (const key of ["ANIMAL", "COLOR", "PHILOSOPHY"] as const) {
@@ -490,7 +486,7 @@ async function seed() {
         ${"MAT-" + c.armyNo},
         true,
         ${DEFAULT_CADET_QUOTES[i % DEFAULT_CADET_QUOTES.length]},
-        ${DEFAULT_CADET_DISPLAY_PHOTO_URL},
+        ${DEFAULT_CADET_DISPLAY_PHOTO_PATH},
         ${physical.cgpa},
         ${physical.height},
         ${physical.weight},
@@ -608,7 +604,7 @@ async function seed() {
       cover_photo_path,
       cover_photo_width,
       cover_photo_height,
-      video_url,
+      video_path,
       status
     )
     values (
@@ -621,34 +617,30 @@ async function seed() {
       ${event.coverPhotoPath},
       ${event.coverPhotoWidth},
       ${event.coverPhotoHeight},
-      ${event.videoUrl},
+      ${event.videoPath},
       'PUBLISHED'
     )
     returning id
   `;
 
     for (const locale of ["en", "ms", "zh", "ta"] as const) {
-      const translation = event.translations[locale];
+          const translation = event.translations[locale];
 
-      await sql`
-      insert into event_translations (
-        event_id,
-        locale,
-        title,
-        summary,
-        seo_title,
-        seo_description
-      )
-      values (
-        ${eventRow.id},
-        ${locale},
-        ${translation.title},
-        ${translation.summary},
-        ${translation.seoTitle},
-        ${translation.seoDescription}
-      )
-    `;
-    }
+          await sql`
+          insert into event_translations (
+            event_id,
+            locale,
+            title,
+            summary
+          )
+          values (
+            ${eventRow.id},
+            ${locale},
+            ${translation.title},
+            ${translation.summary}
+          )
+        `;
+        }
 
     for (const photo of event.displayPhotos) {
       await sql`

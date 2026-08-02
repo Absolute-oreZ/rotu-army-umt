@@ -59,6 +59,29 @@ export function createNewsletterTokens() {
   };
 }
 
+export function createSignedUnsubscribeToken(subscriberId: string) {
+  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET;
+  if (!secret) throw new Error("NEWSLETTER_UNSUBSCRIBE_SECRET is not configured");
+  const payload = Buffer.from(JSON.stringify({ subscriberId }), "utf8").toString("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+export function verifySignedUnsubscribeToken(token: string) {
+  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET;
+  if (!secret) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  const left = Buffer.from(signature);
+  const right = Buffer.from(expected);
+  if (left.length !== right.length || !crypto.timingSafeEqual(left, right)) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { subscriberId?: string };
+    return parsed.subscriberId ?? null;
+  } catch { return null; }
+}
+
 function buildNewsletterEmailHtml({
   copy,
   confirmationUrl,
@@ -242,20 +265,8 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
 
 export async function unsubscribeNewsletterSubscription(token: string): Promise<NewsletterUnsubscribeStatus> {
   const tokenHash = hashNewsletterToken(token);
-
-  const [subscriber] = await db
-    .select({
-      id: newsletterSubscribers.id,
-      status: newsletterSubscribers.status,
-      unsubscribedAt: newsletterSubscribers.unsubscribedAt,
-    })
-    .from(newsletterSubscribers)
-    .where(
-      or(
-        eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash),
-      ),
-    )
-    .limit(1);
+  const signedSubscriberId = verifySignedUnsubscribeToken(token);
+  const [subscriber] = await db.select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt }).from(newsletterSubscribers).where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : or(eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash))).limit(1);
 
   if (!subscriber) {
     try {

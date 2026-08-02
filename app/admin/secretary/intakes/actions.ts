@@ -14,7 +14,8 @@ import {
 import { requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage, getStoragePublicUrl, deleteFromStorage, extractStoragePath } from "@/lib/supabase/storage";
+import { uploadToStorage, deleteFromStorage } from "@/lib/supabase/storage";
+import { extractStoragePath } from "@/lib/supabase/storage-public";
 import { slugify } from "@/lib/slugify";
 import { takeString, takeNumber, takeFile, getFileExtension } from "@/lib/admin/form-helpers";
 
@@ -29,9 +30,7 @@ const VALID_STATUSES: PublicationStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
 async function uploadImage(file: File, path: string): Promise<string | null> {
   try {
     const supabase = createSupabaseAdminClient();
-    const uploaded = await uploadToStorage(supabase, file, path);
-    if (!uploaded) return null;
-    return getStoragePublicUrl(supabase, path);
+    return await uploadToStorage(supabase, file, path);
   } catch {
     return null;
   }
@@ -52,7 +51,7 @@ export type IntakeDetails = {
   patchPhotoPath: string | null;
   innerPhotoPath: string | null;
   tshirtPhotoPath: string | null;
-  translations: Record<string, { summary: string | null; seoTitle: string | null; seoDescription: string | null }>;
+  translations: Record<string, { summary: string | null; }>;
   patchExplanations: Record<string, Record<string, string>>;
   displayPhotos: { id: number; photoPath: string }[];
   cadetCount: number;
@@ -103,8 +102,6 @@ export async function getIntakeDetails(intakeId: number): Promise<{ data: Intake
   for (const t of transRows) {
     translations[t.locale] = {
       summary: t.summary,
-      seoTitle: t.seoTitle,
-      seoDescription: t.seoDescription,
     };
   }
 
@@ -166,12 +163,10 @@ export async function createIntake(formData: FormData) {
       ? (rawStatus as PublicationStatus)
       : "DRAFT";
 
-  const translationData: Record<string, { summary: string | null; seoTitle: string | null; seoDescription: string | null }> = {};
+  const translationData: Record<string, { summary: string | null; }> = {};
   for (const locale of LOCALES) {
     translationData[locale] = {
       summary: takeString(formData.get(`translation_${locale}_summary`)),
-      seoTitle: takeString(formData.get(`translation_${locale}_seoTitle`)),
-      seoDescription: takeString(formData.get(`translation_${locale}_seoDescription`)),
     };
   }
 
@@ -218,13 +213,11 @@ export async function createIntake(formData: FormData) {
 
       for (const locale of LOCALES) {
         const t = translationData[locale];
-        if (t.summary || t.seoTitle || t.seoDescription) {
+        if (t.summary) {
           await tx.insert(intakeTranslations).values({
             intakeId: id,
             locale,
             summary: t.summary,
-            seoTitle: t.seoTitle,
-            seoDescription: t.seoDescription,
           });
         }
       }
@@ -263,27 +256,23 @@ export async function createIntake(formData: FormData) {
 
   if (coverFile) {
     const ext = getFileExtension(coverFile);
-    const path = `intakes/${intakeId}/cover/${timestamp}.${ext}`;
-    const url = await uploadImage(coverFile, path);
-    if (url) photoUpdates.coverPhotoPath = url;
+    const path = await uploadImage(coverFile, `intakes/${intakeId}/cover/${timestamp}.${ext}`);
+    if (path) photoUpdates.coverPhotoPath = path;
   }
   if (patchFile) {
     const ext = getFileExtension(patchFile);
-    const path = `intakes/${intakeId}/patch/${timestamp}.${ext}`;
-    const url = await uploadImage(patchFile, path);
-    if (url) photoUpdates.patchPhotoPath = url;
+    const path = await uploadImage(patchFile, `intakes/${intakeId}/patch/${timestamp}.${ext}`);
+    if (path) photoUpdates.patchPhotoPath = path;
   }
   if (innerFile) {
     const ext = getFileExtension(innerFile);
-    const path = `intakes/${intakeId}/inner/${timestamp}.${ext}`;
-    const url = await uploadImage(innerFile, path);
-    if (url) photoUpdates.innerPhotoPath = url;
+    const path = await uploadImage(innerFile, `intakes/${intakeId}/inner/${timestamp}.${ext}`);
+    if (path) photoUpdates.innerPhotoPath = path;
   }
   if (tshirtFile) {
     const ext = getFileExtension(tshirtFile);
-    const path = `intakes/${intakeId}/tshirt/${timestamp}.${ext}`;
-    const url = await uploadImage(tshirtFile, path);
-    if (url) photoUpdates.tshirtPhotoPath = url;
+    const path = await uploadImage(tshirtFile, `intakes/${intakeId}/tshirt/${timestamp}.${ext}`);
+    if (path) photoUpdates.tshirtPhotoPath = path;
   }
 
   if (Object.keys(photoUpdates).length > 0) {
@@ -293,10 +282,9 @@ export async function createIntake(formData: FormData) {
   for (let j = 0; j < galleryFiles.length; j++) {
     const f = galleryFiles[j];
     const ext = getFileExtension(f);
-    const path = `intakes/${intakeId}/gallery/${timestamp}_${j}.${ext}`;
-    const url = await uploadImage(f, path);
-    if (url) {
-      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: url });
+    const path = await uploadImage(f, `intakes/${intakeId}/gallery/${timestamp}_${j}.${ext}`);
+    if (path) {
+      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: path });
     }
   }
 
@@ -337,12 +325,10 @@ export async function updateIntake(formData: FormData) {
       ? (rawStatus as PublicationStatus)
       : "DRAFT";
 
-  const translationData: Record<string, { summary: string | null; seoTitle: string | null; seoDescription: string | null }> = {};
+  const translationData: Record<string, { summary: string | null; }> = {};
   for (const locale of LOCALES) {
     translationData[locale] = {
       summary: takeString(formData.get(`translation_${locale}_summary`)),
-      seoTitle: takeString(formData.get(`translation_${locale}_seoTitle`)),
-      seoDescription: takeString(formData.get(`translation_${locale}_seoDescription`)),
     };
   }
 
@@ -430,13 +416,11 @@ export async function updateIntake(formData: FormData) {
       await tx.delete(intakeTranslations).where(eq(intakeTranslations.intakeId, intakeId));
       for (const locale of LOCALES) {
         const t = translationData[locale];
-        if (t.summary || t.seoTitle || t.seoDescription) {
+        if (t.summary) {
           await tx.insert(intakeTranslations).values({
             intakeId,
             locale,
             summary: t.summary,
-            seoTitle: t.seoTitle,
-            seoDescription: t.seoDescription,
           });
         }
       }
@@ -503,27 +487,23 @@ export async function updateIntake(formData: FormData) {
 
   if (coverFile) {
     const ext = getFileExtension(coverFile);
-    const path = `intakes/${intakeId}/cover/${timestamp}.${ext}`;
-    const url = await uploadImage(coverFile, path);
-    if (url) photoUpdates.coverPhotoPath = url;
+    const path = await uploadImage(coverFile, `intakes/${intakeId}/cover/${timestamp}.${ext}`);
+    if (path) photoUpdates.coverPhotoPath = path;
   }
   if (patchFile) {
     const ext = getFileExtension(patchFile);
-    const path = `intakes/${intakeId}/patch/${timestamp}.${ext}`;
-    const url = await uploadImage(patchFile, path);
-    if (url) photoUpdates.patchPhotoPath = url;
+    const path = await uploadImage(patchFile, `intakes/${intakeId}/patch/${timestamp}.${ext}`);
+    if (path) photoUpdates.patchPhotoPath = path;
   }
   if (innerFile) {
     const ext = getFileExtension(innerFile);
-    const path = `intakes/${intakeId}/inner/${timestamp}.${ext}`;
-    const url = await uploadImage(innerFile, path);
-    if (url) photoUpdates.innerPhotoPath = url;
+    const path = await uploadImage(innerFile, `intakes/${intakeId}/inner/${timestamp}.${ext}`);
+    if (path) photoUpdates.innerPhotoPath = path;
   }
   if (tshirtFile) {
     const ext = getFileExtension(tshirtFile);
-    const path = `intakes/${intakeId}/tshirt/${timestamp}.${ext}`;
-    const url = await uploadImage(tshirtFile, path);
-    if (url) photoUpdates.tshirtPhotoPath = url;
+    const path = await uploadImage(tshirtFile, `intakes/${intakeId}/tshirt/${timestamp}.${ext}`);
+    if (path) photoUpdates.tshirtPhotoPath = path;
   }
 
   if (Object.keys(photoUpdates).length > 0) {
@@ -533,10 +513,9 @@ export async function updateIntake(formData: FormData) {
   for (let j = 0; j < galleryFiles.length; j++) {
     const f = galleryFiles[j];
     const ext = getFileExtension(f);
-    const path = `intakes/${intakeId}/gallery/${timestamp}_${j}.${ext}`;
-    const url = await uploadImage(f, path);
-    if (url) {
-      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: url });
+    const path = await uploadImage(f, `intakes/${intakeId}/gallery/${timestamp}_${j}.${ext}`);
+    if (path) {
+      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: path });
     }
   }
 

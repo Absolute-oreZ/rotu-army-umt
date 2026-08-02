@@ -26,7 +26,6 @@ import {
 } from "@/db/schema";
 import type { Locale } from "@/lib/i18n/config";
 import {
-  DEFAULT_HERO_IMAGE_URL,
   DEFAULT_GOOGLE_MAP_LOCATION_URL,
   DEFAULT_OFFICIAL_EMAIL,
   DEFAULT_FACEBOOK_URL,
@@ -44,10 +43,10 @@ export type HomePageContent = {
     id: number;
     question: string;
   }>;
-  heroImageUrl: string;
+  heroImagePath: string | null;
   seeAlsoLinks: Array<{
     id: number;
-    imageUrl: string | null;
+    imagePath: string | null;
     link: string;
     title: string;
   }>;
@@ -64,7 +63,7 @@ export type PublicTestimonial = {
   id: number;
   authorName: string;
   authorRank: string;
-  authorImageUrl: string | null;
+  authorImagePath: string | null;
   content: string;
 };
 
@@ -96,8 +95,6 @@ export type PublicIntakeCadet = {
 
 export type PublicIntakeDetail = PublicIntake & {
   innerPhotoPath: string | null;
-  seoDescription: string | null;
-  seoTitle: string | null;
   tagLine: string | null;
   tshirtPhotoPath: string | null;
   displayPhotos: PublicIntakeDisplayPhoto[];
@@ -109,7 +106,7 @@ export type PublicStoryProgram = {
   id: number;
   slug: string;
   startYear: number;
-  coverPhotoPath: string;
+  coverPhotoPath: string | null;
   coverPhotoWidth: number | null;
   coverPhotoHeight: number | null;
   title: string;
@@ -141,8 +138,6 @@ export type PublicStoryDetail = {
   name: string;
   title: string;
   summary: string | null;
-  seoTitle: string | null;
-  seoDescription: string | null;
   startDate: Date;
   endDate: Date;
   location: string;
@@ -150,7 +145,7 @@ export type PublicStoryDetail = {
   coverPhotoPath: string | null;
   coverPhotoWidth: number | null;
   coverPhotoHeight: number | null;
-  videoUrl: string | null;
+  videoPath: string | null;
   tags: PublicStoryTag[];
   displayPhotos: PublicStoryDisplayPhoto[];
 };
@@ -183,7 +178,7 @@ const FALLBACK_STATS = {
 const FALLBACK_SEE_ALSO_LINKS: HomePageContent["seeAlsoLinks"] = DEFAULT_SEE_MORE_LINKS.map(
   (entry, index) => ({
     id: index + 1,
-    imageUrl: entry.imageUrl,
+    imagePath: entry.imagePath,
     link: entry.link,
     title: entry.title,
   }),
@@ -223,7 +218,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
     linksRows,
     testimonialRows,
   ] = await Promise.all([
-    db.select({ heroImageUrl: webappContents.heroImageUrl }).from(webappContents).limit(1),
+    db.select({ heroImagePath: webappContents.heroImagePath }).from(webappContents).limit(1),
     db
       .select({ value: count(intakes.id) })
       .from(intakes)
@@ -259,7 +254,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
     db
       .select({
         id: seeMoreLinks.id,
-        imageUrl: seeMoreLinks.imageUrl,
+        imagePath: seeMoreLinks.imagePath,
         link: seeMoreLinks.link,
         title: seeMoreLinks.title,
       })
@@ -271,7 +266,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
         id: testimonials.id,
         authorName: members.displayName,
         authorRank: members.rank,
-        authorImageUrl: members.blueBgPhotoPath,
+        authorImagePath: members.blueBgPhotoPath,
         content: testimonialTranslations.content,
         locale: testimonialTranslations.locale,
       })
@@ -305,7 +300,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
         id: row.id,
         authorName: row.authorName,
         authorRank: row.authorRank,
-        authorImageUrl: row.authorImageUrl,
+        authorImagePath: row.authorImagePath,
         content: row.content,
       });
     } else if (row.locale === "en" && (!existing || existing.content === "")) {
@@ -313,7 +308,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
         id: row.id,
         authorName: row.authorName,
         authorRank: row.authorRank,
-        authorImageUrl: row.authorImageUrl,
+        authorImagePath: row.authorImagePath,
         content: row.content,
       });
     }
@@ -321,7 +316,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
 
   return {
     faqs: faqRows.length > 0 ? faqRows : FALLBACK_FAQS[locale],
-    heroImageUrl: singletonContent[0]?.heroImageUrl ?? DEFAULT_HERO_IMAGE_URL,
+    heroImagePath: singletonContent[0]?.heroImagePath ?? null,
     seeAlsoLinks: linksRows.length > 0 ? linksRows : FALLBACK_SEE_ALSO_LINKS,
     stats: resolvedStats,
     testimonials: Array.from(testimonialMap.values()),
@@ -364,8 +359,6 @@ export async function getPublishedIntakeDetail(
       innerPhotoPath: intakes.innerPhotoPath,
       intakeNo: intakes.intakeNo,
       patchPhotoPath: intakes.patchPhotoPath,
-      seoDescription: intakeTranslations.seoDescription,
-      seoTitle: intakeTranslations.seoTitle,
       slug: intakes.slug,
       summary: intakeTranslations.summary,
       tagLine: intakes.tagLine,
@@ -458,8 +451,6 @@ export async function getPublishedIntakeDetail(
     displayName: intake.displayName,
     displayPhotos: displayPhotoRows,
     innerPhotoPath: intake.innerPhotoPath,
-    seoDescription: intake.seoDescription,
-    seoTitle: intake.seoTitle,
     intakeNo: intake.intakeNo,
     patchExplanations: Array.from(patchExplanationMap.values()),
     patchPhotoPath: intake.patchPhotoPath,
@@ -535,7 +526,7 @@ export async function getPublishedStoriesByYear(
       id: row.id,
       slug: row.slug,
       startYear,
-      coverPhotoPath: row.coverPhotoPath ?? "/images/default-hero-image.jpg",
+      coverPhotoPath: row.coverPhotoPath,
       coverPhotoWidth: row.coverPhotoWidth,
       coverPhotoHeight: row.coverPhotoHeight,
       title,
@@ -568,7 +559,7 @@ export async function getPublishedStoryDetail(
       coverPhotoPath: events.coverPhotoPath,
       coverPhotoWidth: events.coverPhotoWidth,
       coverPhotoHeight: events.coverPhotoHeight,
-      videoUrl: events.videoUrl,
+      videoPath: events.videoPath,
     })
     .from(events)
     .where(and(eq(events.slug, slug), eq(events.status, "PUBLISHED")))
@@ -583,8 +574,6 @@ export async function getPublishedStoryDetail(
         locale: eventTranslations.locale,
         title: eventTranslations.title,
         summary: eventTranslations.summary,
-        seoTitle: eventTranslations.seoTitle,
-        seoDescription: eventTranslations.seoDescription,
       })
       .from(eventTranslations)
       .where(
@@ -643,8 +632,6 @@ export async function getPublishedStoryDetail(
     name: event.name,
     title: translation?.title ?? event.name,
     summary: translation?.summary ?? null,
-    seoTitle: translation?.seoTitle ?? null,
-    seoDescription: translation?.seoDescription ?? null,
     startDate: event.startDate,
     endDate: event.endDate,
     location: event.location,
@@ -652,7 +639,7 @@ export async function getPublishedStoryDetail(
     coverPhotoPath: event.coverPhotoPath,
     coverPhotoWidth: event.coverPhotoWidth,
     coverPhotoHeight: event.coverPhotoHeight,
-    videoUrl: event.videoUrl,
+    videoPath: event.videoPath,
     tags: Array.from(tagMap.values()),
     displayPhotos: displayPhotoRows,
   };
@@ -742,7 +729,7 @@ export async function getSimilarStories(
       id: row.id,
       slug: row.slug,
       startYear: row.startDate.getUTCFullYear(),
-      coverPhotoPath: row.coverPhotoPath ?? "/images/default-hero-image.jpg",
+      coverPhotoPath: row.coverPhotoPath,
       coverPhotoWidth: row.coverPhotoWidth,
       coverPhotoHeight: row.coverPhotoHeight,
       title,
@@ -863,7 +850,7 @@ export async function getPublishedStoriesByTag(
       id: row.id,
       slug: row.slug,
       startYear,
-      coverPhotoPath: row.coverPhotoPath ?? "/images/default-hero-image.jpg",
+      coverPhotoPath: row.coverPhotoPath,
       coverPhotoWidth: row.coverPhotoWidth,
       coverPhotoHeight: row.coverPhotoHeight,
       title,

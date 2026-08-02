@@ -63,14 +63,18 @@ export function StoriesBrowser({
       return [];
     }
 
-    return (stories.byYear[activeYear] ?? []).map((story) => ({
-      id: String(story.id),
-      img: story.coverPhotoPath,
-      url: `/${locale}/stories/${story.slug}`,
-      width: story.coverPhotoWidth ?? 1000,
-      height: story.coverPhotoHeight ?? 1000,
-      title: story.title,
-    }));
+    return (stories.byYear[activeYear] ?? [])
+      .filter(
+        (story): story is typeof story & { coverPhotoPath: string } => Boolean(story.coverPhotoPath),
+      )
+      .map((story) => ({
+        id: String(story.id),
+        img: story.coverPhotoPath,
+        url: `/${locale}/stories/${story.slug}`,
+        width: story.coverPhotoWidth ?? 1000,
+        height: story.coverPhotoHeight ?? 1000,
+        title: story.title,
+      }));
   }, [activeYear, locale, stories.byYear]);
 
   return (

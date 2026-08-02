@@ -60,7 +60,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Cadet self-service payment page (`/cadet/collections/[slug]`)
 - [x] Cadet authentication via Google OAuth (`/cadet/login`, `lib/auth/cadet.ts`)
 - [x] Treasurer lifecycle cleanup: delete treasury accounts when role changes away from Treasurer
-- [ ] Build Multimedia modules: Portfolio, stories, Newsletters.
+- [x] Build Multimedia modules: Portfolio, stories, Newsletters.
 - [ ] Build Sports modules: Activities, Collaborations.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.
 - [ ] Build Academic modules: Results, Timetables.

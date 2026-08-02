@@ -59,7 +59,7 @@ function buildAdminsBaseQuery() {
       memberName: members.name,
       memberRank: members.rank,
       memberArmyNo: members.armyNo,
-      memberAvatarUrl: members.redBgPhotoPath,
+      memberAvatarPath: members.redBgPhotoPath,
       intakeNo: intakes.intakeNo,
     })
     .from(adminUsers)
@@ -187,7 +187,7 @@ export default async function RankHoldersPage({
           name: members.name,
           personalEmail: members.personalEmail,
           eduEmail: members.eduEmail,
-          avatarUrl: members.redBgPhotoPath,
+          avatarPath: members.redBgPhotoPath,
         })
         .from(members)
         .innerJoin(cadets, eq(cadets.memberId, members.id))

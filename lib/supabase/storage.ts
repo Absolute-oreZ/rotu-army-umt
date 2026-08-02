@@ -1,9 +1,6 @@
 import "server-only";
 import { getPublicEnv } from "@/lib/env/public";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { storageUrl, extractStoragePath } from "./storage-client";
-
-export { storageUrl, extractStoragePath };
 
 function bucket() {
   return getPublicEnv().supabaseStorageRootPath;
@@ -52,11 +49,6 @@ export async function uploadToStorage(
   } catch {
     return null;
   }
-}
-
-export function getStoragePublicUrl(supabase: SupabaseClient, path: string): string {
-  const { data } = supabase.storage.from(bucket()).getPublicUrl(path);
-  return data.publicUrl;
 }
 
 export async function deleteFromStorage(supabase: SupabaseClient, path: string): Promise<void> {

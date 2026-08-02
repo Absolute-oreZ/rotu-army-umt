@@ -99,6 +99,7 @@ export function NewsletterForm({
 
       <div className="px-5 pb-5">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               {emailLabel}

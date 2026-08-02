@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { format } from "date-fns";
 import { PencilIcon, Loader2Icon, AlertCircleIcon, Trash2Icon } from "lucide-react";
+import Image from "next/image";
 import {
   Sheet,
   SheetContent,
@@ -87,7 +88,7 @@ function SheetInner({
 
   if (loading) {
     return (
-      <SheetSkeleton />
+      <SheetSkeleton className="w-140 max-w-[calc(100vw-2rem)] p-0" />
     );
   }
 
@@ -162,11 +163,11 @@ function ViewMode({ details, onEdit }: { details: ExpenseDetails; onEdit: () => 
                   return (
                     <div key={receipt.id} className="overflow-hidden rounded-lg border border-border">
                       {url ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <Image
                           src={url}
                           alt=""
-                          className="h-32 w-full object-cover"
+                          fill
+                          className="object-cover"
                         />
                       ) : (
                         <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
@@ -338,11 +339,11 @@ function EditMode({
                     <div key={receipt.id} className="rounded-xl border border-border bg-background p-2 shadow-sm">
                       <div className="relative overflow-hidden rounded-lg border border-border bg-muted">
                         {url ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
+                          <Image
                             src={url}
                             alt=""
-                            className="h-32 w-full object-cover"
+                            fill
+                            className="object-cover"
                           />
                         ) : (
                           <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">

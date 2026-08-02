@@ -26,9 +26,8 @@ export async function generateMetadata({
     notFound();
   }
 
-  const title = intake.seoTitle ?? intake.displayName;
+  const title = intake.displayName;
   const description =
-    intake.seoDescription ??
     intake.summary ??
     dictionary.intakesPage.description;
 
@@ -93,13 +92,13 @@ export default async function IntakeDetailPage({
     intake.coverPhotoPath ??
     intake.patchPhotoPath ??
     galleryPhotos[0]?.photoPath ??
-    "/images/default-hero-image.jpg";
+    null;
 
   const patchHero =
     intake.patchPhotoPath ??
     intake.coverPhotoPath ??
     galleryPhotos[0]?.photoPath ??
-    "/images/default-hero-image.jpg";
+    null;
 
   const uniformPhotos = [
     {

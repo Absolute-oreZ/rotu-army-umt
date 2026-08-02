@@ -16,7 +16,7 @@ export type EligibleMember = {
   name: string;
   personalEmail: string | null;
   eduEmail: string | null;
-  avatarUrl: string | null;
+  avatarPath: string | null;
 };
 
 type RankHoldersPageClientProps = {

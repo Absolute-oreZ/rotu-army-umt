@@ -11,6 +11,7 @@ import { formatDateRange } from "@/lib/utils";
 import { TagLink } from "@/components/public/tag-link";
 import { SimilarStories } from "@/components/public/similar-stories";
 import { MetaRow } from "@/components/public/story-meta-row";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 export async function generateMetadata({
   params,
@@ -24,8 +25,8 @@ export async function generateMetadata({
   const story = await getPublishedStoryDetail(locale, slug);
   if (!story) notFound();
 
-  const title = story.seoTitle ?? story.title;
-  const description = story.seoDescription ?? story.summary ?? undefined;
+  const title = story.title;
+  const description = story.summary ?? undefined;
 
   return {
     title,
@@ -129,9 +130,9 @@ export default async function StoryDetailPage({
               )}
             </div>
 
-            {story.videoUrl && (
-              <VideoPreview url={story.videoUrl} label={d.watchVideo} />
-            )}
+            {story.videoPath ? (
+              <VideoPreview url={storageUrl(story.videoPath)} label={d.watchVideo} />
+            ) : null}
 
             {story.displayPhotos.length > 0 && (
               <StoryPhotoCarousel

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { ScrollReveal } from "./scroll-reveal";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import { PublicTestimonial } from "@/lib/public/content";
 
 interface TestimonialsProps {
@@ -65,8 +66,8 @@ export function Testimonials({ title, intro, testimonials }: TestimonialsProps) 
                   <div className="grid items-center gap-8 lg:grid-cols-[auto_1fr]">
                     <div className="relative">
                       <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-border bg-muted">
-                        {t.authorImageUrl ? (
-                          <Image src={t.authorImageUrl} alt={t.authorName} fill className="object-cover" sizes="100%" />
+                        {t.authorImagePath ? (
+                          <Image src={storageUrl(t.authorImagePath)} alt={t.authorName} fill className="object-cover" sizes="100%" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-xl font-bold text-muted-foreground">
                             {t.authorName.charAt(0)}

@@ -149,13 +149,14 @@ export function AddAccountDialog({
               maxLength={20}
             />
           </Field>
-          <SingleFileField
-            label="QR Code"
-            file={qrFile}
-            onChange={setQrFile}
-            onRemove={() => setQrFile(null)}
-            className="max-w-40"
-          />
+          <Field label="QR Code">
+            <SingleFileField
+              file={qrFile}
+              onChange={setQrFile}
+              onRemove={() => setQrFile(null)}
+              className="max-w-40"
+            />
+          </Field>
 
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => { resetForm(); setOpen(false); }}>

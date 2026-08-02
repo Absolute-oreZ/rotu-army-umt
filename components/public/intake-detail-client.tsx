@@ -11,6 +11,7 @@ import type { PublicIntakeDetail } from "@/lib/public/content";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 type IntakeDetailClientProps = {
   dictionary: Dictionary["intakeDetailPage"] &
@@ -23,8 +24,8 @@ type IntakeDetailClientProps = {
     key: "ANIMAL" | "COLOR" | "PHILOSOPHY";
     value: string;
   }[];
-  heroImage: string;
-  patchHero: string;
+  heroImage: string | null;
+  patchHero: string | null;
   uniformPhotos: { label: string; src: string }[];
   summary: string;
 };
@@ -56,7 +57,7 @@ export function IntakeDetailClient({
     intake.patchPhotoPath ??
     intake.coverPhotoPath ??
     intake.displayPhotos[0]?.photoPath ??
-    "/images/default-hero-image.jpg";
+    null;
 
   const patchExplanationKeys = ["ANIMAL", "COLOR", "PHILOSOPHY"] as const;
 
@@ -136,7 +137,7 @@ export function IntakeDetailClient({
                           className="relative h-full w-full overflow-hidden rounded-[0.75rem] border border-border bg-card shadow-sm"
                         >
                           <Image
-                            src={photo.photoPath}
+                            src={storageUrl(photo.photoPath)}
                             alt={`${intake.displayName} display ${index + 1}`}
                             fill
                             priority={index === 0}
@@ -209,13 +210,15 @@ export function IntakeDetailClient({
                     <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">
                       <div className="relative w-full max-w-80 overflow-hidden rounded-[1.2rem] border border-border bg-card shadow-sm">
                         <div className="relative aspect-3/4">
-                          <Image
-                            src={patchImage}
-                            alt={`${intake.displayName} patch`}
-                            fill
-                            sizes="(max-width: 1280px) 100vw, 260px"
-                            className="object-cover"
-                          />
+                          {patchImage ? (
+                            <Image
+                              src={storageUrl(patchImage)}
+                              alt={`${intake.displayName} patch`}
+                              fill
+                              sizes="(max-width: 1280px) 100vw, 260px"
+                              className="object-cover"
+                            />
+                          ) : null}
                         </div>
                       </div>
 
@@ -269,7 +272,7 @@ export function IntakeDetailClient({
                           >
                             <div className="relative aspect-4/3">
                               <Image
-                                src={item.src}
+                                src={storageUrl(item.src)}
                                 alt={`${intake.displayName} ${item.label}`}
                                 fill
                                 sizes="(max-width: 1280px) 100vw, 30vw"
@@ -314,7 +317,7 @@ export function IntakeDetailClient({
 
             <div
               ref={rosterRef}
-              className="min-h-0 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              className="min-h-0 overflow-y-auto pr-1 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             >
               {intake.cadets.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
@@ -333,16 +336,15 @@ export function IntakeDetailClient({
                       <div className="relative h-full w-full transition-transform duration-700 transform-3d group-hover:transform-[rotateY(180deg)] group-focus-visible:transform-[rotateY(180deg)]">
                         <div className="absolute inset-0 flex flex-col backface-hidden">
                           <div className="relative flex-[0_0_74%]">
-                            <Image
-                              src={
-                                cadet.displayPhotoPath ??
-                                "/images/default-hero-image.jpg"
-                              }
-                              alt={cadet.displayName}
-                              fill
-                              sizes="(max-width: 1280px) 50vw, 22vw"
-                              className="object-cover"
-                            />
+                            {cadet.displayPhotoPath ? (
+                              <Image
+                                src={storageUrl(cadet.displayPhotoPath)}
+                                alt={cadet.displayName}
+                                fill
+                                sizes="(max-width: 1280px) 50vw, 22vw"
+                                className="object-cover"
+                              />
+                            ) : null}
                           </div>
 
                           <div className="flex flex-[0_0_26%] min-h-0 items-center justify-center px-2 py-1 text-center">
@@ -392,7 +394,7 @@ export function IntakeDetailClient({
           <div className="mx-auto max-w-7xl space-y-8">
             <div className="space-y-4">
               {mobileDisplayPhotos.length > 0 ? (
-                <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   <div className="flex gap-3 p-3">
                     {mobileDisplayPhotos.map((photo, index) => (
                       <div
@@ -400,7 +402,7 @@ export function IntakeDetailClient({
                         className="relative aspect-4/5 w-[72%] min-w-[72%] shrink-0 overflow-hidden rounded-2xl border border-border bg-muted shadow-sm"
                       >
                         <Image
-                          src={photo.photoPath}
+                          src={storageUrl(photo.photoPath)}
                           alt={`${intake.displayName} display ${index + 1}`}
                           fill
                           priority={index === 0}
@@ -411,7 +413,7 @@ export function IntakeDetailClient({
                     ))}
                   </div>
                 </div>
-              ) : (
+              ) : heroImage ? (
                 <div className="relative aspect-4/3 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                   <Image
                     src={heroImage}
@@ -421,6 +423,10 @@ export function IntakeDetailClient({
                     sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) calc(100vw - 3rem), 80rem"
                     className="object-cover"
                   />
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
+                  {dictionary.noGalleryPhotos}
                 </div>
               )}
 
@@ -465,7 +471,7 @@ export function IntakeDetailClient({
                   >
                     <div className="relative aspect-4/3">
                       <Image
-                        src={photo.src}
+                        src={storageUrl(photo.src)}
                         alt={`${intake.displayName} ${photo.label}`}
                         fill
                         sizes="(max-width: 640px) calc(100vw - 2rem), calc(50vw - 2rem)"
@@ -495,13 +501,15 @@ export function IntakeDetailClient({
               ) : (
                 <div className="grid gap-4">
                   <div className="relative aspect-4/3 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                    <Image
-                      src={patchHero}
-                      alt={`${intake.displayName} patch`}
-                      fill
-                      sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) calc(100vw - 3rem), 80rem"
-                      className="object-cover"
-                    />
+                    {patchHero ? (
+                      <Image
+                        src={storageUrl(patchHero)}
+                        alt={`${intake.displayName} patch`}
+                        fill
+                        sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) calc(100vw - 3rem), 80rem"
+                        className="object-cover"
+                      />
+                    ) : null}
                   </div>
 
                   <div className="grid gap-3">
@@ -543,16 +551,15 @@ export function IntakeDetailClient({
                       >
                         <div className="flex items-start gap-4">
                           <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                            <Image
-                              src={
-                                cadet.displayPhotoPath ??
-                                "/images/default-hero-image.jpg"
-                              }
-                              alt={cadet.displayName}
-                              fill
-                              sizes="56px"
-                              className="object-cover"
-                            />
+                            {cadet.displayPhotoPath ? (
+                              <Image
+                                src={storageUrl(cadet.displayPhotoPath)}
+                                alt={cadet.displayName}
+                                fill
+                                sizes="56px"
+                                className="object-cover"
+                              />
+                            ) : null}
                           </div>
 
                           <div className="min-w-0">

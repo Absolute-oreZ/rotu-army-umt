@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircleIcon, EyeIcon, FileTextIcon, Loader2Icon, XCircleIcon } from "lucide-react";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import {
   Table,
   TableHeader,
@@ -29,10 +30,12 @@ import { formatRank } from "@/components/admin/secretary/cadets/table-config";
 
 export type Claim = {
   id: number;
-  avatarUrl: string | null;
+  avatarPath: string | null;
   rank: string;
   title: string;
   amount: string;
+  receiptPath: string | null;
+  qrCodePath: string | null;
   receiptUrl: string | null;
   qrCodeUrl: string | null;
   description: string | null;
@@ -158,139 +161,142 @@ export function ClaimsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {claims.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell>
-                  <span className="relative inline-flex size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                    {c.avatarUrl ? (
-                      <Image
-                        src={c.avatarUrl}
-                        alt={c.memberName}
-                        fill
-                        sizes="36px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className="flex size-full items-center justify-center text-[11px] font-semibold uppercase text-muted-foreground">
-                        {getInitials(c.memberName)}
-                      </span>
-                    )}
-                  </span>
-                </TableCell>
-                <TableCell className="font-mono tabular-nums">
-                  <CopyableValue
-                    value={copyableColumns.has("armyNo") ? c.armyNo : null}
-                    valueClassName="font-mono tabular-nums"
-                  >
-                    {c.armyNo}
-                  </CopyableValue>
-                </TableCell>
-                <TableCell>{formatRank(c.rank)}</TableCell>
-                <TableCell className="font-medium">
-                  <CopyableValue
-                    value={copyableColumns.has("memberName") ? c.memberName : null}
-                    valueClassName="font-medium"
-                  >
-                    {c.memberName}
-                  </CopyableValue>
-                </TableCell>
-                <TableCell className="max-w-48">
-                  <CopyableValue
-                    value={copyableColumns.has("title") ? c.title : null}
-                    valueClassName="truncate"
-                  >
-                    <span className="truncate">{c.title}</span>
-                  </CopyableValue>
-                </TableCell>
-                <TableCell className="max-w-64">
-                  <CopyableValue
-                    value={copyableColumns.has("description") ? c.description : null}
-                    valueClassName="truncate text-xs text-muted-foreground"
-                  >
-                    <span className="line-clamp-1 text-xs text-muted-foreground">
-                      {c.description ?? "—"}
+            {claims.map((c) => {
+              const avatarUrl = c.avatarPath ? storageUrl(c.avatarPath) : null;
+              return (
+                <TableRow key={c.id}>
+                  <TableCell>
+                    <span className="relative inline-flex size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={c.memberName}
+                          fill
+                          sizes="36px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-full items-center justify-center text-[11px] font-semibold uppercase text-muted-foreground">
+                          {getInitials(c.memberName)}
+                        </span>
+                      )}
                     </span>
-                  </CopyableValue>
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  RM {Number(c.amount).toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <span
-                    className={cn(
-                      "inline-block rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      STATUS_STYLES[c.status] ?? "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {STATUS_LABELS[c.status] ?? c.status}
-                  </span>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(c.createdAt).toLocaleDateString("en-MY", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </TableCell>
-                <TableCell className="pr-5">
-                  <div className="flex items-center justify-end gap-0.5">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          className="hover:text-emerald-600"
-                          onClick={() => onView(c)}
-                        >
-                          <EyeIcon className="size-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">View details</TooltipContent>
-                    </Tooltip>
-                    {c.status === "PENDING" ? (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Button
-                              variant="ghost"
-                              size="icon-xs"
-                              className="hover:text-emerald-600"
-                              onClick={() => handleStatusChange(c.id, "FULFILLED")}
-                              disabled={isPending}
-                            >
-                              {isPending ? (
-                                <Loader2Icon className="size-3.5 animate-spin" />
-                              ) : (
-                                <CheckCircleIcon className="size-3.5" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">Fulfill</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Button
-                              variant="ghost"
-                              size="icon-xs"
-                              className="hover:text-red-600"
-                              onClick={() => handleStatusChange(c.id, "REJECTED")}
-                              disabled={isPending}
-                            >
-                              {isPending ? (
-                                <Loader2Icon className="size-3.5 animate-spin" />
-                              ) : (
-                                <XCircleIcon className="size-3.5" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">Reject</TooltipContent>
-                        </Tooltip>
-                      </>
-                    ) : null}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell className="font-mono tabular-nums">
+                    <CopyableValue
+                      value={copyableColumns.has("armyNo") ? c.armyNo : null}
+                      valueClassName="font-mono tabular-nums"
+                    >
+                      {c.armyNo}
+                    </CopyableValue>
+                  </TableCell>
+                  <TableCell>{formatRank(c.rank)}</TableCell>
+                  <TableCell className="font-medium">
+                    <CopyableValue
+                      value={copyableColumns.has("memberName") ? c.memberName : null}
+                      valueClassName="font-medium"
+                    >
+                      {c.memberName}
+                    </CopyableValue>
+                  </TableCell>
+                  <TableCell className="max-w-48">
+                    <CopyableValue
+                      value={copyableColumns.has("title") ? c.title : null}
+                      valueClassName="truncate"
+                    >
+                      <span className="truncate">{c.title}</span>
+                    </CopyableValue>
+                  </TableCell>
+                  <TableCell className="max-w-64">
+                    <CopyableValue
+                      value={copyableColumns.has("description") ? c.description : null}
+                      valueClassName="truncate text-xs text-muted-foreground"
+                    >
+                      <span className="line-clamp-1 text-xs text-muted-foreground">
+                        {c.description ?? "—"}
+                      </span>
+                    </CopyableValue>
+                  </TableCell>
+                  <TableCell className="tabular-nums">
+                    RM {Number(c.amount).toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "inline-block rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        STATUS_STYLES[c.status] ?? "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {STATUS_LABELS[c.status] ?? c.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(c.createdAt).toLocaleDateString("en-MY", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </TableCell>
+                  <TableCell className="pr-5">
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            className="hover:text-emerald-600"
+                            onClick={() => onView(c)}
+                          >
+                            <EyeIcon className="size-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">View details</TooltipContent>
+                      </Tooltip>
+                      {c.status === "PENDING" ? (
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                className="hover:text-emerald-600"
+                                onClick={() => handleStatusChange(c.id, "FULFILLED")}
+                                disabled={isPending}
+                              >
+                                {isPending ? (
+                                  <Loader2Icon className="size-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircleIcon className="size-3.5" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Fulfill</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                className="hover:text-red-600"
+                                onClick={() => handleStatusChange(c.id, "REJECTED")}
+                                disabled={isPending}
+                              >
+                                {isPending ? (
+                                  <Loader2Icon className="size-3.5 animate-spin" />
+                                ) : (
+                                  <XCircleIcon className="size-3.5" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Reject</TooltipContent>
+                          </Tooltip>
+                        </>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}

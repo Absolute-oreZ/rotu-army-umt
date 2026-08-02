@@ -100,7 +100,7 @@ function SheetInner({
 
   if (loading) {
     return (
-      <SheetSkeleton />
+      <SheetSkeleton className="w-125 max-w-[calc(100vw-2rem)] p-0" />
     );
   }
 

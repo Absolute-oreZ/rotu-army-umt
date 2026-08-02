@@ -24,6 +24,7 @@ import { Empty } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import { formatRank } from "@/components/admin/secretary/cadets/table-config";
 import { buildPaymentsTableConfig } from "@/components/admin/treasurer/payments/table-config";
+import { storageUrl } from "@/lib/supabase/storage-public";
 
 export type Payment = {
   paymentId: number | null;
@@ -35,6 +36,7 @@ export type Payment = {
   rank: string;
   displayPhotoPath: string | null;
   amountPaid: string | null;
+  receiptPath: string | null;
   receiptUrl: string | null;
   paidAt: string | null;
 };
@@ -163,6 +165,7 @@ export function PaymentsTable({
           <TableBody>
             {payments.map((p) => {
               const isPaid = p.paymentId !== null;
+              const displayPhotoUrl = p.displayPhotoPath ? storageUrl(p.displayPhotoPath) : null;
               const collection = collectionById.get(p.collectionId);
               const showFixedExpected =
                 !isPaid && collection?.isFixedAmount && collection.amount;
@@ -171,9 +174,9 @@ export function PaymentsTable({
                 <TableRow key={`${p.memberId}-${p.collectionId}-${p.paymentId ?? "unpaid"}`}>
                   <TableCell>
                     <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                      {p.displayPhotoPath ? (
+                      {displayPhotoUrl ? (
                         <Image
-                          src={p.displayPhotoPath}
+                          src={displayPhotoUrl}
                           alt={p.memberName}
                           fill
                           sizes="32px"

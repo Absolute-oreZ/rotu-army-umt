@@ -51,7 +51,7 @@ function buildBaseQuery() {
       armyNo: members.armyNo,
       rank: members.rank,
       name: members.name,
-      avatarUrl: members.redBgPhotoPath,
+      avatarPath: members.redBgPhotoPath,
       intakeNo: intakes.intakeNo,
       isActive: cadets.isActive,
     })

@@ -22,6 +22,41 @@
       "when": 1782557528670,
       "tag": "0002_rapid_lady_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782708062874,
+      "tag": "0003_chubby_the_enforcers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785089254099,
+      "tag": "0004_hesitant_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785645314920,
+      "tag": "0005_nice_darwin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785661450375,
+      "tag": "0006_steady_captain_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785679632310,
+      "tag": "0007_lyrical_impossible_man",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import { type PublicStoryProgram } from "@/lib/public/content";
 
 interface SimilarStoriesProps {
@@ -26,15 +27,15 @@ export function SimilarStories({ locale, stories, title }: SimilarStoriesProps) 
               href={`/${locale}/stories/${story.slug}`}
               className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-muted/30 transition-all hover:border-foreground/30 hover:bg-muted/50 active:scale-[0.98]"
             >
-              <div className="relative aspect-video w-full overflow-hidden">
+              {story.coverPhotoPath ? <div className="relative aspect-video w-full overflow-hidden">
                 <Image
-                  src={story.coverPhotoPath}
+                  src={storageUrl(story.coverPhotoPath)}
                   alt={story.title}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
-              </div>
+              </div> : null}
               <div className="flex flex-col gap-2 p-3 sm:p-4">
                 <h3 className="line-clamp-2 text-sm font-bold leading-tight tracking-tight group-hover:text-primary transition-colors">
                   {story.title}

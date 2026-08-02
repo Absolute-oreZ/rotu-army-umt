@@ -5,7 +5,6 @@ export type CadetAccountRecord = {
   accountNumber: number;
   duitNowId: number | null;
   qrCodePath: string | null;
-  qrCodeUrl: string | null;
   createdAt: string;
   updatedAt: string;
 };

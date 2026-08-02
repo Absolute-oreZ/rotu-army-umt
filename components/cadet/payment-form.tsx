@@ -89,14 +89,15 @@ export function PaymentForm({
         </p>
       )}
 
-      <SingleFileField
-        label={isReceiptRequired ? "Upload Receipt" : "Upload Receipt (optional)"}
-        file={receiptFile}
-        onChange={setReceiptFile}
-        accept="image/*,.pdf"
-        buttonLabel="Choose receipt"
-        helperText="Max 5 MB. Image or PDF."
-      />
+      <Field label={isReceiptRequired ? "Upload Receipt" : "Upload Receipt (optional)"}>
+        <SingleFileField
+          file={receiptFile}
+          onChange={setReceiptFile}
+          accept="image/*,.pdf"
+          buttonLabel="Choose receipt"
+          helperText="Max 5 MB. Image or PDF."
+        />
+      </Field>
 
       {error && (
         <p

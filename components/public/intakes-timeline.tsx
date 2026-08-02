@@ -5,11 +5,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ScrollReveal } from "@/components/public/scroll-reveal";
+import { storageUrl } from "@/lib/supabase/storage-public";
 import type { PublicIntake } from "@/lib/public/content";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
-
-const FALLBACK_INTAKE_IMAGE = "/images/default-hero-image.jpg";
 
 type IntakesTimelineProps = {
   intakes: PublicIntake[];
@@ -64,36 +63,36 @@ export function IntakesTimeline({ intakes, locale, dictionary }: IntakesTimeline
           const detailColumnClass = isEven
             ? "lg:col-start-3 lg:row-start-1"
             : "lg:col-start-1 lg:row-start-1";
-          const coverSrc = intake.coverPhotoPath ?? FALLBACK_INTAKE_IMAGE;
-          const patchSrc = intake.patchPhotoPath ?? FALLBACK_INTAKE_IMAGE;
+          const coverUrl = intake.coverPhotoPath ? storageUrl(intake.coverPhotoPath) : null;
+          const patchUrl = intake.patchPhotoPath ? storageUrl(intake.patchPhotoPath) : null;
 
           return (
             <ScrollReveal key={intake.slug}>
               <article className="relative pl-10 sm:pl-12 lg:pl-0">
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] lg:items-start lg:gap-x-8">
                   <div className={`${coverColumnClass} group w-full`}>
-                    <div className="relative aspect-5/3 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                    {coverUrl ? <div className="relative aspect-5/3 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                       <Image
-                        src={coverSrc}
+                        src={coverUrl}
                         alt={`${intake.displayName} - ${dictionary.cardImageAlt}`}
                         fill
                         sizes="(max-width: 1024px) 100vw, 50vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                       />
-                    </div>
+                    </div> : null}
                   </div>
 
                   <div className={`${detailColumnClass} w-full`}>
                     <div className="inline-flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm sm:px-5 sm:py-4">
-                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-border">
+                      {patchUrl ? <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-border">
                         <Image
-                          src={patchSrc}
+                          src={patchUrl}
                           alt={`${intake.displayName} - ${dictionary.cardImageAlt}`}
                           fill
                           sizes="48px"
                           className="object-cover"
                         />
-                      </div>
+                      </div> : null}
                       <div className="min-w-0">
                         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                           {intake.intakeNo}

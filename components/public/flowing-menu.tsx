@@ -6,7 +6,7 @@ import { gsap } from "gsap";
 const animationDefaults = { duration: 0.6, ease: "expo" };
 
 interface MenuItemProps {
-  image: string;
+  image?: string;
   link: string;
   text: string;
 }
@@ -91,7 +91,7 @@ function MenuItem({ link, text, image }: MenuItemProps) {
         </span>
         <div
           className="mx-[2.8vw] my-[2.4em] h-[clamp(4rem,10vh,6rem)] w-[clamp(220px,24vw,420px)] rounded-[999px] bg-cover bg-center shadow-[0_14px_35px_rgba(0,0,0,0.28)]"
-          style={{ backgroundImage: `url(${image})` }}
+          style={image ? { backgroundImage: `url(${image})` } : undefined}
         />
       </React.Fragment>
     ));
