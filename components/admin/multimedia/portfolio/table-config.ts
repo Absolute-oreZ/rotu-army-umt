@@ -92,7 +92,7 @@ export function buildFAQTableConfig(): TableConfig {
       status: "Status",
       createdAt: "Created",
     },
-    filterColumns: [statusFilter()],
+    filterColumns: [statusFilter(), { key: "createdAt", label: "Created", type: "date" }],
     pageSizeOptions: [10, 25, 50],
     prefix: "faq_",
   };
@@ -113,7 +113,7 @@ export function buildSeeMoreTableConfig(): TableConfig {
       status: "Status",
       createdAt: "Created",
     },
-    filterColumns: [statusFilter()],
+    filterColumns: [statusFilter(), { key: "createdAt", label: "Created", type: "date" }],
     pageSizeOptions: [10, 25, 50],
     prefix: "sm_",
   };
@@ -135,7 +135,7 @@ export function buildTestimonialTableConfig(): TableConfig {
       createdAt: "Created",
       memberName: "Member",
     },
-    filterColumns: [statusFilter()],
+    filterColumns: [statusFilter(), { key: "createdAt", label: "Created", type: "date" }],
     pageSizeOptions: [10, 25, 50],
     prefix: "test_",
   };

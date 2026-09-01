@@ -9,6 +9,7 @@ const STATUS_OPTIONS = [
 
 export function buildClaimsTableConfig(): TableConfig {
   const filterColumns: FilterColumn[] = [
+    { key: "createdAt", label: "Created", type: "date" },
     { key: "status", label: "Status", type: "enum", options: STATUS_OPTIONS },
     { key: "amount", label: "Amount", type: "number" },
   ];

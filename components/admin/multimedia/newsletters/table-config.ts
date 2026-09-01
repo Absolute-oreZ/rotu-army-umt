@@ -50,7 +50,7 @@ export function buildNewslettersTableConfig(): TableConfig {
       sentAt: "Sent",
       createdAt: "Created",
     },
-    filterColumns: [statusOptions],
+    filterColumns: [statusOptions, { key: "scheduledAt", label: "Scheduled", type: "date" }, { key: "sentAt", label: "Sent", type: "date" }, { key: "createdAt", label: "Created", type: "date" }],
     copyableColumns: ["subject"],
     pageSizeOptions: [10, 25, 50],
   };
@@ -95,7 +95,7 @@ export function buildSubscribersTableConfig(): TableConfig {
       status: "Status",
       createdAt: "Subscribed",
     },
-    filterColumns: [statusOptions, localeOptions],
+    filterColumns: [statusOptions, localeOptions, { key: "createdAt", label: "Subscribed", type: "date" }],
     copyableColumns: ["email"],
     pageSizeOptions: [25, 50, 100],
   };

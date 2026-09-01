@@ -7,6 +7,7 @@ import { canAccessAdminModule } from "@/lib/admin/roles";
 import { notFound } from "next/navigation";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
   wrapLikePattern,
@@ -33,6 +34,7 @@ function buildFilters(state: { q: string; filters: Record<string, FilterConditio
   }
 
   clauses.push(...buildEnumFilterClause(state.filters.status, events.status));
+  clauses.push(...buildDateFilterClause(state.filters.startDate, events.startDate));
 
   return clauses;
 }

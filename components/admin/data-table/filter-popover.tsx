@@ -33,6 +33,14 @@ const STRING_OPS = [
   { value: "endsWith", label: "Ends with" },
 ] as const;
 
+const DATE_OPS = [
+  { value: "eq", label: "Equals" },
+  { value: "gt", label: "Greater than" },
+  { value: "gte", label: "Greater or equal" },
+  { value: "lt", label: "Less than" },
+  { value: "lte", label: "Less or equal" },
+] as const;
+
 export type FilterPopoverProps = {
   column: FilterColumn;
   conditions: FilterCondition[];
@@ -86,6 +94,15 @@ export function FilterPopover({ column, conditions, onChange }: FilterPopoverPro
             onChange={onChange}
             ops={STRING_OPS}
             inputType="text"
+            onClose={() => setOpen(false)}
+          />
+        )}
+        {column.type === "date" && (
+          <ConditionFilterBody
+            conditions={conditions}
+            onChange={onChange}
+            ops={DATE_OPS}
+            inputType="date"
             onClose={() => setOpen(false)}
           />
         )}
@@ -173,7 +190,7 @@ function ConditionFilterBody({
   conditions: FilterCondition[];
   onChange: (c: FilterCondition[]) => void;
   ops: readonly { value: string; label: string }[];
-  inputType: "number" | "text";
+  inputType: "number" | "text" | "date";
   onClose: () => void;
 }) {
   const [op, setOp] = useState(ops[0].value);

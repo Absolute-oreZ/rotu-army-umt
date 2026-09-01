@@ -10,6 +10,7 @@ export const EXPENSES_SORT_FIELD_MAP = {
 
 export function buildExpensesTableConfig(intakeOptions?: IntakeOption[]): TableConfig {
   const filterColumns: FilterColumn[] = [
+    { key: "createdAt", label: "Created", type: "date" },
     { key: "amount", label: "Amount", type: "number" },
   ];
 

@@ -28,6 +28,7 @@ import {
 } from "@/components/admin/multimedia/portfolio/table-config";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
   wrapLikePattern,
@@ -91,9 +92,9 @@ export async function getPortfolioData(raw: RawSearchParams) {
   const seeMoreState = parseTableSearchParams(raw, seeMoreConfig);
   const testimonialState = parseTableSearchParams(raw, testimonialConfig);
 
-  const faqWhere = buildFAQWhere(content.id, faqState.q, faqState.filters.status);
-  const seeMoreWhere = buildSeeMoreWhere(content.id, seeMoreState.q, seeMoreState.filters.status);
-  const testimonialWhere = buildTestimonialWhere(testimonialState.q, testimonialState.filters.status);
+  const faqWhere = buildFAQWhere(content.id, faqState.q, faqState.filters.status, faqState.filters.createdAt);
+  const seeMoreWhere = buildSeeMoreWhere(content.id, seeMoreState.q, seeMoreState.filters.status, seeMoreState.filters.createdAt);
+  const testimonialWhere = buildTestimonialWhere(testimonialState.q, testimonialState.filters.status, testimonialState.filters.createdAt);
 
   const faqOrder = buildSortOrderBy(faqState.sortRules, FAQ_SORT_FIELD_MAP);
   faqOrder.push(asc(frequentlyAskedQuestions.id));
@@ -167,25 +168,28 @@ export async function getPortfolioData(raw: RawSearchParams) {
   };
 }
 
-function buildFAQWhere(contentId: number, query: string, conditions?: FilterCondition[]) {
+function buildFAQWhere(contentId: number, query: string, conditions?: FilterCondition[], dateConditions?: FilterCondition[]) {
   const clauses = [eq(frequentlyAskedQuestions.webappContentId, contentId)];
   if (query) {
     clauses.push(exists(db.select({ id: frequentlyAskedQuestionTranslations.id }).from(frequentlyAskedQuestionTranslations)
       .where(and(eq(frequentlyAskedQuestionTranslations.faqId, frequentlyAskedQuestions.id), ilike(frequentlyAskedQuestionTranslations.question, wrapLikePattern(query))))));
   }
   clauses.push(...buildEnumFilterClause(conditions, frequentlyAskedQuestions.status));
+  clauses.push(...buildDateFilterClause(dateConditions, frequentlyAskedQuestions.createdAt));
   return and(...clauses);
 }
 
-function buildSeeMoreWhere(contentId: number, query: string, conditions?: FilterCondition[]) {
+function buildSeeMoreWhere(contentId: number, query: string, conditions?: FilterCondition[], dateConditions?: FilterCondition[]) {
   const clauses = [eq(seeMoreLinks.webappContentId, contentId)];
   if (query) clauses.push(or(ilike(seeMoreLinks.title, wrapLikePattern(query)), ilike(seeMoreLinks.link, wrapLikePattern(query)))!);
   clauses.push(...buildEnumFilterClause(conditions, seeMoreLinks.status));
+  clauses.push(...buildDateFilterClause(dateConditions, seeMoreLinks.createdAt));
   return and(...clauses);
 }
 
-function buildTestimonialWhere(query: string, conditions?: FilterCondition[]) {
+function buildTestimonialWhere(query: string, conditions?: FilterCondition[], dateConditions?: FilterCondition[]) {
   const clauses = [...buildEnumFilterClause(conditions, testimonials.status)];
+  clauses.push(...buildDateFilterClause(dateConditions, testimonials.createdAt));
   if (query) {
     clauses.push(or(
       ilike(members.displayName, wrapLikePattern(query)),

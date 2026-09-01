@@ -14,6 +14,7 @@ import { signedStorageUrl } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildSortOrderBy,
   IntakeOption,
   parseTableSearchParams,
@@ -46,6 +47,7 @@ function buildFilters(
   }
 
   clauses.push(...buildEnumFilterClause(state.filters.collectionTitle, collections.title));
+  clauses.push(...buildDateFilterClause(state.filters.paidAt, collectionPayments.paidAt));
 
   const statusConditions = state.filters.status;
   if (statusConditions && statusConditions.length > 0) {

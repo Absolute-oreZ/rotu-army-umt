@@ -32,7 +32,7 @@ export function buildStoriesTableConfig(): TableConfig {
     },
     sortKeys: ["name", "startDate", "status", "location"],
     sortLabels: { name: "Title", startDate: "Start Date", location: "Location" },
-    filterColumns: [statusOptions],
+    filterColumns: [statusOptions, { key: "startDate", label: "Start Date", type: "date" }],
     copyableColumns: ["name", "location"],
     pageSizeOptions: [10, 25, 50],
   };

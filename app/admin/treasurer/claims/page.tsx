@@ -9,6 +9,7 @@ import { signedStorageUrl } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildNumberFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
@@ -37,6 +38,7 @@ function buildFilters(
   }
 
   clauses.push(...buildEnumFilterClause(state.filters.status, claims.status));
+  clauses.push(...buildDateFilterClause(state.filters.createdAt, claims.createdAt));
   clauses.push(...buildNumberFilterClause(state.filters.amount, claims.amount));
 
   if (intakeScope !== null) {

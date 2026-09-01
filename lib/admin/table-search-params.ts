@@ -1,5 +1,5 @@
 import { asc, desc, inArray, notInArray, sql } from "drizzle-orm";
-import type { Column, SQL } from "drizzle-orm";
+import type { Column, SQL, SQLWrapper } from "drizzle-orm";
 
 export type FilterCondition = { operator: string; value: string };
 
@@ -10,7 +10,9 @@ export type IntakeOption = { value: string; label: string };
 export type FilterColumn =
   | { key: string; label: string; type: "enum"; options: { value: string; label: string }[] }
   | { key: string; label: string; type: "number" }
-  | { key: string; label: string; type: "string" };
+  | { key: string; label: string; type: "string" }
+  | { key: string; label: string; type: "date" }
+  | { key: string; label: string; type: "time" };
 
 export type TableState = {
   q: string;
@@ -38,12 +40,16 @@ const DEFAULT_OPS: Record<FilterColumn["type"], string> = {
   enum: "in",
   number: "eq",
   string: "contains",
+  date: "eq",
+  time: "eq",
 };
 
 const VALID_OPS: Record<FilterColumn["type"], string[]> = {
   enum: ["in", "notIn"],
   number: ["eq", "neq", "gt", "gte", "lt", "lte"],
   string: ["contains", "startsWith", "endsWith"],
+  date: ["eq", "gt", "gte", "lt", "lte"],
+  time: ["eq", "gt", "gte", "lt", "lte"],
 };
 
 export function takeString(value: string | string[] | undefined): string | undefined {
@@ -110,6 +116,87 @@ export function buildNumberFilterClause(
   }
 
   return clauses;
+}
+
+export function buildDateFilterClause(
+  conditions: FilterCondition[] | undefined,
+  column: Column,
+): SQL[] {
+  if (!conditions?.length) return [];
+  const clauses: SQL[] = [];
+  for (const condition of conditions) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(condition.value)) continue;
+    const value = condition.value;
+    switch (condition.operator) {
+      case "eq":
+        clauses.push(sql`${column} >= ${value}::date AND ${column} < (${value}::date + interval '1 day')`);
+        break;
+      case "gt":
+        clauses.push(sql`${column} >= (${value}::date + interval '1 day')`);
+        break;
+      case "gte":
+        clauses.push(sql`${column} >= ${value}::date`);
+        break;
+      case "lt":
+        clauses.push(sql`${column} < ${value}::date`);
+        break;
+      case "lte":
+        clauses.push(sql`${column} < (${value}::date + interval '1 day')`);
+        break;
+    }
+  }
+  return clauses;
+}
+
+export function buildTimeFilterClause(
+  conditions: FilterCondition[] | undefined,
+  column: SQLWrapper,
+): SQL[] {
+  if (!conditions?.length) return [];
+  const clauses: SQL[] = [];
+  for (const condition of conditions) {
+    const seconds = parseTimeFilterValue(condition.value);
+    if (seconds == null) continue;
+    const value = seconds;
+    switch (condition.operator) {
+      case "eq":
+        clauses.push(sql`${column} = ${value}`);
+        break;
+      case "gt":
+        clauses.push(sql`${column} > ${value}`);
+        break;
+      case "gte":
+        clauses.push(sql`${column} >= ${value}`);
+        break;
+      case "lt":
+        clauses.push(sql`${column} < ${value}`);
+        break;
+      case "lte":
+        clauses.push(sql`${column} <= ${value}`);
+        break;
+    }
+  }
+  return clauses;
+}
+
+export function parseTimeFilterValue(value: string): number | null {
+  const match = /^(\d+)m(\d+(\.\d+)?)s$/.exec(value.trim());
+  if (match) {
+    const minutes = Number(match[1]);
+    const seconds = Number(match[2]);
+    if (Number.isFinite(minutes) && Number.isFinite(seconds)) return minutes * 60 + seconds;
+  }
+  const plain = Number(value);
+  return Number.isFinite(plain) ? plain : null;
+}
+
+export function formatTimeFilterValue(value: string): string {
+  const seconds = parseTimeFilterValue(value);
+  if (seconds == null) return value;
+  const minutes = Math.floor(seconds / 60);
+  const remaining = Math.round(seconds % 60);
+  if (minutes === 0) return `${remaining}s`;
+  return `${minutes}m${remaining.toString().padStart(2, "0")}s`;
 }
 
 export function buildSortOrderBy<K extends string>(

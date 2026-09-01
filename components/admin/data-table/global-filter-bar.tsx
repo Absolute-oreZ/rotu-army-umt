@@ -3,10 +3,11 @@
 import { FilterPill } from "./filter-pill";
 import { FilterBuilder } from "./filter-builder";
 import { SortControl } from "./sort-control";
-import type {
-  FilterColumn,
-  FilterCondition,
-  SortRule,
+import {
+  formatTimeFilterValue,
+  type FilterColumn,
+  type FilterCondition,
+  type SortRule,
 } from "@/lib/admin/table-search-params";
 
 export function GlobalFilterBar({
@@ -67,7 +68,7 @@ export function GlobalFilterBar({
         columnKey,
         columnLabel: col.label,
         operator: cond.operator,
-        value: cond.value,
+        value: col.type === "time" ? formatTimeFilterValue(cond.value) : cond.value,
         index,
       });
     });

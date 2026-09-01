@@ -6,6 +6,7 @@ import { adminUsers, adminInvitations, adminRoleAuditLogs, cadets, intakes, memb
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildSortOrderBy,
   IntakeOption,
   parseTableSearchParams,
@@ -103,7 +104,7 @@ function buildAuditLogCountQuery() {
     .leftJoin(changerMembers, eq(changerMembers.id, changerAdminUsers.memberId));
 }
 
-function buildAuditLogFilters(state: { q: string }): SQL[] {
+function buildAuditLogFilters(state: { q: string; filters: Record<string, FilterCondition[]> }): SQL[] {
   const clauses: SQL[] = [];
 
   if (state.q) {
@@ -114,6 +115,8 @@ function buildAuditLogFilters(state: { q: string }): SQL[] {
     );
     if (searchClause) clauses.push(searchClause);
   }
+
+  clauses.push(...buildDateFilterClause(state.filters.date, adminRoleAuditLogs.createdAt));
 
   return clauses;
 }

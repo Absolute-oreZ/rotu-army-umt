@@ -7,6 +7,7 @@ import { canAccessAdminModule } from "@/lib/admin/roles";
 import { notFound } from "next/navigation";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
   takeString,
@@ -37,6 +38,9 @@ function buildCampaignFilters(state: { q: string; filters: Record<string, Filter
   }
 
   clauses.push(...buildEnumFilterClause(state.filters.status, newsletterCampaigns.status));
+  clauses.push(...buildDateFilterClause(state.filters.scheduledAt, newsletterCampaigns.scheduledAt));
+  clauses.push(...buildDateFilterClause(state.filters.sentAt, newsletterCampaigns.sentAt));
+  clauses.push(...buildDateFilterClause(state.filters.createdAt, newsletterCampaigns.createdAt));
 
   return clauses;
 }
@@ -50,6 +54,7 @@ function buildSubscriberFilters(state: { q: string; filters: Record<string, Filt
 
   clauses.push(...buildEnumFilterClause(state.filters.status, newsletterSubscribers.status));
   clauses.push(...buildEnumFilterClause(state.filters.preferredLocale, newsletterSubscribers.preferredLocale));
+  clauses.push(...buildDateFilterClause(state.filters.createdAt, newsletterSubscribers.createdAt));
 
   return clauses;
 }

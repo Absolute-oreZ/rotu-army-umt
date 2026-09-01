@@ -11,6 +11,7 @@ import { takeString, takeNumber } from "@/lib/admin/form-helpers";
 import {
   parseTableSearchParams,
   buildEnumFilterClause,
+  buildDateFilterClause,
   wrapLikePattern,
   buildSortOrderBy,
 } from "@/lib/admin/table-search-params";
@@ -111,6 +112,9 @@ function buildCampaignFilters(state: { q: string; filters: Record<string, { oper
   }
 
   clauses.push(...buildEnumFilterClause(state.filters.status, newsletterCampaigns.status));
+  clauses.push(...buildDateFilterClause(state.filters.scheduledAt, newsletterCampaigns.scheduledAt));
+  clauses.push(...buildDateFilterClause(state.filters.sentAt, newsletterCampaigns.sentAt));
+  clauses.push(...buildDateFilterClause(state.filters.createdAt, newsletterCampaigns.createdAt));
 
   return clauses;
 }

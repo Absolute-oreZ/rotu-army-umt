@@ -7,6 +7,7 @@ import { canAccessAdminModule } from "@/lib/admin/roles";
 import { notFound } from "next/navigation";
 import {
   buildEnumFilterClause,
+  buildDateFilterClause,
   buildNumberFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
@@ -36,6 +37,7 @@ function buildFilters(
   }
 
   clauses.push(...buildNumberFilterClause(state.filters.amount, expenses.amount));
+  clauses.push(...buildDateFilterClause(state.filters.createdAt, expenses.createdAt));
   clauses.push(...buildEnumFilterClause(state.filters.intakeNo, intakes.intakeNo));
 
   if (intakeScope !== null) {

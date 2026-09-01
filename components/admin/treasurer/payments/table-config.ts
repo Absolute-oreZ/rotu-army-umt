@@ -3,6 +3,7 @@ import { FilterColumn, IntakeOption, TableConfig } from "@/lib/admin/table-searc
 
 export function buildPaymentsTableConfig(collectionOptions?: IntakeOption[]): TableConfig {
   const filterColumns: FilterColumn[] = [
+    { key: "paidAt", label: "Paid At", type: "date" },
     { key: "status", label: "Status", type: "enum", options: [
       { value: "PAID", label: "Paid" },
       { value: "UNPAID", label: "Unpaid" },

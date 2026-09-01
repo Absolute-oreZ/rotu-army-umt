@@ -9,6 +9,8 @@ const VALID_OPS: Record<FilterColumn["type"], string[]> = {
   enum: ["in", "notIn"],
   number: ["eq", "neq", "gt", "gte", "lt", "lte"],
   string: ["contains", "startsWith", "endsWith"],
+  date: ["eq", "gt", "gte", "lt", "lte"],
+  time: ["eq", "gt", "gte", "lt", "lte"],
 };
 
 const OP_LABELS: Record<string, string> = {
@@ -37,6 +39,8 @@ export function FilterBuilder({
   const [columnKey, setColumnKey] = useState("");
   const [operator, setOperator] = useState("");
   const [value, setValue] = useState("");
+  const [timeMinutes, setTimeMinutes] = useState("");
+  const [timeSeconds, setTimeSeconds] = useState("");
 
   const columnRef = useRef<HTMLInputElement>(null);
   const valueRef = useRef<HTMLInputElement>(null);
@@ -67,7 +71,17 @@ export function FilterBuilder({
   }
 
   function handleValueSubmit() {
-    if (!value.trim() || !selectedColumn) return;
+    if (!selectedColumn) return;
+    if (selectedColumn.type === "time") {
+      const minutes = Number(timeMinutes);
+      const seconds = Number(timeSeconds);
+      if (!Number.isFinite(minutes) && !Number.isFinite(seconds)) return;
+      const totalSeconds = (Number.isFinite(minutes) ? minutes : 0) * 60 + (Number.isFinite(seconds) ? seconds : 0);
+      onCommit(columnKey, operator, `${totalSeconds}s`);
+      reset();
+      return;
+    }
+    if (!value.trim()) return;
     onCommit(columnKey, operator, value.trim());
     reset();
   }
@@ -78,6 +92,8 @@ export function FilterBuilder({
     setColumnKey("");
     setOperator("");
     setValue("");
+    setTimeMinutes("");
+    setTimeSeconds("");
   }
 
   if (!open) {
@@ -152,10 +168,42 @@ export function FilterBuilder({
                 </option>
               ))}
             </select>
+          ) : selectedColumn.type === "time" ? (
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                value={timeMinutes}
+                onChange={(e) => setTimeMinutes(e.target.value)}
+                placeholder="Min"
+                aria-label="Minutes"
+                className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleValueSubmit();
+                  if (e.key === "Escape") reset();
+                }}
+              />
+              <span className="text-xs text-muted-foreground">m</span>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={timeSeconds}
+                onChange={(e) => setTimeSeconds(e.target.value)}
+                placeholder="Sec"
+                aria-label="Seconds"
+                className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleValueSubmit();
+                  if (e.key === "Escape") reset();
+                }}
+              />
+              <span className="text-xs text-muted-foreground">s</span>
+            </div>
           ) : (
             <input
               ref={valueRef}
-              type={selectedColumn.type === "number" ? "number" : "text"}
+              type={selectedColumn.type === "number" ? "number" : selectedColumn.type === "date" ? "date" : "text"}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder="Value..."

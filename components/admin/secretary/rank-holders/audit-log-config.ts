@@ -12,7 +12,7 @@ export const AUDIT_LOG_TABLE_CONFIG: TableConfig = {
   },
   sortKeys: ["date"],
   sortLabels: { date: "Date" },
-  filterColumns: [],
+  filterColumns: [{ key: "date", label: "Date", type: "date" }],
   pageSizeOptions: [10, 25, 50],
 };
 
