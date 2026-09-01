@@ -62,6 +62,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Treasurer lifecycle cleanup: delete treasury accounts when role changes away from Treasurer
 - [x] Build Multimedia modules: Portfolio, stories, Newsletters.
 - [ ] Build Sports modules: Activities, Collaborations.
+- [x] Add platoon support with nullable cadet-to-platoon assignment.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.
 - [ ] Build Academic modules: Results, Timetables.
 - [ ] Build Officer and Instructor bento dashboard.

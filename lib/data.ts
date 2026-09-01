@@ -974,6 +974,120 @@ export const DEFAULT_EVENT_TAGS = [
   },
 ] as const;
 
+export const DEFAULT_PLATOONS = [
+  {
+    platoonNo: 1,
+    displayName: "Platoon Alpha",
+    slug: "platoon-alpha",
+    status: "PUBLISHED",
+    color: "#e63946",
+    tagLine: "First Platoon",
+    flagPhotoPath: DEFAULT_RED_BG_PHOTO_PATH,
+  },
+  {
+    platoonNo: 2,
+    displayName: "Platoon Bravo",
+    slug: "platoon-bravo",
+    status: "PUBLISHED",
+    color: "#457b9d",
+    tagLine: "Second Platoon",
+    flagPhotoPath: DEFAULT_RED_BG_PHOTO_PATH,
+  },
+  {
+    platoonNo: 3,
+    displayName: "Platoon Charlie",
+    slug: "platoon-charlie",
+    status: "PUBLISHED",
+    color: "#2a9d8f",
+    tagLine: "Third Platoon",
+    flagPhotoPath: DEFAULT_RED_BG_PHOTO_PATH,
+  },
+] as const;
+
+export const DEFAULT_CADET_PLATOON_NOS = DEFAULT_CADETS_INFO.map(
+  (_, index) => (index % DEFAULT_PLATOONS.length) + 1,
+);
+
+export const DEFAULT_NEWSLETTER_SUBSCRIBERS = [
+  {
+    email: "newsletter.active@example.com",
+    preferredLocale: "en",
+    status: "ACTIVE",
+    confirmationTokenHash: null,
+    unsubscribeTokenHash: "seed-unsubscribe-active",
+    confirmedAt: "2026-01-15T08:00:00.000Z",
+    unsubscribedAt: null,
+  },
+  {
+    email: "newsletter.pending@example.com",
+    preferredLocale: "ms",
+    status: "PENDING",
+    confirmationTokenHash: "seed-confirmation-pending",
+    unsubscribeTokenHash: null,
+    confirmedAt: null,
+    unsubscribedAt: null,
+  },
+  {
+    email: "newsletter.unsubscribed@example.com",
+    preferredLocale: "zh",
+    status: "UNSUBSCRIBED",
+    confirmationTokenHash: null,
+    unsubscribeTokenHash: "seed-unsubscribe-old",
+    confirmedAt: "2025-11-01T08:00:00.000Z",
+    unsubscribedAt: "2026-02-01T08:00:00.000Z",
+  },
+] as const;
+
+export const DEFAULT_NEWSLETTER_CAMPAIGNS = [
+  {
+    subject: "ROTU Army UMT Update",
+    previewText: "A sample campaign for the newsletter dashboard.",
+    contentHtml: "<p>This is seeded newsletter content.</p>",
+    contentText: "This is seeded newsletter content.",
+    status: "SENT",
+    scheduledAt: null,
+    sentAt: "2026-02-15T08:00:00.000Z",
+    recipientCount: 1,
+    translations: {
+      en: { subject: "ROTU Army UMT Update", previewText: "A sample campaign for the newsletter dashboard.", contentHtml: "<p>This is seeded newsletter content.</p>", contentText: "This is seeded newsletter content." },
+      ms: { subject: "Kemas Kini ROTU Army UMT", previewText: "Kempen contoh untuk papan pemuka surat berita.", contentHtml: "<p>Ini ialah kandungan surat berita contoh.</p>", contentText: "Ini ialah kandungan surat berita contoh." },
+      zh: { subject: "ROTU Army UMT 最新消息", previewText: "通讯录面板的示例活动。", contentHtml: "<p>这是预置的通讯内容。</p>", contentText: "这是预置的通讯内容。" },
+      ta: { subject: "ROTU Army UMT புதுப்பிப்பு", previewText: "செய்திமடல் கட்டுப்பாட்டகத்திற்கான மாதிரி பிரசாரம்.", contentHtml: "<p>இது முன் விதைக்கப்பட்ட செய்திமடல் உள்ளடக்கம்.</p>", contentText: "இது முன் விதைக்கப்பட்ட செய்திமடல் உள்ளடக்கம்." },
+    },
+  },
+  {
+    subject: "Upcoming ROTU Briefing",
+    previewText: null,
+    contentHtml: "<p>Draft newsletter content.</p>",
+    contentText: null,
+    status: "DRAFT",
+    scheduledAt: null,
+    sentAt: null,
+    recipientCount: 0,
+    translations: null,
+  },
+] as const;
+
+export const DEFAULT_TREASURY_ACCOUNTS = [
+  { bankName: "MAYBANK", accountNumber: 1122334455, duitNowId: 60123456789, qrCodePath: "treasury/seed/maybank-qr.png" },
+  { bankName: "CIMB", accountNumber: 2233445566, duitNowId: null, qrCodePath: null },
+] as const;
+
+export const DEFAULT_COLLECTIONS = [
+  { title: "Monthly Training Collection", slug: "monthly-training-collection", purpose: "MONTHLY_COLLECTION", description: "Seeded fixed collection.", amount: "25.00", isFixedAmount: true, isReceiptRequired: true, status: "PUBLISHED" },
+  { title: "Welfare Support Fund", slug: "welfare-support-fund", purpose: "WELFARE", description: null, amount: null, isFixedAmount: false, isReceiptRequired: false, status: "DRAFT" },
+] as const;
+
+export const DEFAULT_EXPENSES = [
+  { title: "Training supplies", description: "Seeded expense record.", amount: "180.50", receiptPath: "expenses/seed/training-supplies.pdf" },
+  { title: "Transport allowance", description: null, amount: "75.00", receiptPath: null },
+] as const;
+
+export const DEFAULT_CLAIMS = [
+  { title: "Field training supplies", amount: "42.50", description: "Seeded pending claim.", receiptPath: "claims/seed/receipt.pdf", qrCodePath: "claims/seed/qr.png", status: "PENDING", fulfilledAt: null, rejectedAt: null },
+  { title: "Rejected sample claim", amount: "18.00", description: null, receiptPath: "claims/seed/rejected-receipt.pdf", qrCodePath: "claims/seed/rejected-qr.png", status: "REJECTED", fulfilledAt: null, rejectedAt: "2026-02-20T08:00:00.000Z" },
+] as const;
+
 export const DEFAULT_EVENTS = Array.from(
   { length: 36 },
   (_, index) => {

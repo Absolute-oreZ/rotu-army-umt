@@ -66,6 +66,11 @@ A shared component system for admin list/table pages with server-side filtering,
 **Server-side helpers** (`lib/admin/table-search-params.ts`):
 - `parseTableSearchParams(raw, config)` — parses URL search params into a typed `TableState` (query, sort rules, page, page size, filter conditions).
 - `buildEnumFilterClause(conditions, column)` — converts filter conditions to Drizzle `inArray`/`notInArray` SQL clauses.
+- `buildNumberFilterClause(conditions, column)` — converts numeric conditions (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`) to SQL clauses.
+- `buildDateFilterClause(conditions, column)` — converts date conditions (`eq`, `gt`, `gte`, `lt`, `lte`) to day-aware SQL clauses.
+- `buildTimeFilterClause(conditions, column)` — converts time conditions (`eq`, `gt`, `gte`, `lt`, `lte`) to second-based SQL clauses; values accept `XmYs` or plain seconds.
+- `parseTimeFilterValue(value)` — parses a time filter value (`"12m20s"` or `"690"`) into total seconds.
+- `formatTimeFilterValue(value)` — formats a time filter value as `XmYs` for display in filter pills.
 - `buildSortOrderBy(sortRules, fieldMap)` — maps sort rules to Drizzle `asc`/`desc` order-by expressions using a field map.
 - `wrapLikePattern(input, mode)` / `escapeLikeWildcards(input)` — safe ILIKE pattern builders.
 - `isTableStateDefault(state, config)` — checks if current state matches defaults (for reset button visibility).
@@ -372,6 +377,7 @@ Primary schema domains in `db/schema.ts`:
   - `academic_years`, `sessions`, `exams`, `academic_exam_results`.
 - Members and cadet data:
   - `members` (with birthdate, age, kor/regiment fields), `cadets` (with physical metrics: height, weight, BMI, CGPA), `study_programs`, `officers_and_instructors`.
+  - `platoons` (normalized platoon entity) with nullable `cadets.platoon_id` assignment.
   - Secretary module operates exclusively on cadets; rank-holders filters admin users to cadets only.
 - Newsletter:
   - `newsletter_subscribers` with status and token hash fields.
@@ -501,3 +507,72 @@ Based on `TASKS.md` and codebase review:
 5. Implement admin CMS modules: Multimedia for `webapp_contents`, stories CRUD, newsletter management.
 6. Add route-level error boundaries for admin surfaces.
 7. Audit per-page canonical URLs and `hreflang` alternates across all public routes.
+
+## 14. Admin Module Consistency Contract
+
+Secretary, Treasurer, Multimedia, Sports, Welfare, and Academic admin modules may have different domain workflows, but they must share the following interaction and implementation behavior.
+
+### 14.1 Authorization and ownership
+
+- Every admin route is protected by its module layout and server-side RBAC.
+- Every Server Action authenticates with `requireCurrentAdmin()` and checks `canAccessAdminModule()`.
+- Intake-scoped modules enforce intake ownership in both reads and writes.
+- Client-side hiding is UX only and never replaces server authorization.
+- Related entities must be re-queried and validated by the server before mutation.
+
+### 14.2 Server Action contract
+
+Actions should return a discriminated result:
+
+```ts
+type ActionResult<T = undefined> =
+  | { success: true; data?: T }
+  | { success: false; error: string };
+```
+
+- Validation failures are returned as `success: false`; they should not be silently swallowed.
+- Mutations should use transactions when they write multiple related tables.
+- Domain services own domain validation and transactional writes; actions own authentication, form parsing, and cache invalidation.
+- File uploads must validate file type and size before storage, and remove an uploaded file if the database write fails.
+- Delete operations must validate the parent entity and ownership before removing database or storage records.
+
+### 14.3 Cache and navigation behavior
+
+- Successful in-place mutations call `router.refresh()` from client components.
+- `window.location.reload()` and `window.location.href` must not be used for admin mutation completion.
+- `router.push()` is used only when the mutation intentionally leaves the current route, such as deleting the entity currently being viewed.
+- Server Actions revalidate the affected list route and the affected detail route when applicable.
+
+### 14.4 Dialog and form behavior
+
+- Dialogs use `DialogHeader`, `DialogDescription`, and `DialogFooter` consistently.
+- Dialog state is reset when the dialog closes and after successful creation.
+- Inputs use shared UI primitives from `components/ui/`: `Input`, `Select`, `DatePicker`, `Textarea`, and `Field`.
+- Required fields use both UI required indicators and server-side validation.
+- Pending states disable submit/destructive controls and show a clear loading label.
+- Action failures remain visible in the dialog or page until corrected or dismissed.
+- Date and time controls match the domain: date-only records use `type="date"`; event ranges or scheduled operations may use date-time controls.
+
+### 14.5 List and table behavior
+
+- Admin list pages use the shared data-table infrastructure with URL-based search, filtering, sorting, and pagination.
+- Empty states distinguish between no records and no records matching active filters.
+- Filtered empty states provide a reset action.
+- Date, currency, status, and result values use shared formatters or module-level helpers rather than ad hoc formatting in table cells.
+- Add actions use consistent placement, spacing, labels, and icons.
+
+### 14.6 Data fetching and client boundaries
+
+- Server Components fetch database data and pass only the required serialized view model to client components.
+- Independent server queries should run in parallel with `Promise.all()`.
+- Client components must not access Drizzle or Supabase database clients directly.
+- Large searchable populations should use server-backed search instead of loading an unbounded dataset into the browser.
+- Components should be split by responsibility: page client, table, form/dialog, detail view, and mutation controls.
+
+### 14.7 Code quality
+
+- Avoid dense one-line pages, actions, and JSX blocks.
+- Top-level functions should have explicit prop and return types where practical.
+- Shared helpers in `lib/admin` and `lib/utils` must be preferred over duplicated validation, formatting, and parsing logic.
+- Dead branches, unused lookup fields, obsolete routes, and compatibility wrappers must be removed after route migrations.
+- Changes to shared helpers require updating the architecture helper catalog as required by `AGENTS.md`.

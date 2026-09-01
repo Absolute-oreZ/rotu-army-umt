@@ -11,7 +11,7 @@ const globalForDb = globalThis as unknown as {
 const client =
   globalForDb.dbClient ??
   postgres(getServerEnv().databaseUrl, {
-    max: 10,
+    max: 20,
     prepare: false,
   });
 

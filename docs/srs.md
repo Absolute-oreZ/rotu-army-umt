@@ -204,6 +204,7 @@ System data model shall include at minimum:
 - Stories (events) and translations.
 - Events tags and tag translations.
 - Members (with birthdate, age, regiment/kor) and cadet information (with physical metrics: height, weight, BMI, CGPA).
+- Platoons (normalized platoon records) with nullable cadet-to-platoon assignment.
 - Officers and instructors.
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.

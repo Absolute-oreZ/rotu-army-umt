@@ -14,6 +14,7 @@ import {
   DEFAULT_CADET_QUOTES,
   DEFAULT_CADET_DISPLAY_PHOTO_PATH,
   DEFAULT_CADETS_INFO,
+  DEFAULT_CADET_PLATOON_NOS,
   DEFAULT_CADET_PHYSICAL,
   DEFAULT_OFFICERS_AND_INSTRUCTORS,
   DEFAULT_STUDY_PROGRAMS,
@@ -27,6 +28,13 @@ import {
   DEFAULT_TIKTOK_URL,
   DEFAULT_X_URL,
   DEFAULT_BLUE_BG_PHOTO_PATH,
+  DEFAULT_PLATOONS,
+  DEFAULT_NEWSLETTER_SUBSCRIBERS,
+  DEFAULT_NEWSLETTER_CAMPAIGNS,
+  DEFAULT_TREASURY_ACCOUNTS,
+  DEFAULT_COLLECTIONS,
+  DEFAULT_EXPENSES,
+  DEFAULT_CLAIMS,
 } from "../lib/data";
 import { calculateBMI, computeAcademicSchedule } from "@/lib/utils";
 
@@ -68,6 +76,7 @@ const sql = postgres(process.env.DATABASE_URL, {
 async function seed() {
   await sql`
     TRUNCATE TABLE
+      platoons,
       testimonial_translations,
       testimonials,
       officers_and_instructors,
@@ -92,6 +101,20 @@ async function seed() {
       event_tags,
       event_translations,
       events,
+      expense_receipts,
+      expenses,
+      collection_payments,
+      collections,
+      treasury_accounts,
+      claims,
+      newsletter_campaign_deliveries,
+      newsletter_campaign_attachments,
+      newsletter_campaign_translations,
+      newsletter_campaigns,
+      academic_exam_results,
+      exams,
+      cadet_accounts,
+      admin_invitations,
       contact_reasons,
       contact_reason_translations,
       newsletter_subscribers,
@@ -111,8 +134,16 @@ async function seed() {
     studyProgramIds.push(row.id);
   }
 
+  // Insert dummy platoons
+  for (const p of DEFAULT_PLATOONS) {
+    await sql`
+      INSERT INTO platoons (platoon_no, display_name, slug, status, color, tag_line, flag_photo_path)
+      VALUES (${p.platoonNo}, ${p.displayName}, ${p.slug}, ${p.status}, ${p.color}, ${p.tagLine}, ${p.flagPhotoPath})
+    `;
+  }
+
   const [adminMemberRow] = await sql<[{ id: number }]>`
-    insert into members (
+    INSERT INTO members (
       army_no,
       rank,
       name,
@@ -130,7 +161,7 @@ async function seed() {
       red_bg_photo_path,
       blue_bg_photo_path
     )
-    values (
+    VALUES (
       2099,
       'MAJOR',
       ${DEFAULT_ADMIN.fullName},
@@ -148,7 +179,7 @@ async function seed() {
       ${DEFAULT_CADET_DISPLAY_PHOTO_PATH},
       ${DEFAULT_BLUE_BG_PHOTO_PATH}
     )
-    returning id
+    RETURNING id
   `;
 
   await sql`
@@ -480,6 +511,7 @@ async function seed() {
         bmi,
         study_program_id,
         intake_id,
+        platoon_id,
         member_id
       )
       values (
@@ -493,6 +525,7 @@ async function seed() {
         ${bmi},
         ${studyProgramId},
         ${intakeId},
+        ${DEFAULT_CADET_PLATOON_NOS[i]},
         ${memberRow.id}
       )
     `;
@@ -672,6 +705,198 @@ async function seed() {
     `;
     }
   }
+
+  const [adminUserRow] = await sql<[{ id: string }]>`
+    select id from admin_users where auth_user_id = ${DEFAULT_ADMIN.authUserId}
+  `;
+
+  await sql`
+    insert into admin_invitations (
+      member_id, email, role, intake_id, invited_by_auth_user_id
+    )
+    values (
+      ${adminMemberRow.id}, 'secretary.seed@example.com', 'SECRETARY',
+      ${intakeIds[0]}, ${DEFAULT_ADMIN.authUserId}
+    )
+  `;
+
+  await sql`
+    insert into admin_role_audit_logs (
+      action, changed_by_admin_user_id, target_admin_user_id,
+      target_member_name, old_role, new_role
+    )
+    values (
+      'INVITED', ${adminUserRow.id}, null, 'Seed Secretary', null, 'SECRETARY'
+    )
+  `;
+
+  const subscriberIds: string[] = [];
+  for (const subscriber of DEFAULT_NEWSLETTER_SUBSCRIBERS) {
+    const [row] = await sql<[{ id: string }]>`
+      insert into newsletter_subscribers (
+        email, preferred_locale, status, confirmation_token_hash,
+        unsubscribe_token_hash, confirmed_at, unsubscribed_at
+      )
+      values (
+        ${subscriber.email}, ${subscriber.preferredLocale}, ${subscriber.status},
+        ${subscriber.confirmationTokenHash}, ${subscriber.unsubscribeTokenHash},
+        ${subscriber.confirmedAt}, ${subscriber.unsubscribedAt}
+      )
+      returning id
+    `;
+
+    subscriberIds.push(row.id);
+  }
+
+  const campaignIds: number[] = [];
+  for (const campaign of DEFAULT_NEWSLETTER_CAMPAIGNS) {
+    const [row] = await sql<[{ id: number }]>`
+      insert into newsletter_campaigns (
+        subject, preview_text, content_html, content_text, status,
+        scheduled_at, sent_at, recipient_count, sent_by_admin_user_id
+      )
+      values (
+        ${campaign.subject}, ${campaign.previewText}, ${campaign.contentHtml},
+        ${campaign.contentText}, ${campaign.status}, ${campaign.scheduledAt},
+        ${campaign.sentAt}, ${campaign.recipientCount},
+        ${campaign.status === "DRAFT" ? null : adminUserRow.id}
+      )
+      returning id
+    `;
+    campaignIds.push(row.id);
+
+    if (campaign.translations) {
+      for (const locale of ["en", "ms", "zh", "ta"] as const) {
+        const translation = campaign.translations[locale];
+        await sql`
+          insert into newsletter_campaign_translations (
+            campaign_id, locale, subject, preview_text, content_html, content_text
+          )
+          values (
+            ${row.id}, ${locale}, ${translation.subject}, ${translation.previewText},
+            ${translation.contentHtml}, ${translation.contentText}
+          )
+        `;
+      }
+    }
+  }
+
+  await sql`
+    insert into newsletter_campaign_attachments
+      (campaign_id, file_name, storage_path, content_type, file_size)
+    values
+      (${campaignIds[0]}, 'update.pdf', 'newsletter/seed/update.pdf', 'application/pdf', 2048)
+  `;
+
+  await sql`
+    insert into newsletter_campaign_deliveries
+      (campaign_id, subscriber_id, email, locale, status, provider_message_id, sent_at)
+    values
+      (${campaignIds[0]}, ${subscriberIds[0]}, ${DEFAULT_NEWSLETTER_SUBSCRIBERS[0].email}, 'en',
+       'SENT', 'seed-message-id', '2026-02-15T08:00:00.000Z')
+  `;
+
+  const treasuryAccountIds: number[] = [];
+  for (const account of DEFAULT_TREASURY_ACCOUNTS) {
+    const [row] = await sql<[{ id: number }]>`
+      insert into treasury_accounts (
+        intake_id, treasurer_id, bank_name, account_number, qr_code_path, duitnow_id
+      )
+      values (
+        ${intakeIds[0]}, ${adminUserRow.id}, ${account.bankName}, ${account.accountNumber},
+        ${account.qrCodePath}, ${account.duitNowId}
+      )
+      returning id
+    `;
+    treasuryAccountIds.push(row.id);
+  }
+
+  const collectionIds: number[] = [];
+  for (let i = 0; i < DEFAULT_COLLECTIONS.length; i += 1) {
+    const collection = DEFAULT_COLLECTIONS[i];
+    const [row] = await sql<[{ id: number }]>`
+      insert into collections (
+        intake_id, treasurer_id, title, slug, purpose, description, amount,
+        is_fixed_amount, is_receipt_required, payment_account_id, status
+      )
+      values (
+        ${intakeIds[0]}, ${adminUserRow.id}, ${collection.title}, ${collection.slug},
+        ${collection.purpose}, ${collection.description}, ${collection.amount},
+        ${collection.isFixedAmount}, ${collection.isReceiptRequired},
+        ${treasuryAccountIds[i % treasuryAccountIds.length]}, ${collection.status}
+      )
+      returning id
+    `;
+    collectionIds.push(row.id);
+  }
+
+  const cadetRows = await sql<{ id: number; member_id: number }[]>`
+    select id, member_id from cadets order by id limit 6
+  `;
+
+  await sql`
+    insert into collection_payments
+      (collection_id, member_id, amount_paid, receipt_path, paid_at)
+    values
+      (${collectionIds[0]}, ${cadetRows[0].member_id}, '25.00', 'payments/seed/receipt.pdf', '2026-02-16T08:00:00.000Z')
+  `;
+
+  for (const expense of DEFAULT_EXPENSES) {
+    const [row] = await sql<[{ id: number }]>`
+      insert into expenses (intake_id, treasurer_id, title, description, amount)
+      values (${intakeIds[0]}, ${adminUserRow.id}, ${expense.title}, ${expense.description}, ${expense.amount})
+      returning id
+    `;
+
+    if (expense.receiptPath) {
+      await sql`
+        insert into expense_receipts (expense_id, file_path)
+        values (${row.id}, ${expense.receiptPath})
+      `;
+    }
+  }
+
+  await sql`
+    insert into cadet_accounts
+      (member_id, bank_name, account_number, duitnow_id, qr_code_path)
+    values
+      (${cadetRows[0].member_id}, 'RHB', 3344556677, 60112233445, 'cadet-accounts/seed/qr.png')
+  `;
+
+  for (const claim of DEFAULT_CLAIMS) {
+    await sql`
+      insert into claims (
+        member_id, intake_id, title, amount, receipt_path, qr_code_path,
+        description, status, fulfilled_at, rejected_at
+      )
+      values (
+        ${cadetRows[0].member_id}, ${intakeIds[0]}, ${claim.title}, ${claim.amount},
+        ${claim.receiptPath}, ${claim.qrCodePath}, ${claim.description}, ${claim.status},
+        ${claim.fulfilledAt}, ${claim.rejectedAt}
+      )
+    `;
+  }
+
+  const sessionRows = await sql<{ id: number }[]>`
+    select id from sessions order by id limit 4
+  `;
+  const examIds: number[] = [];
+  for (let i = 0; i < sessionRows.length; i += 1) {
+    const [row] = await sql<[{ id: number }]>`
+      insert into exams (session_id, name, exam_date)
+      values (${sessionRows[i].id}, ${`Assessment ${i + 1}`}, ${`2026-0${i + 1}-15T08:00:00.000Z`})
+      returning id
+    `;
+    examIds.push(row.id);
+  }
+
+  for (let i = 0; i < examIds.length; i += 1) {
+    await sql`
+      insert into academic_exam_results (exam_id, cadet_id, score, grade)
+      values (${examIds[i]}, ${cadetRows[i].id}, ${80 - i * 7.5}, ${i < 2 ? "A" : "B"})
+    `;
+  }
+
 }
 
 seed()

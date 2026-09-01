@@ -53,7 +53,9 @@ export async function uploadToStorage(
 
 export async function deleteFromStorage(supabase: SupabaseClient, path: string): Promise<void> {
   try {
-    await supabase.storage.from(bucket()).remove([path]);
-  } catch {
+    const { error } = await supabase.storage.from(bucket()).remove([path]);
+    if (error) console.error("Storage deletion failed", { path, message: error.message });
+  } catch (error) {
+    console.error("Storage deletion failed", { path, message: error instanceof Error ? error.message : "Unknown error" });
   }
 }
