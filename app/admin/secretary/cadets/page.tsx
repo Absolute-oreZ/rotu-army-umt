@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { CADET_RANKS, cadets, intakes, members } from "@/db/schema";
+import { CADET_RANKS, cadets, intakes, members, platoons } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
@@ -53,11 +53,13 @@ function buildBaseQuery() {
       name: members.name,
       avatarPath: members.redBgPhotoPath,
       intakeNo: intakes.intakeNo,
+      platoonName: platoons.displayName,
       isActive: cadets.isActive,
     })
     .from(cadets)
     .innerJoin(members, eq(members.id, cadets.memberId))
-    .innerJoin(intakes, eq(intakes.id, cadets.intakeId));
+    .innerJoin(intakes, eq(intakes.id, cadets.intakeId))
+    .leftJoin(platoons, eq(platoons.id, cadets.platoonId));
 }
 
 function buildCountQuery() {
@@ -80,10 +82,16 @@ export default async function CadetsPage({
   const tab = takeString(raw.tab) === "inactive" ? "inactive" : "active";
   const isActiveFilter = tab === "active";
 
-  const intakeRows = await db
-    .select({ id: intakes.id, intakeNo: intakes.intakeNo, startYear: intakes.startYear })
-    .from(intakes)
-    .orderBy(desc(intakes.startYear));
+  const [intakeRows, platoonRows] = await Promise.all([
+    db
+      .select({ id: intakes.id, intakeNo: intakes.intakeNo, startYear: intakes.startYear })
+      .from(intakes)
+      .orderBy(desc(intakes.startYear)),
+    db
+      .select({ id: platoons.id, displayName: platoons.displayName })
+      .from(platoons)
+      .orderBy(asc(platoons.displayName)),
+  ]);
 
   const intakeOptions = intakeRows.map((i) => ({
     id: i.id,
@@ -131,6 +139,7 @@ export default async function CadetsPage({
       totalCount={totalCount}
       intakeOptions={intakeOptions}
       intakeDialogOptions={intakeDialogOptions}
+      platoonOptions={platoonRows}
     />
   );
 }

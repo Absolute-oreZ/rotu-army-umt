@@ -57,6 +57,13 @@
       "when": 1785679632310,
       "tag": "0007_lyrical_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788275889311,
+      "tag": "0008_small_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

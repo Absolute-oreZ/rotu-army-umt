@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { cadets, intakes, members } from "@/db/schema";
+import { cadets, intakes, members, platoons } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { calculateAge, isValidPersonalEmail, isValidEduEmail } from "@/lib/utils";
@@ -103,6 +103,7 @@ export async function addCadet(formData: FormData) {
   const rank = takeString(formData.get("rank"));
   const matricNo = takeString(formData.get("matricNo"));
   const rawIntakeId = takeNumber(formData.get("intakeId"));
+  const rawPlatoonId = takeNumber(formData.get("platoonId"));
   const quote = takeString(formData.get("quote"));
   const rawIsActive = takeString(formData.get("isActive"));
 
@@ -148,6 +149,18 @@ export async function addCadet(formData: FormData) {
 
   if (intakeScope !== null && rawIntakeId !== intakeScope) {
     return { error: "You cannot move cadets to a different intake." };
+  }
+
+  if (rawPlatoonId !== null) {
+    if (!Number.isInteger(rawPlatoonId) || rawPlatoonId <= 0) {
+      return { error: "Invalid platoon." };
+    }
+    const [platoon] = await db
+      .select({ id: platoons.id })
+      .from(platoons)
+      .where(eq(platoons.id, rawPlatoonId))
+      .limit(1);
+    if (!platoon) return { error: "Platoon not found." };
   }
 
   const isActive = rawIsActive !== "false";
@@ -199,6 +212,7 @@ export async function addCadet(formData: FormData) {
         bmi: null,
         studyProgramId: null,
         intakeId: effectiveIntakeId,
+        platoonId: rawPlatoonId,
         memberId: memberRow.id,
       });
 
@@ -264,6 +278,8 @@ export type CadetDetails = {
   rank: string;
   intakeId: number;
   intakeNo: string;
+  platoonId: number | null;
+  platoonName: string | null;
   quote: string | null;
   isActive: boolean;
   redBgPhotoPath: string | null;
@@ -302,6 +318,8 @@ export async function getCadetDetails(cadetInfoId: number): Promise<{ data: Cade
       rank: members.rank,
       intakeId: cadets.intakeId,
       intakeNo: intakes.intakeNo,
+      platoonId: cadets.platoonId,
+      platoonName: platoons.displayName,
       quote: cadets.quote,
       isActive: cadets.isActive,
       redBgPhotoPath: members.redBgPhotoPath,
@@ -311,6 +329,7 @@ export async function getCadetDetails(cadetInfoId: number): Promise<{ data: Cade
     .from(cadets)
     .innerJoin(members, eq(members.id, cadets.memberId))
     .innerJoin(intakes, eq(intakes.id, cadets.intakeId))
+    .leftJoin(platoons, eq(platoons.id, cadets.platoonId))
     .where(eq(cadets.id, cadetInfoId))
     .limit(1);
 
@@ -368,6 +387,7 @@ export async function updateCadet(formData: FormData) {
   const rank = takeString(formData.get("rank"));
   const matricNo = takeString(formData.get("matricNo"));
   const rawIntakeId = takeNumber(formData.get("intakeId"));
+  const rawPlatoonId = takeNumber(formData.get("platoonId"));
   const quote = takeString(formData.get("quote"));
   const rawIsActive = takeString(formData.get("isActive"));
 
@@ -412,6 +432,18 @@ export async function updateCadet(formData: FormData) {
     return { error: "You cannot move cadets to a different intake." };
   }
 
+  if (rawPlatoonId !== null) {
+    if (!Number.isInteger(rawPlatoonId) || rawPlatoonId <= 0) {
+      return { error: "Invalid platoon." };
+    }
+    const [platoon] = await db
+      .select({ id: platoons.id })
+      .from(platoons)
+      .where(eq(platoons.id, rawPlatoonId))
+      .limit(1);
+    if (!platoon) return { error: "Platoon not found." };
+  }
+
   const isActive = rawIsActive !== "false";
   const removeRedBg = formData.get("removeRedBgPhoto") === "true";
   const removeBlueBg = formData.get("removeBlueBgPhoto") === "true";
@@ -450,6 +482,7 @@ export async function updateCadet(formData: FormData) {
         isActive,
         quote: quote ?? null,
         intakeId: effectiveIntakeId,
+        platoonId: rawPlatoonId,
         ...(removeDisplay ? { displayPhotoPath: null } : {}),
       }).where(eq(cadets.id, rawCadetInfoId));
     });

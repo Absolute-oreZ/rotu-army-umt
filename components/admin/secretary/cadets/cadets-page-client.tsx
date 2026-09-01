@@ -17,6 +17,7 @@ type CadetsPageClientProps = {
   totalCount: number;
   intakeOptions: IntakeOption[];
   intakeDialogOptions: { id: number; intakeNo: string }[];
+  platoonOptions: { id: number; displayName: string }[];
 };
 
 export function CadetsPageClient({
@@ -26,6 +27,7 @@ export function CadetsPageClient({
   totalCount,
   intakeOptions,
   intakeDialogOptions,
+  platoonOptions,
 }: CadetsPageClientProps) {
   const router = useRouter();
 
@@ -59,6 +61,7 @@ export function CadetsPageClient({
         </Button>
       }
       intakeOptions={intakeDialogOptions}
+      platoonOptions={platoonOptions}
     />
   );
 
@@ -87,6 +90,7 @@ export function CadetsPageClient({
           totalCount={totalCount}
           intakeOptions={intakeOptions}
           intakeDialogOptions={intakeDialogOptions}
+          platoonOptions={platoonOptions}
           prefix="a_"
         />
       </TabsContent>
@@ -98,6 +102,7 @@ export function CadetsPageClient({
           totalCount={totalCount}
           intakeOptions={intakeOptions}
           intakeDialogOptions={intakeDialogOptions}
+          platoonOptions={platoonOptions}
           prefix="i_"
         />
       </TabsContent>

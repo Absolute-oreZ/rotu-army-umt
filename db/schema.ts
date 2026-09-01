@@ -426,6 +426,8 @@ export const cadets = pgTable(
     intakeId: integer("intake_id")
       .notNull()
       .references(() => intakes.id),
+    platoonId: integer("platoon_id")
+      .references(() => platoons.id, { onDelete: "set null" }),
     memberId: integer("member_id")
       .notNull()
       .references(() => members.id),
@@ -435,8 +437,29 @@ export const cadets = pgTable(
     uniqueIndex("cadets_matric_no_idx").on(table.matricNo),
     uniqueIndex("cadets_member_id_idx").on(table.memberId),
     index("cadets_intake_id_idx").on(table.intakeId),
+    index("cadets_platoon_id_idx").on(table.platoonId),
     index("cadets_study_program_id_idx").on(table.studyProgramId),
     index("cadets_is_active_idx").on(table.isActive).where(sql`${table.isActive} = true`),
+  ],
+);
+
+export const platoons = pgTable(
+  "platoons",
+  {
+    id: serial("id").primaryKey(),
+    platoonNo: varchar("platoon_no", { length: 40 }).notNull(),
+    displayName: varchar("display_name", { length: 180 }).notNull(),
+    slug: varchar("slug", { length: 180 }).notNull(),
+    status: publicationStatusEnum("status").default("DRAFT").notNull(),
+    color: varchar("color", { length: 40 }),
+    tagLine: varchar("tag_line", { length: 240 }),
+    flagPhotoPath: text("flag_photo_path"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("platoons_platoon_no_idx").on(table.platoonNo),
+    uniqueIndex("platoons_slug_idx").on(table.slug),
+    index("platoons_status_idx").on(table.status),
   ],
 );
 

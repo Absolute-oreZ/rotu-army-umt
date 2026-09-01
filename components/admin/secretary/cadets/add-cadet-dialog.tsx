@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition, useMemo, type ReactNode } from "react";
 import { format } from "date-fns";
@@ -29,13 +29,16 @@ import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
 type IntakeOption = { id: number; intakeNo: string };
+type PlatoonOption = { id: number; displayName: string };
 
 export function AddCadetDialog({
   trigger,
   intakeOptions,
+  platoonOptions,
 }: {
   trigger: ReactNode;
   intakeOptions: IntakeOption[];
+  platoonOptions: PlatoonOption[];
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -54,6 +57,7 @@ export function AddCadetDialog({
   const [rank, setRank] = useState("");
   const [matricNo, setMatricNo] = useState("");
   const [intakeId, setIntakeId] = useState("");
+  const [platoonId, setPlatoonId] = useState("");
   const [quote, setQuote] = useState("");
   const [redBgFile, setRedBgFile] = useState<File | null>(null);
   const [blueBgFile, setBlueBgFile] = useState<File | null>(null);
@@ -123,6 +127,7 @@ export function AddCadetDialog({
     setRank("");
     setMatricNo("");
     setIntakeId("");
+    setPlatoonId("");
     setQuote("");
     setRedBgFile(null);
     setBlueBgFile(null);
@@ -172,6 +177,7 @@ export function AddCadetDialog({
       formData.append("rank", rank);
       formData.append("matricNo", matricNo.toUpperCase());
       formData.append("intakeId", intakeId);
+      if (platoonId) formData.append("platoonId", platoonId);
       if (quote) formData.append("quote", quote);
       formData.append("isActive", "true");
       if (redBgFile) formData.append("redBgPhoto", redBgFile);
@@ -401,6 +407,28 @@ export function AddCadetDialog({
                           onClick={() => setIntakeId(String(i.id))}
                         >
                           {i.intakeNo}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </Field>
+                <Field label="Platoon">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm flex items-center justify-between transition-colors hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <span className="text-muted-foreground">
+                          {platoonId
+                            ? platoonOptions.find((platoon) => String(platoon.id) === platoonId)?.displayName
+                            : "Unassigned"}
+                        </span>
+                        <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-full">
+                      <DropdownMenuItem onClick={() => setPlatoonId("")}>Unassigned</DropdownMenuItem>
+                      {platoonOptions.map((platoon) => (
+                        <DropdownMenuItem key={platoon.id} onClick={() => setPlatoonId(String(platoon.id))}>
+                          {platoon.displayName}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>

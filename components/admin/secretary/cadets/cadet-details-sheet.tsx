@@ -41,6 +41,7 @@ import { Field } from "@/components/ui/field";
 import { storageUrl } from "@/lib/supabase/storage-public";
 
 type IntakeOption = { id: number; intakeNo: string };
+type PlatoonOption = { id: number; displayName: string };
 
 export function CadetDetailsSheet({
   cadetInfoId,
@@ -48,12 +49,14 @@ export function CadetDetailsSheet({
   open,
   onOpenChange,
   intakeOptions,
+  platoonOptions,
 }: {
   cadetInfoId: number | null;
   initialMode: "view" | "edit";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   intakeOptions: IntakeOption[];
+  platoonOptions: PlatoonOption[];
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange} side="right">
@@ -64,6 +67,7 @@ export function CadetDetailsSheet({
             cadetInfoId={cadetInfoId}
             initialMode={initialMode}
             intakeOptions={intakeOptions}
+            platoonOptions={platoonOptions}
             onClose={() => onOpenChange(false)}
           />
         )}
@@ -76,11 +80,13 @@ function SheetInner({
   cadetInfoId,
   initialMode,
   intakeOptions,
+  platoonOptions,
   onClose,
 }: {
   cadetInfoId: number;
   initialMode: "view" | "edit";
   intakeOptions: IntakeOption[];
+  platoonOptions: PlatoonOption[];
   onClose: () => void;
 }) {
   const [loading, setLoading] = useState(true);
@@ -129,6 +135,7 @@ function SheetInner({
     <EditMode
       details={details}
       intakeOptions={intakeOptions}
+      platoonOptions={platoonOptions}
       onCancel={() => setMode("view")}
       onClose={onClose}
     />
@@ -174,6 +181,7 @@ function ViewMode({ details, onEdit }: { details: CadetDetails; onEdit: () => vo
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <DetailRow label="Intake" value={d.intakeNo} />
+              <DetailRow label="Platoon" value={d.platoonName ?? "Unassigned"} />
               <DetailRow label="Quote" value={d.quote ?? "-"} />
             </div>
           </section>
@@ -213,11 +221,13 @@ function ViewMode({ details, onEdit }: { details: CadetDetails; onEdit: () => vo
 function EditMode({
   details,
   intakeOptions,
+  platoonOptions,
   onCancel,
   onClose,
 }: {
   details: CadetDetails;
   intakeOptions: IntakeOption[];
+  platoonOptions: PlatoonOption[];
   onCancel: () => void;
   onClose: () => void;
 }) {
@@ -237,6 +247,7 @@ function EditMode({
   const [rank, setRank] = useState(details.rank);
   const [matricNo, setMatricNo] = useState(details.matricNo ?? "");
   const [intakeId, setIntakeId] = useState(String(details.intakeId));
+  const [platoonId, setPlatoonId] = useState(details.platoonId ? String(details.platoonId) : "");
   const [quote, setQuote] = useState(details.quote ?? "");
   const [redBgFile, setRedBgFile] = useState<File | null>(null);
   const [blueBgFile, setBlueBgFile] = useState<File | null>(null);
@@ -346,6 +357,7 @@ function EditMode({
       fd.append("rank", rank);
       fd.append("matricNo", matricNo.toUpperCase());
       fd.append("intakeId", intakeId);
+      if (platoonId) fd.append("platoonId", platoonId);
       if (quote) fd.append("quote", quote);
       fd.append("isActive", String(details.isActive));
 
@@ -568,6 +580,28 @@ function EditMode({
                         onClick={() => setIntakeId(String(i.id))}
                       >
                         {i.intakeNo}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </Field>
+              <Field label="Platoon">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm flex items-center justify-between transition-colors hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                      <span className="text-muted-foreground">
+                        {platoonId
+                          ? platoonOptions.find((platoon) => String(platoon.id) === platoonId)?.displayName
+                          : "Unassigned"}
+                      </span>
+                      <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem onClick={() => setPlatoonId("")}>Unassigned</DropdownMenuItem>
+                    {platoonOptions.map((platoon) => (
+                      <DropdownMenuItem key={platoon.id} onClick={() => setPlatoonId(String(platoon.id))}>
+                        {platoon.displayName}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>

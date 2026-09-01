@@ -36,10 +36,12 @@ export type CadetRow = {
   name: string;
   avatarPath: string | null;
   intakeNo: string | null;
+  platoonName: string | null;
   isActive: boolean;
 };
 
 type IntakeDialogOption = { id: number; intakeNo: string };
+type PlatoonOption = { id: number; displayName: string };
 
 type CadetsTableProps = {
   cadets: CadetRow[];
@@ -47,6 +49,7 @@ type CadetsTableProps = {
   totalCount: number;
   intakeOptions: IntakeOption[];
   intakeDialogOptions: IntakeDialogOption[];
+  platoonOptions: PlatoonOption[];
   prefix?: string;
 };
 
@@ -56,6 +59,7 @@ export function CadetsTable({
   totalCount,
   intakeOptions,
   intakeDialogOptions,
+  platoonOptions,
   prefix,
 }: CadetsTableProps) {
   const config = useMemo(
@@ -147,6 +151,12 @@ export function CadetsTable({
                     state={state}
                     onChange={update}
                   />
+                  <SortableHead
+                    columnKey="platoon"
+                    label="Platoon"
+                    state={state}
+                    onChange={update}
+                  />
                   <TableHead className="pr-5 text-right w-35">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -185,6 +195,7 @@ export function CadetsTable({
                         </CopyableValue>
                       </TableCell>
                       <TableCell>{cadet.intakeNo ?? "-"}</TableCell>
+                      <TableCell>{cadet.platoonName ?? "-"}</TableCell>
                       <TableCell className="pr-5">
                         <div className="flex items-center justify-end gap-0.5">
                           <Tooltip>
@@ -282,6 +293,7 @@ export function CadetsTable({
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p>Intake: {cadet.intakeNo ?? "-"}</p>
+                    <p>Platoon: {cadet.platoonName ?? "-"}</p>
                   </div>
                   <div className="mt-3 flex justify-end gap-0.5">
                     <Tooltip>
@@ -370,6 +382,7 @@ export function CadetsTable({
           if (!open) setDetailsTarget(null);
         }}
         intakeOptions={intakeDialogOptions}
+        platoonOptions={platoonOptions}
       />
     </>
   );

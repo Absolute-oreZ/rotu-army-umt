@@ -1,4 +1,4 @@
-import { CADET_RANKS, intakes, members } from "@/db/schema";
+import { CADET_RANKS, intakes, members, platoons } from "@/db/schema";
 import type { FilterColumn, IntakeOption, TableConfig } from "@/lib/admin/table-search-params";
 
 const RANK_OPTIONS: FilterColumn = {
@@ -25,8 +25,8 @@ export function buildCadetsTableConfig(intakeOptions?: IntakeOption[], prefix?: 
       pageSize: 10,
       filters: {},
     },
-    sortKeys: ["name", "armyNo", "rank", "intakeNo"],
-    sortLabels: { name: "Name", armyNo: "Army No" },
+    sortKeys: ["name", "armyNo", "rank", "intakeNo", "platoon"],
+    sortLabels: { name: "Name", armyNo: "Army No", platoon: "Platoon" },
     filterColumns: [RANK_OPTIONS, intakeColumn],
     copyableColumns: ["armyNo", "name"],
     pageSizeOptions: [10, 25, 50],
@@ -40,6 +40,7 @@ export const CADETS_SORT_FIELD_MAP = {
   armyNo: members.armyNo,
   rank: members.rank,
   intakeNo: intakes.intakeNo,
+  platoon: platoons.displayName,
 } as const;
 
 export type CadetsSortKey = keyof typeof CADETS_SORT_FIELD_MAP;
