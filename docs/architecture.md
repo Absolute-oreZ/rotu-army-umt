@@ -232,12 +232,14 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `isValidPersonalEmail(email)` — personal email validation (rejects `@ocean.umt.edu.my`).
 - `isValidEduEmail(email)` — validates `@ocean.umt.edu.my` domain.
 
-**`lib/supabase/storage.ts`** — Supabase Storage helpers:
+**`lib/supabase/storage-public.ts`** — Client-safe public storage URL helpers:
 - `storageUrl(path)` — builds a public Supabase Storage URL from a relative path.
-- `uploadToStorage(supabase, path, file)` — uploads a `File` to a given path.
-- `getStoragePublicUrl(supabase, path)` — resolves a public URL.
-- `deleteFromStorage(supabase, path)` — deletes an object.
 - `extractStoragePath(publicUrl)` — reverse-engineers a storage path from a public URL.
+
+**`lib/supabase/storage.ts`** — Server-only Supabase Storage helpers:
+- `signedStorageUrl(supabase, path, expiresIn)` — signs a private object for temporary access; logs and returns `null` when signing fails (e.g., object missing).
+- `uploadToStorage(supabase, file, path, contentType)` — uploads a `File` to a given path; returns the path or `null`.
+- `deleteFromStorage(supabase, path)` — deletes an object; logs deletion failures.
 
 **`lib/slugify.ts`** — URL-slug generator.
 

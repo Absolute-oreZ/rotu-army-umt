@@ -25,7 +25,7 @@ import {
 
 export type ExpenseReceipt = {
   id: number;
-  filePath: string;
+  filePath: string | null;
   createdAt: string;
 };
 
@@ -176,7 +176,7 @@ function ViewMode({ details, onEdit }: { details: ExpenseDetails; onEdit: () => 
                       )}
                       <div className="bg-linear-to-t from-black/70 via-black/20 to-transparent px-2 py-1.5">
                         <p className="truncate text-[11px] font-medium text-white/90">
-                          {receipt.filePath.split("/").pop()}
+                          {receipt.filePath?.split("/").pop() ?? "Receipt"}
                         </p>
                       </div>
                     </div>
@@ -352,7 +352,7 @@ function EditMode({
                         )}
                         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/20 to-transparent p-2">
                           <p className="truncate text-[11px] font-medium text-white/90">
-                            {receipt.filePath.split("/").pop()}
+                            {receipt.filePath?.split("/").pop() ?? "Receipt"}
                           </p>
                         </div>
                       </div>

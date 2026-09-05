@@ -25,7 +25,7 @@ import { buildExpensesTableConfig } from "@/components/admin/treasurer/expenses/
 
 export type ExpenseReceipt = {
   id: number;
-  fileUrl: string;
+  fileUrl: string | null;
   createdAt: string;
 };
 

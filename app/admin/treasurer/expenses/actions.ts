@@ -30,7 +30,7 @@ export type ExpenseDetails = {
   createdAt: string;
   receipts: {
     id: number;
-    filePath: string;
+    filePath: string | null;
     createdAt: string;
   }[];
 };
@@ -174,7 +174,7 @@ export async function getExpenseDetails(expenseId: number): Promise<{ data: Expe
       const signedUrl = await signedStorageUrl(supabase, r.filePath);
       return {
         id: r.id,
-        filePath: signedUrl ?? r.filePath,
+        filePath: signedUrl,
         createdAt: r.createdAt.toISOString(),
       };
     }),

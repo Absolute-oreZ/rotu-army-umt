@@ -131,7 +131,7 @@ export default async function ExpensesPage({
       const current = receiptsByExpense.get(receipt.expenseId) ?? [];
       current.push({
         id: receipt.id,
-        fileUrl: (await signedStorageUrl(supabase, receipt.filePath)) ?? receipt.filePath,
+        fileUrl: await signedStorageUrl(supabase, receipt.filePath),
         createdAt: receipt.createdAt.toISOString(),
       });
       receiptsByExpense.set(receipt.expenseId, current);

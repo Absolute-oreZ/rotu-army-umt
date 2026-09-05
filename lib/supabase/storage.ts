@@ -22,9 +22,14 @@ export async function signedStorageUrl(
       .storage
       .from(bucket())
       .createSignedUrl(path, expiresIn);
-    if (error || !data?.signedUrl) return null;
+    if (error || !data?.signedUrl) {
+      const message = error?.message ?? "Empty signed URL";
+      console.error(`Storage signing failed for "${path}": ${message}`);
+      return null;
+    }
     return data.signedUrl;
-  } catch {
+  } catch (error) {
+    console.error(`Storage signing failed for "${path}": ${error instanceof Error ? error.message : "Unknown error"}`);
     return null;
   }
 }
