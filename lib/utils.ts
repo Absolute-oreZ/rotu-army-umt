@@ -89,14 +89,17 @@ export function getBMIClassification(bmi: number | null): BMIClassification | nu
   return "OBESE";
 }
 
-export function calculateAge(birthdate: Date): number {
-  const today = new Date();
-  let age = today.getFullYear() - birthdate.getFullYear();
-  const monthDiff = today.getMonth() - birthdate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthdate.getDate())) {
+export function calculateAgeAt(birthdate: Date, asOf: Date): number {
+  let age = asOf.getFullYear() - birthdate.getFullYear();
+  const monthDiff = asOf.getMonth() - birthdate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && asOf.getDate() < birthdate.getDate())) {
     age--;
   }
   return age;
+}
+
+export function calculateAge(birthdate: Date): number {
+  return calculateAgeAt(birthdate, new Date());
 }
 
 export function isValidPersonalEmail(email: string): boolean {
@@ -121,4 +124,23 @@ export function defaultBirthdate(): Date {
 
 export function formatLabel(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, " ");
+}
+
+export function parseDuration(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^\d+$/.test(trimmed)) {
+    const seconds = Number(trimmed);
+    return seconds > 0 && seconds <= 7199 ? seconds : null;
+  }
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(trimmed);
+  if (!match) return null;
+  const seconds = Number(match[1]) * 60 + Number(match[2]);
+  return seconds > 0 && seconds <= 7199 ? seconds : null;
+}
+
+export function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return `${minutes}:${String(rest).padStart(2, "0")}`;
 }

@@ -91,11 +91,11 @@ A shared component system for admin list/table pages with server-side filtering,
 - `CopyableColumn` — table value cell with click-to-copy
 - `Pagination` — page size selector and prev/next navigation.
 
-**Config pattern**: Each table page defines a `buildXTableConfig(options?)` function returning a `TableConfig` with defaults, sort keys, filter columns, page size options, and optional prefix. A companion `X_SORT_FIELD_MAP` maps sort keys to Drizzle column references.
+**Config pattern**: Each table page defines a `buildXTableConfig(options?)` function returning a `TableConfig` with defaults, sort keys, filter columns, page size options, and optional prefix. A companion `X_SORT_FIELD_MAP` maps sort keys to Drizzle column references. Tables may declare an optional `editMode` (`DIALOG` | `SHEET` | `INLINE`): `INLINE` tables render single-row inline editing on desktop (dialog fallback on mobile) and wrap every table-state change in an unsaved-changes confirmation while a row edit is active.
 
 **Data flow**: Server page reads `searchParams` → `parseTableSearchParams` → SQL WHERE/ORDER BY/LIMIT/OFFSET → passes rows + `RawSearchParams` + `totalCount` to client. Client uses `useTableURL` for URL-driven state and shared components for UI.
 
-**Usage**: Secretary rank-holders (admin users + audit log tabs), Secretary cadets, Treasurer accounts, Treasurer collections, Treasurer payments.
+**Usage**: Secretary rank-holders (admin users + audit log tabs), Secretary cadets, Treasurer accounts, Treasurer collections, Treasurer payments, Sports metrics, Sports assessment records, Sports assessments (UKA/APFA result entry).
 
 ### 3.6 Admin Module Component Structure Convention
 Admin list/entity pages must be split into small, single-purpose components under `components/admin/<module>/`. **Never** place a monolithic `client.tsx` directly under `app/admin/<role>/<page>/` — the server `page.tsx` is the only file that belongs there.
@@ -190,6 +190,16 @@ Helper functions are organized by domain. **Always check here before writing inl
 
 **`lib/admin/use-table-url.ts`** — Client-side URL-state hook (see §3.5).
 
+**`lib/hooks/use-mobile.ts`** — Client hook:
+- `useIsMobile()` — subscribes to `matchMedia("(max-width: 767px)")`, matching the admin sidebar breakpoint; use for responsive behavior decisions such as inline vs dialog table editing.
+
+**`lib/assessment/standards.ts`** — Server-only UKA/APFA passing standards:
+- `getAssessmentStandards(recordType, gender)` — per-item thresholds read from env (e.g. `UKA_RUN_MALE`, `APFA_SWIMMING_FEMALE`) with hardcoded fallbacks; returns `{ key, label, unit, direction, threshold }` (run thresholds converted to seconds; direction `max` = ≤ passes, `min` = ≥ passes).
+- `evaluatePass(value, standard)` — threshold comparison for server-side pass/fail evaluation.
+
+**`lib/admin/use-table-edit-guard.ts`** — Client hook wrapping table-state updates:
+- `useTableEditGuard({ update, hasUnsavedEdit, onDiscard })` — stashes state patches while a row edit is active and exposes confirm/discard state for the unsaved-changes dialog. Used by the metrics and assessments tables.
+
 **`lib/admin/rbac.ts`** — Auth + authorization:
 - `CurrentAdmin` type — the shape returned by `getCurrentAdmin` / `requireCurrentAdmin`.
 - `getCurrentAdmin()` — non-throwing; returns `CurrentAdmin | null`.
@@ -229,6 +239,8 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `escapeHtml(str)` — HTML-entity escape for server-rendered strings.
 - `calculateBMI(heightM, weightKg)` / `getBMIClassification(bmi)` — BMI math and `BMIClassification` tagger.
 - `calculateAge(birthdate)` — years-from-birthdate calculation.
+- `calculateAgeAt(birthdate, asOf)` — age as of a specific date (used for age-at-record-time health metrics).
+- `parseDuration(value)` / `formatDuration(seconds)` — `mm:ss` ⇄ seconds helpers for assessment time entries (accepts plain seconds input; caps below 2 hours).
 - `isValidPersonalEmail(email)` — personal email validation (rejects `@ocean.umt.edu.my`).
 - `isValidEduEmail(email)` — validates `@ocean.umt.edu.my` domain.
 
@@ -278,8 +290,10 @@ Current implemented routes:
 - `/admin/multimedia/portfolio` (Multimedia: portfolio)
 - `/admin/multimedia/stories` (Multimedia: stories CRUD)
 - `/admin/multimedia/newsletters` (Multimedia: newsletter management)
-- `/admin/sports/activities` (Sports: activities)
-- `/admin/sports/collaborations` (Sports: collaborations)
+- `/admin/sports/metrics` (Sports: cadet health metric records)
+- `/admin/sports/uka` (Sports: UKA assessment record list)
+- `/admin/sports/apfa` (Sports: APFA assessment record list)
+- `/admin/sports/assessments` (Sports: per-cadet UKA/APFA result entry)
 - `/admin/welfare/health` (Welfare: health)
 - `/admin/welfare/accommodations` (Welfare: accommodations)
 - `/admin/welfare/religion` (Welfare: religion)
@@ -329,8 +343,8 @@ Routes are organized by role group (e.g., `/admin/secretary/*`, `/admin/treasure
 ### 6.3 Intake Scope Mechanism
 Certain roles are intake-scoped, meaning they can only read and write data belonging to their assigned intake.
 
-- **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `WELFARE`, `ACADEMIC`
-- **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`, `SPORTS`
+- **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `SPORTS`, `WELFARE`, `ACADEMIC`
+- **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`
 
 The `admin_users` table has a nullable `intake_id` column. Officer/Instructor have `null`; intake-scoped roles have their specific intake ID (set from the cadet's intake at invitation acceptance).
 
@@ -393,6 +407,13 @@ Primary schema domains in `db/schema.ts`:
   - `claims` (reimbursement claims: title, amount, description, receipt path, QR code path, status PENDING/FULFILLED/REJECTED, intake-scoped).
   - Claims are created via dialog from the claims list page (`/cadet/claims`), not a separate form page.
   - Enum: `claim_status` (PENDING, FULFILLED, REJECTED).
+- Sports health metrics:
+  - `health_records` (assessment sessions: intake, record date set to the creation day; one record per intake per day, enforced by a unique index with a friendly duplicate error in the create action).
+  - `health_record_metrics` (per-cadet metrics per record: age at record date, height, weight, BMI, BMI classification; unique per record+cadet; rows are created only when a cadet's metrics are saved — unfilled cadets render as dashes in the UI).
+- Sports assessments (UKA/APFA):
+  - `uka_records` / `apfa_records` (intake-scoped assessment sessions; `session` auto-numbered per intake per year, unique per intake+session+year; label `{type}-{session}-{year}`, e.g. `UKA-1-2026`).
+  - `uka_record_assessments` / `apfa_record_assessments` (per-cadet item values + stored pass flags + nullable overall `assessment_result`; unique per record+cadet; rows created only when a cadet's first item is saved).
+  - Passing thresholds come from env (`UKA_*` / `APFA_*`, run in minutes converted to seconds) with hardcoded defaults; per-item pass flags and overall results are frozen at write time (editing a value re-evaluates with current thresholds).
 - Stories and metadata:
   - `events`, `event_translations`, `event_tags`, `event_tag_translations`, `events_to_tags`, `event_display_photos`.
 - Homepage-managed content:
@@ -484,6 +505,8 @@ Based on `TASKS.md` and codebase review:
 - Cadet collections page: card-based grid of published collections scoped to the cadet's intake, with detail/payment pages.
 - Cadet claims system: dialog-based reimbursement claim creation with receipt and QR upload, bank detail pre-fill from `cadet_accounts`, and claim list with status badges.
 - Treasurer lifecycle cleanup: treasury accounts deleted when role changes away from Treasurer.
+- Sports Metrics module: health record sessions with per-cadet metrics (age at record date, height, weight, BMI + classification), intake-scoped, record selector above the table (Officer/Instructor select intake; Sport role scope inferred).
+- Sports assessments: UKA/APFA record lists with auto session numbering (`UKA-1-2026`), combined Assessments entry page with inline per-cadet result editing (desktop) and dialog fallback (mobile), gender-based env thresholds with defaults, and per-item/overall pass evaluation stored at write time.
 - Placeholder pages for remaining admin modules across other role groups.
 
 ### Pending
@@ -558,6 +581,7 @@ type ActionResult<T = undefined> =
 ### 14.5 List and table behavior
 
 - Admin list pages use the shared data-table infrastructure with URL-based search, filtering, sorting, and pagination.
+- Intake columns, intake filters, and intake-bearing record selector labels are shown only to full-access roles; intake-scoped roles have them hidden because all of their rows belong to one intake. Platoon columns and filters are available to every role on cadet tables (metrics, assessments). Rows themselves are always server-filtered by intake scope.
 - Empty states distinguish between no records and no records matching active filters.
 - Filtered empty states provide a reset action.
 - Date, currency, status, and result values use shared formatters or module-level helpers rather than ad hoc formatting in table cells.

@@ -137,7 +137,8 @@ export default async function CadetsPage({
       searchParams={raw}
       cadets={cadetRows}
       totalCount={totalCount}
-      intakeOptions={intakeOptions}
+      isIntakeScoped={intakeScope !== null}
+      intakeOptions={intakeScope === null ? intakeOptions : []}
       intakeDialogOptions={intakeDialogOptions}
       platoonOptions={platoonRows}
     />

@@ -103,7 +103,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
    - SECRETARY -> `/admin/secretary/rank-holders`
    - TREASURER -> `/admin/treasurer/collections`
    - MULTIMEDIA -> `/admin/multimedia/portfolio`
-   - SPORTS -> `/admin/sports/activities`
+   - SPORTS -> `/admin/sports/metrics`
    - WELFARE -> `/admin/welfare/health`
    - ACADEMIC -> `/admin/academic/results`
 4. OFFICER and INSTRUCTOR shall be separate roles with same highest permissions.
@@ -113,10 +113,10 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 8. Adding an admin shall create an invitation and send an email. The admin record is created when the invitee signs in via Google.
 9. System shall log all admin management events (INVITED, ACCEPTED, ROLE_CHANGED, DROPPED) with actor, target, roles, and timestamp.
 10. Multi-role assignments are not allowed. One admin user = one role, strictly.
-11. System shall support intake-scoped access control for Secretary, Treasurer, Welfare, and Academic roles.
+11. System shall support intake-scoped access control for Secretary, Treasurer, Sports, Welfare, and Academic roles.
 12. Intake-scoped admins shall only read and write data belonging to their assigned intake.
 13. Officer and Instructor shall bypass intake restrictions and access all intakes.
-14. Multimedia and Sports roles shall remain unrestricted across all intakes.
+14. Multimedia role shall remain unrestricted across all intakes.
 15. System shall validate intake ownership on all write operations in intake-scoped modules.
 
 ### 3.7 Admin Modules
@@ -124,10 +124,12 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
    - Secretary: rank holders (cadet admin users only), intakes, cadets (cadet management), admin invitations (cadets only).
    - Treasurer: account management (bank/QR), collection creation and management, payment ledger, expenses.
    - Multimedia: portfolio, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed), application deadline configuration.
-   - Sports: activities, collaborations.
+   - Sports: metrics (cadet health metric records), UKA records, APFA records, assessments (per-cadet UKA/APFA result entry).
    - Welfare: health, accommodations, religion.
    - Academic: results, timetables.
 2. Full-access roles (OFFICER, INSTRUCTOR) shall access all modules.
+3. System shall support inline row editing in the Sports metrics table on desktop, fall back to dialog editing on mobile, and confirm with the user before discarding an unsaved row edit when the table state or selected record changes.
+4. System shall support UKA and APFA assessment records — one record per intake per session per year, auto-numbered and labeled `UKA-1-2026` style — with per-cadet results per assessment item (UKA: push-up, sit-up, 2.4km run; APFA: 1.6km run, pull-up, swimming, floating), gender-based passing thresholds read from environment variables with hardcoded defaults, per-item pass evaluation, and an overall PASS/FAIL result finalized only when all items are recorded.
 
 ### 3.8 Newsletter
 1. System shall collect newsletter subscriptions from contact page.
@@ -213,6 +215,8 @@ System data model shall include at minimum:
 - Cadet accounts (one-to-one by memberId: bank name, account number, DuitNow ID, QR code path) for pre-filling claim bank details.
 - Claims (reimbursement claims: title, amount, description, receipt path, QR code path, status, intake-scoped).
 - Claim status enum: `PENDING`, `FULFILLED`, `REJECTED`.
+- Health records (one per intake per day) and per-cadet health metrics (age at record date, height, weight, BMI, BMI classification).
+- UKA/APFA assessment records (intake, session number, year, record date) and per-cadet assessment results (item values, stored pass flags, overall PASS/FAIL).
 - Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
 
 ### 4.2 Localization Data
@@ -289,6 +293,8 @@ System data model shall include at minimum:
 - Cadet collections: card-based grid of published collections scoped to the cadet's intake, with detail/payment pages.
 - Cadet claims system: dialog-based reimbursement claim creation with receipt and QR upload, bank detail pre-fill from `cadet_accounts`, and claim list with status badges.
 - Treasurer lifecycle cleanup: treasury accounts deleted when role changes away from Treasurer.
+- Sports Metrics module: health record sessions with per-cadet metrics (age, height, weight, BMI + classification), intake-scoped with record selection, inline table editing on desktop (dialog on mobile) with unsaved-changes confirmation.
+- Sports assessments: UKA/APFA record lists with auto session numbering and combined per-cadet result entry page (inline editing, env-based thresholds with defaults).
 - Placeholder pages for remaining admin modules across other role groups.
 
 ### 7.2 Pending

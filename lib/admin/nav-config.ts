@@ -5,9 +5,11 @@ import {
   CalendarIcon,
   CreditCardIcon,
   DumbbellIcon,
+  ActivityIcon,
+  TimerIcon,
+  HeartPulseIcon,
   FileTextIcon,
   GraduationCapIcon,
-  HandshakeIcon,
   HeartIcon,
   ImageIcon,
   LandmarkIcon,
@@ -20,6 +22,7 @@ import {
   WalletIcon,
   BedIcon,
   ChurchIcon,
+  ClipboardCheckIcon,
 } from "lucide-react";
 import type { AdminModule, AdminRole } from "@/lib/admin/roles";
 import {
@@ -156,16 +159,28 @@ const NAV_GROUPS: NavGroupDefinition[] = [
     icon: DumbbellIcon,
     items: [
       {
-        title: "Activities",
-        href: "/admin/sports/activities",
-        icon: DumbbellIcon,
-        module: "activities",
+        title: "Metrics",
+        href: "/admin/sports/metrics",
+        icon: HeartPulseIcon,
+        module: "metrics",
       },
       {
-        title: "Collaborations",
-        href: "/admin/sports/collaborations",
-        icon: HandshakeIcon,
-        module: "collaborations",
+        title: "UKA",
+        href: "/admin/sports/uka",
+        icon: ActivityIcon,
+        module: "uka",
+      },
+      {
+        title: "APFA",
+        href: "/admin/sports/apfa",
+        icon: TimerIcon,
+        module: "apfa",
+      },
+      {
+        title: "Assessments",
+        href: "/admin/sports/assessments",
+        icon: ClipboardCheckIcon,
+        module: "assessments",
       },
     ],
   },

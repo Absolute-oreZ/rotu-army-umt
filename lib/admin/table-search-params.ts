@@ -22,6 +22,8 @@ export type TableState = {
   filters: Record<string, FilterCondition[]>;
 };
 
+export type TableEditMode = "DIALOG" | "SHEET" | "INLINE";
+
 export type TableConfig = {
   defaults: TableState;
   sortKeys: string[];
@@ -30,6 +32,7 @@ export type TableConfig = {
   copyableColumns?: string[];
   pageSizeOptions?: number[];
   prefix?: string;
+  editMode?: TableEditMode;
 };
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;

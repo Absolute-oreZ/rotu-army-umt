@@ -12,9 +12,15 @@ const RANK_OPTIONS: FilterColumn = {
 };
 
 export function buildCadetsTableConfig(intakeOptions?: IntakeOption[], prefix?: string): TableConfig {
-  const intakeColumn: FilterColumn = intakeOptions
-    ? { key: "intakeNo", label: "Intake", type: "enum", options: intakeOptions }
-    : { key: "intakeNo", label: "Intake", type: "string" };
+  const filterColumns: FilterColumn[] = [RANK_OPTIONS];
+  if (intakeOptions && intakeOptions.length > 0) {
+    filterColumns.push({
+      key: "intakeNo",
+      label: "Intake",
+      type: "enum",
+      options: intakeOptions,
+    });
+  }
 
   return {
     prefix,
@@ -27,7 +33,7 @@ export function buildCadetsTableConfig(intakeOptions?: IntakeOption[], prefix?: 
     },
     sortKeys: ["name", "armyNo", "rank", "intakeNo", "platoon"],
     sortLabels: { name: "Name", armyNo: "Army No", platoon: "Platoon" },
-    filterColumns: [RANK_OPTIONS, intakeColumn],
+    filterColumns,
     copyableColumns: ["armyNo", "name"],
     pageSizeOptions: [10, 25, 50],
   };

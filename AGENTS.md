@@ -103,8 +103,8 @@ Do not print secrets in logs or responses.
 
 Some admin roles are restricted to managing data from their own intake only:
 
-- **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `WELFARE`, `ACADEMIC`
-- **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`, `SPORTS`
+- **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `SPORTS`, `WELFARE`, `ACADEMIC`
+- **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`
 
 Intake-scoped admins have an `intakeId` on their `adminUsers` record (set from the cadet's intake at invitation acceptance time). This restricts both reads (filtered queries) and writes (ownership validation) to their intake's data.
 
@@ -113,12 +113,12 @@ Officer and Instructor bypass intake restrictions entirely and can access and ma
 **Intake-scoped data:**
 - Cadets and admin users (Secretary module)
 - Treasury accounts, collections, payments (Treasurer module)
+- Health metric records, UKA/APFA assessment records (Sports module)
 - Health, accommodations (Welfare module — future)
 - Results, timetables (Academic module — future)
 
 **Non-intake-scoped data:**
 - Newsletter, stories, portfolio, `webapp_contents` (Multimedia)
-- Activities, collaborations (Sports)
 
 Helper functions in `lib/admin/rbac.ts`:
 - `isIntakeScopedRole(role)` — checks if a role is intake-scoped
@@ -332,7 +332,7 @@ Admin routes are non-localized unless explicitly changed later.
 - `SECRETARY` -> `/admin/secretary/rank-holders`
 - `TREASURER` -> `/admin/treasurer/collections`
 - `MULTIMEDIA` -> `/admin/multimedia/portfolio`
-- `SPORTS` -> `/admin/sports/activities`
+- `SPORTS` -> `/admin/sports/metrics`
 - `WELFARE` -> `/admin/welfare/health`
 - `ACADEMIC` -> `/admin/academic/results`
 
@@ -421,10 +421,12 @@ Each admin user has exactly one role.
 
 ### Sports
 
-- Default: Activities.
+- Default: Metrics.
 - Access:
-  - Activities
-  - Collaborations
+  - Metrics (cadet health metric records: age, height, weight, BMI per assessment record)
+  - UKA (UKA assessment record management; label format `UKA-[session]-[year]`)
+  - APFA (APFA assessment record management; label format `APFA-[session]-[year]`)
+  - Assessments (per-cadet UKA/APFA result entry with pass/fail evaluation; passing thresholds configurable via env with hardcoded defaults)
 
 ### Welfare
 

@@ -1,0 +1,105 @@
+import "server-only";
+
+import type {
+  AssessmentGender,
+  AssessmentRecordType,
+  AssessmentStandard,
+} from "./types";
+
+function readThreshold(key: string, fallback: number): number {
+  const raw = process.env[key];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+function minutesToSeconds(minutes: number): number {
+  return Math.round(minutes * 60);
+}
+
+export function getAssessmentStandards(
+  recordType: AssessmentRecordType,
+  gender: AssessmentGender,
+): AssessmentStandard[] {
+  const isMale = gender === "MALE";
+
+  if (recordType === "UKA") {
+    const runMinutes = isMale
+      ? readThreshold("SPORTS_UKA_RUN_MALE", 12)
+      : readThreshold("SPORTS_UKA_RUN_FEMALE", 14);
+    return [
+      {
+        key: "pushUp",
+        label: "Push-up",
+        unit: "count",
+        direction: "min",
+        threshold: isMale
+          ? readThreshold("SPORTS_UKA_PUSHUP_MALE", 40)
+          : readThreshold("SPORTS_UKA_PUSHUP_FEMALE", 40),
+      },
+      {
+        key: "sitUp",
+        label: "Sit-up",
+        unit: "count",
+        direction: "min",
+        threshold: isMale
+          ? readThreshold("SPORTS_UKA_SITUP_MALE", 60)
+          : readThreshold("SPORTS_UKA_SITUP_FEMALE", 40),
+      },
+      {
+        key: "run",
+        label: "2.4km Run",
+        unit: "seconds",
+        direction: "max",
+        threshold: minutesToSeconds(runMinutes),
+      },
+    ];
+  }
+
+  const runMinutes = isMale
+    ? readThreshold("SPORTS_APFA_RUN_MALE", 6)
+    : readThreshold("SPORTS_APFA_RUN_FEMALE", 8);
+  const floatingMinutes = isMale
+    ? readThreshold("SPORTS_APFA_FLOATING_MALE", 3)
+    : readThreshold("SPORTS_APFA_FLOATING_FEMALE", 2);
+
+  return [
+    {
+      key: "run",
+      label: "1.6km Run",
+      unit: "seconds",
+      direction: "max",
+      threshold: minutesToSeconds(runMinutes),
+    },
+    {
+      key: "pullUp",
+      label: "Pull-up",
+      unit: "count",
+      direction: "min",
+      threshold: isMale
+        ? readThreshold("SPORTS_APFA_PULLUP_MALE", 20)
+        : readThreshold("SPORTS_APFA_PULLUP_FEMALE", 10),
+    },
+    {
+      key: "swimming",
+      label: "Swimming",
+      unit: "metres",
+      direction: "min",
+      threshold: isMale
+        ? readThreshold("SPORTS_APFA_SWIMMING_MALE", 100)
+        : readThreshold("SPORTS_APFA_SWIMMING_FEMALE", 100),
+    },
+    {
+      key: "floating",
+      label: "Floating",
+      unit: "seconds",
+      direction: "min",
+      threshold: minutesToSeconds(floatingMinutes),
+    },
+  ];
+}
+
+export function evaluatePass(value: number, standard: AssessmentStandard): boolean {
+  return standard.direction === "min" ? value >= standard.threshold : value <= standard.threshold;
+}

@@ -27,6 +27,7 @@ type RankHoldersPageClientProps = {
   currentAdminId: string;
   eligibleMembers: EligibleMember[];
   intakeOptions: IntakeOption[];
+  isIntakeScoped: boolean;
   auditLogs: AuditLogRow[];
   auditTotalCount: number;
 };
@@ -39,6 +40,7 @@ export function RankHoldersPageClient({
   currentAdminId,
   eligibleMembers,
   intakeOptions,
+  isIntakeScoped,
   auditLogs,
   auditTotalCount,
 }: RankHoldersPageClientProps) {
@@ -99,6 +101,7 @@ export function RankHoldersPageClient({
           searchParams={searchParams}
           totalCount={adminTotalCount}
           intakeOptions={intakeOptions}
+          isIntakeScoped={isIntakeScoped}
         />
       </TabsContent>
 

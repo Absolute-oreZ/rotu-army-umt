@@ -649,6 +649,85 @@ export const DEFAULT_CADET_PHYSICAL = [
   { height: 1.76, weight: 72.0, cgpa: 3.18 },
 ];
 
+export const DEFAULT_HEALTH_RECORDS = [
+  {
+    recordDate: "2026-01-15",
+    metrics: DEFAULT_CADETS_INFO.map((_, index) => ({
+      cadetIndex: index,
+      height: DEFAULT_CADET_PHYSICAL[index % DEFAULT_CADET_PHYSICAL.length].height * 100,
+      weight: DEFAULT_CADET_PHYSICAL[index % DEFAULT_CADET_PHYSICAL.length].weight,
+    })),
+  },
+  {
+    recordDate: "2026-02-15",
+    metrics: DEFAULT_CADETS_INFO.map((_, index) => {
+      const physical = DEFAULT_CADET_PHYSICAL[index % DEFAULT_CADET_PHYSICAL.length];
+
+      return {
+        cadetIndex: index,
+        height: physical.height * 100,
+        weight: physical.weight + 0.5,
+      };
+    }),
+  },
+] as const;
+
+export const DEFAULT_UKA_RECORDS = [
+  {
+    intakeIndex: 0,
+    recordDate: "2026-03-15",
+    session: 1,
+    year: 2026,
+    assessments: [
+      { cadetIndex: 0, pushUp: 45, sitUp: 65, runSeconds: 690 },
+      { cadetIndex: 3, pushUp: 38, sitUp: 58, runSeconds: 735 },
+      { cadetIndex: 6, pushUp: 42, sitUp: 44, runSeconds: 810 },
+    ],
+  },
+  {
+    intakeIndex: 0,
+    recordDate: "2026-06-15",
+    session: 2,
+    year: 2026,
+    assessments: [
+      { cadetIndex: 0, pushUp: 50, sitUp: 70, runSeconds: 660 },
+      { cadetIndex: 3, pushUp: 40, sitUp: 60, runSeconds: 720 },
+    ],
+  },
+] as const;
+
+export const DEFAULT_APFA_RECORDS = [
+  {
+    intakeIndex: 0,
+    recordDate: "2026-04-15",
+    session: 1,
+    year: 2026,
+    assessments: [
+      {
+        cadetIndex: 0,
+        runSeconds: 330,
+        pullUp: 22,
+        swimmingMetres: 120,
+        floatingSeconds: 210,
+      },
+      {
+        cadetIndex: 3,
+        runSeconds: 390,
+        pullUp: 17,
+        swimmingMetres: 90,
+        floatingSeconds: 150,
+      },
+      {
+        cadetIndex: 6,
+        runSeconds: 450,
+        pullUp: 12,
+        swimmingMetres: 110,
+        floatingSeconds: 130,
+      },
+    ],
+  },
+] as const;
+
 export const DEFAULT_OFFICERS_AND_INSTRUCTORS = DEFAULT_MEMBERS
   .filter((m) => m.role === "OFFICER" || m.role === "INSTRUCTOR")
   .map((m, i) => ({

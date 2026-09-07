@@ -16,6 +16,7 @@ export const FULL_ACCESS_ADMIN_ROLES = ["OFFICER", "INSTRUCTOR"] as const;
 export const INTAKE_SCOPED_ROLES = [
   "SECRETARY",
   "TREASURER",
+  "SPORTS",
   "WELFARE",
   "ACADEMIC",
 ] as const;
@@ -33,8 +34,10 @@ export type AdminModule =
   | "portfolio"
   | "stories"
   | "newsletters"
-  | "activities"
-  | "collaborations"
+  | "metrics"
+  | "uka"
+  | "apfa"
+  | "assessments"
   | "health"
   | "accommodations"
   | "religion"
@@ -47,7 +50,7 @@ export const ADMIN_DEFAULT_ROUTES = {
   SECRETARY: "/admin/secretary/rank-holders",
   TREASURER: "/admin/treasurer/collections",
   MULTIMEDIA: "/admin/multimedia/portfolio",
-  SPORTS: "/admin/sports/activities",
+  SPORTS: "/admin/sports/metrics",
   WELFARE: "/admin/welfare/health",
   ACADEMIC: "/admin/academic/results",
 } satisfies Record<AdminRole, string>;
@@ -70,7 +73,7 @@ const roleModules = {
   SECRETARY: ["rank-holders", "intakes", "cadets"],
   TREASURER: ["accounts", "collections", "payments", "expenses", "claims"],
   MULTIMEDIA: ["portfolio", "stories", "newsletters"],
-  SPORTS: ["activities", "collaborations"],
+  SPORTS: ["metrics", "uka", "apfa", "assessments"],
   WELFARE: ["health", "accommodations", "religion"],
   ACADEMIC: ["results", "timetables"],
 } satisfies Record<AdminRole, AdminModule[]>;

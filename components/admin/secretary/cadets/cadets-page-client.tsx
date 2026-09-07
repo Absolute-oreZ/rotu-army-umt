@@ -18,6 +18,7 @@ type CadetsPageClientProps = {
   intakeOptions: IntakeOption[];
   intakeDialogOptions: { id: number; intakeNo: string }[];
   platoonOptions: { id: number; displayName: string }[];
+  isIntakeScoped: boolean;
 };
 
 export function CadetsPageClient({
@@ -28,6 +29,7 @@ export function CadetsPageClient({
   intakeOptions,
   intakeDialogOptions,
   platoonOptions,
+  isIntakeScoped,
 }: CadetsPageClientProps) {
   const router = useRouter();
 
@@ -91,6 +93,7 @@ export function CadetsPageClient({
           intakeOptions={intakeOptions}
           intakeDialogOptions={intakeDialogOptions}
           platoonOptions={platoonOptions}
+          isIntakeScoped={isIntakeScoped}
           prefix="a_"
         />
       </TabsContent>
@@ -103,6 +106,7 @@ export function CadetsPageClient({
           intakeOptions={intakeOptions}
           intakeDialogOptions={intakeDialogOptions}
           platoonOptions={platoonOptions}
+          isIntakeScoped={isIntakeScoped}
           prefix="i_"
         />
       </TabsContent>

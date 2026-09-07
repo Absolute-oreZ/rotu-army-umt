@@ -61,7 +61,8 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Cadet authentication via Google OAuth (`/cadet/login`, `lib/auth/cadet.ts`)
 - [x] Treasurer lifecycle cleanup: delete treasury accounts when role changes away from Treasurer
 - [x] Build Multimedia modules: Portfolio, stories, Newsletters.
-- [ ] Build Sports modules: Activities, Collaborations.
+- [x] Build Sports module: Metrics (health records with per-cadet metrics, inline table editing on desktop with unsaved-changes guard).
+- [x] Build Sports modules: UKA/APFA assessment records + Assessments per-cadet result entry (env-based passing thresholds with defaults).
 - [x] Add platoon support with nullable cadet-to-platoon assignment.
 - [ ] Build Welfare modules: Health, Accommodations, Religion.
 - [ ] Build Academic modules: Results, Timetables.

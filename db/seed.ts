@@ -35,8 +35,17 @@ import {
   DEFAULT_COLLECTIONS,
   DEFAULT_EXPENSES,
   DEFAULT_CLAIMS,
+  DEFAULT_HEALTH_RECORDS,
+  DEFAULT_UKA_RECORDS,
+  DEFAULT_APFA_RECORDS,
 } from "../lib/data";
-import { calculateBMI, computeAcademicSchedule } from "@/lib/utils";
+import {
+  calculateAgeAt,
+  calculateBMI,
+  computeAcademicSchedule,
+  getBMIClassification,
+} from "@/lib/utils";
+import { evaluatePass, getAssessmentStandards } from "@/lib/assessment/standards";
 
 function loadDotEnv() {
   const envPath = resolve(process.cwd(), ".env");
@@ -107,6 +116,12 @@ async function seed() {
       collections,
       treasury_accounts,
       claims,
+      uka_record_assessments,
+      apfa_record_assessments,
+      uka_records,
+      apfa_records,
+      health_record_metrics,
+      health_records,
       newsletter_campaign_deliveries,
       newsletter_campaign_attachments,
       newsletter_campaign_translations,
@@ -895,6 +910,129 @@ async function seed() {
       insert into academic_exam_results (exam_id, cadet_id, score, grade)
       values (${examIds[i]}, ${cadetRows[i].id}, ${80 - i * 7.5}, ${i < 2 ? "A" : "B"})
     `;
+  }
+
+  const healthRecordCadets = await sql<{
+    id: number;
+    birthdate: string;
+    intakeId: number;
+  }[]>`
+    select cadets.id, members.birthdate, cadets.intake_id as "intakeId"
+    from cadets
+    inner join members on members.id = cadets.member_id
+    order by cadets.id
+  `;
+
+  for (const healthRecord of DEFAULT_HEALTH_RECORDS) {
+    const [recordRow] = await sql<[{ id: number }]>`
+      insert into health_records (intake_id, record_date)
+      values (${intakeIds[0]}, ${healthRecord.recordDate})
+      returning id
+    `;
+
+    for (const metric of healthRecord.metrics) {
+      const cadet = healthRecordCadets[metric.cadetIndex];
+
+      if (!cadet || cadet.intakeId !== intakeIds[0]) continue;
+
+      const bmi = calculateBMI(metric.height / 100, metric.weight);
+      const bmiClassification = getBMIClassification(bmi);
+
+      if (bmi === null || bmiClassification === null) continue;
+
+      await sql`
+        insert into health_record_metrics (
+          record_id, cadet_id, age, height, weight, bmi, bmi_classification
+        )
+        values (
+          ${recordRow.id}, ${cadet.id},
+          ${calculateAgeAt(new Date(cadet.birthdate), new Date(`${healthRecord.recordDate}T00:00:00Z`))},
+          ${metric.height.toFixed(2)}, ${metric.weight.toFixed(2)},
+          ${bmi.toFixed(2)}, ${bmiClassification}
+        )
+      `;
+    }
+  }
+
+  const assessmentCadets = await sql<{
+    id: number;
+    intakeId: number;
+    gender: "MALE" | "FEMALE";
+  }[]>`
+    select cadets.id, cadets.intake_id as "intakeId", members.gender
+    from cadets
+    inner join members on members.id = cadets.member_id
+    order by cadets.id
+  `;
+
+  for (const record of DEFAULT_UKA_RECORDS) {
+    const [recordRow] = await sql<[{ id: number }]>`
+      insert into uka_records (intake_id, record_date, session, year)
+      values (
+        ${intakeIds[record.intakeIndex]}, ${record.recordDate},
+        ${record.session}, ${record.year}
+      )
+      returning id
+    `;
+
+    for (const assessment of record.assessments) {
+      const cadet = assessmentCadets[assessment.cadetIndex];
+
+      if (!cadet || cadet.intakeId !== intakeIds[record.intakeIndex]) continue;
+
+      const standards = getAssessmentStandards("UKA", cadet.gender);
+      const pushUpPass = evaluatePass(assessment.pushUp, standards[0]);
+      const sitUpPass = evaluatePass(assessment.sitUp, standards[1]);
+      const runPass = evaluatePass(assessment.runSeconds, standards[2]);
+
+      await sql`
+        insert into uka_record_assessments (
+          record_id, cadet_id, push_up, push_up_pass, sit_up, sit_up_pass,
+          run_seconds, run_pass, result
+        )
+        values (
+          ${recordRow.id}, ${cadet.id}, ${assessment.pushUp}, ${pushUpPass},
+          ${assessment.sitUp}, ${sitUpPass}, ${assessment.runSeconds}, ${runPass},
+          ${pushUpPass && sitUpPass && runPass ? "PASS" : "FAIL"}
+        )
+      `;
+    }
+  }
+
+  for (const record of DEFAULT_APFA_RECORDS) {
+    const [recordRow] = await sql<[{ id: number }]>`
+      insert into apfa_records (intake_id, record_date, session, year)
+      values (
+        ${intakeIds[record.intakeIndex]}, ${record.recordDate},
+        ${record.session}, ${record.year}
+      )
+      returning id
+    `;
+
+    for (const assessment of record.assessments) {
+      const cadet = assessmentCadets[assessment.cadetIndex];
+
+      if (!cadet || cadet.intakeId !== intakeIds[record.intakeIndex]) continue;
+
+      const standards = getAssessmentStandards("APFA", cadet.gender);
+      const runPass = evaluatePass(assessment.runSeconds, standards[0]);
+      const pullUpPass = evaluatePass(assessment.pullUp, standards[1]);
+      const swimmingPass = evaluatePass(assessment.swimmingMetres, standards[2]);
+      const floatingPass = evaluatePass(assessment.floatingSeconds, standards[3]);
+
+      await sql`
+        insert into apfa_record_assessments (
+          record_id, cadet_id, run_seconds, run_pass, pull_up, pull_up_pass,
+          swimming_metres, swimming_pass, floating_seconds, floating_pass, result
+        )
+        values (
+          ${recordRow.id}, ${cadet.id}, ${assessment.runSeconds}, ${runPass},
+          ${assessment.pullUp}, ${pullUpPass}, ${assessment.swimmingMetres},
+          ${swimmingPass}, ${assessment.floatingSeconds}, ${floatingPass},
+          ${runPass && pullUpPass && swimmingPass && floatingPass ? "PASS" : "FAIL"}
+        )
+      `;
+    }
   }
 
 }

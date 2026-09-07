@@ -83,6 +83,8 @@ export const bmiClassificationEnum = pgEnum("bmi_classification", [
   "OBESE",
 ]);
 
+export const assessmentResultEnum = pgEnum("assessment_result", ["PASS", "FAIL"]);
+
 export const memberRoleEnum = pgEnum("member_role", [
   "OFFICER",
   "INSTRUCTOR",
@@ -1020,5 +1022,151 @@ export const claims = pgTable(
     index("claims_member_id_idx").on(table.memberId),
     index("claims_intake_id_idx").on(table.intakeId),
     index("claims_status_idx").on(table.status),
+  ],
+);
+
+export const healthRecords = pgTable(
+  "health_records",
+  {
+    id: serial("id").primaryKey(),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id, { onDelete: "cascade" }),
+    recordDate: date("record_date").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("health_records_intake_date_idx").on(table.intakeId, table.recordDate),
+  ],
+);
+
+export const healthRecordMetrics = pgTable(
+  "health_record_metrics",
+  {
+    id: serial("id").primaryKey(),
+    recordId: integer("record_id")
+      .notNull()
+      .references(() => healthRecords.id, { onDelete: "cascade" }),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    age: integer("age").notNull(),
+    height: numeric("height", { precision: 5, scale: 2 }).notNull(),
+    weight: numeric("weight", { precision: 5, scale: 2 }).notNull(),
+    bmi: numeric("bmi", { precision: 4, scale: 2 }).notNull(),
+    bmiClassification: bmiClassificationEnum("bmi_classification").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("health_record_metrics_record_cadet_idx").on(
+      table.recordId,
+      table.cadetId,
+    ),
+    index("health_record_metrics_record_id_idx").on(table.recordId),
+    index("health_record_metrics_cadet_id_idx").on(table.cadetId),
+  ],
+);
+
+export const ukaRecords = pgTable(
+  "uka_records",
+  {
+    id: serial("id").primaryKey(),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id, { onDelete: "cascade" }),
+    recordDate: date("record_date").notNull(),
+    session: integer("session").notNull(),
+    year: integer("year").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("uka_records_intake_session_year_idx").on(
+      table.intakeId,
+      table.session,
+      table.year,
+    ),
+    index("uka_records_intake_date_idx").on(table.intakeId, table.recordDate),
+  ],
+);
+
+export const apfaRecords = pgTable(
+  "apfa_records",
+  {
+    id: serial("id").primaryKey(),
+    intakeId: integer("intake_id")
+      .notNull()
+      .references(() => intakes.id, { onDelete: "cascade" }),
+    recordDate: date("record_date").notNull(),
+    session: integer("session").notNull(),
+    year: integer("year").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("apfa_records_intake_session_year_idx").on(
+      table.intakeId,
+      table.session,
+      table.year,
+    ),
+    index("apfa_records_intake_date_idx").on(table.intakeId, table.recordDate),
+  ],
+);
+
+export const ukaRecordAssessments = pgTable(
+  "uka_record_assessments",
+  {
+    id: serial("id").primaryKey(),
+    recordId: integer("record_id")
+      .notNull()
+      .references(() => ukaRecords.id, { onDelete: "cascade" }),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    pushUp: integer("push_up"),
+    pushUpPass: boolean("push_up_pass"),
+    sitUp: integer("sit_up"),
+    sitUpPass: boolean("sit_up_pass"),
+    runSeconds: integer("run_seconds"),
+    runPass: boolean("run_pass"),
+    result: assessmentResultEnum("result"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("uka_record_assessments_record_cadet_idx").on(
+      table.recordId,
+      table.cadetId,
+    ),
+    index("uka_record_assessments_record_id_idx").on(table.recordId),
+    index("uka_record_assessments_cadet_id_idx").on(table.cadetId),
+  ],
+);
+
+export const apfaRecordAssessments = pgTable(
+  "apfa_record_assessments",
+  {
+    id: serial("id").primaryKey(),
+    recordId: integer("record_id")
+      .notNull()
+      .references(() => apfaRecords.id, { onDelete: "cascade" }),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    runSeconds: integer("run_seconds"),
+    runPass: boolean("run_pass"),
+    pullUp: integer("pull_up"),
+    pullUpPass: boolean("pull_up_pass"),
+    swimmingMetres: integer("swimming_metres"),
+    swimmingPass: boolean("swimming_pass"),
+    floatingSeconds: integer("floating_seconds"),
+    floatingPass: boolean("floating_pass"),
+    result: assessmentResultEnum("result"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("apfa_record_assessments_record_cadet_idx").on(
+      table.recordId,
+      table.cadetId,
+    ),
+    index("apfa_record_assessments_record_id_idx").on(table.recordId),
+    index("apfa_record_assessments_cadet_id_idx").on(table.cadetId),
   ],
 );

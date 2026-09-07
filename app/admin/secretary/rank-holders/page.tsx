@@ -142,7 +142,7 @@ export default async function RankHoldersPage({
     label: i.intakeNo,
   }));
 
-  const config = buildRankHoldersTableConfig(intakeOptions);
+  const config = buildRankHoldersTableConfig(intakeScope === null ? intakeOptions : []);
   const adminState = parseTableSearchParams(raw, config);
   const auditState = parseTableSearchParams(raw, AUDIT_LOG_TABLE_CONFIG);
 
@@ -236,7 +236,8 @@ export default async function RankHoldersPage({
       adminTotalCount={adminTotalCount}
       currentAdminId={admin.id}
       eligibleMembers={eligibleMembers}
-      intakeOptions={intakeOptions}
+      intakeOptions={intakeScope === null ? intakeOptions : []}
+      isIntakeScoped={intakeScope !== null}
       auditLogs={auditLogs.map((log) => ({
         ...log,
         changedByName: log.changedByName ?? "Unknown",

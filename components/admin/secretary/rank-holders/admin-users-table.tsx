@@ -47,6 +47,7 @@ type AdminUsersTableProps = {
   searchParams: Record<string, string | string[] | undefined>;
   totalCount: number;
   intakeOptions: IntakeOption[];
+  isIntakeScoped: boolean;
 };
 
 export function AdminUsersTable({
@@ -55,6 +56,7 @@ export function AdminUsersTable({
   searchParams,
   totalCount,
   intakeOptions,
+  isIntakeScoped,
 }: AdminUsersTableProps) {
   const config = useMemo(
     () => buildRankHoldersTableConfig(intakeOptions),
@@ -139,12 +141,14 @@ export function AdminUsersTable({
                     state={state}
                     onChange={update}
                   />
-                  <SortableHead
-                    columnKey="intakeNo"
-                    label="Intake"
-                    state={state}
-                    onChange={update}
-                  />
+                  {!isIntakeScoped && (
+                    <SortableHead
+                      columnKey="intakeNo"
+                      label="Intake"
+                      state={state}
+                      onChange={update}
+                    />
+                  )}
                   <SortableHead
                     columnKey="role"
                     label="Role"
@@ -188,7 +192,7 @@ export function AdminUsersTable({
                           {admin.memberName}
                         </CopyableValue>
                       </TableCell>
-                      <TableCell>{admin.intakeNo ?? "-"}</TableCell>
+                      {!isIntakeScoped && <TableCell>{admin.intakeNo ?? "-"}</TableCell>}
                       <TableCell>
                         <RoleBadge role={admin.role} />
                       </TableCell>

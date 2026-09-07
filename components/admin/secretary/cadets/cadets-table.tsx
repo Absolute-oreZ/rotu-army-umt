@@ -50,6 +50,7 @@ type CadetsTableProps = {
   intakeOptions: IntakeOption[];
   intakeDialogOptions: IntakeDialogOption[];
   platoonOptions: PlatoonOption[];
+  isIntakeScoped: boolean;
   prefix?: string;
 };
 
@@ -60,6 +61,7 @@ export function CadetsTable({
   intakeOptions,
   intakeDialogOptions,
   platoonOptions,
+  isIntakeScoped,
   prefix,
 }: CadetsTableProps) {
   const config = useMemo(
@@ -145,12 +147,14 @@ export function CadetsTable({
                     state={state}
                     onChange={update}
                   />
-                  <SortableHead
-                    columnKey="intakeNo"
-                    label="Intake"
-                    state={state}
-                    onChange={update}
-                  />
+                  {!isIntakeScoped && (
+                    <SortableHead
+                      columnKey="intakeNo"
+                      label="Intake"
+                      state={state}
+                      onChange={update}
+                    />
+                  )}
                   <SortableHead
                     columnKey="platoon"
                     label="Platoon"
@@ -194,7 +198,7 @@ export function CadetsTable({
                           {cadet.name}
                         </CopyableValue>
                       </TableCell>
-                      <TableCell>{cadet.intakeNo ?? "-"}</TableCell>
+                      {!isIntakeScoped && <TableCell>{cadet.intakeNo ?? "-"}</TableCell>}
                       <TableCell>{cadet.platoonName ?? "-"}</TableCell>
                       <TableCell className="pr-5">
                         <div className="flex items-center justify-end gap-0.5">
