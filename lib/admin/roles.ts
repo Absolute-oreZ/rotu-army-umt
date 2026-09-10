@@ -38,7 +38,7 @@ export type AdminModule =
   | "uka"
   | "apfa"
   | "assessments"
-  | "health"
+  | "attend"
   | "accommodations"
   | "religion"
   | "results"
@@ -51,7 +51,7 @@ export const ADMIN_DEFAULT_ROUTES = {
   TREASURER: "/admin/treasurer/collections",
   MULTIMEDIA: "/admin/multimedia/portfolio",
   SPORTS: "/admin/sports/metrics",
-  WELFARE: "/admin/welfare/health",
+  WELFARE: "/admin/welfare/attend",
   ACADEMIC: "/admin/academic/results",
 } satisfies Record<AdminRole, string>;
 
@@ -74,7 +74,7 @@ const roleModules = {
   TREASURER: ["accounts", "collections", "payments", "expenses", "claims"],
   MULTIMEDIA: ["portfolio", "stories", "newsletters"],
   SPORTS: ["metrics", "uka", "apfa", "assessments"],
-  WELFARE: ["health", "accommodations", "religion"],
+  WELFARE: ["attend", "accommodations", "religion"],
   ACADEMIC: ["results", "timetables"],
 } satisfies Record<AdminRole, AdminModule[]>;
 

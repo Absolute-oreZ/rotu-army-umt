@@ -23,6 +23,7 @@ import {
   BedIcon,
   ChurchIcon,
   ClipboardCheckIcon,
+  CalendarXIcon,
 } from "lucide-react";
 import type { AdminModule, AdminRole } from "@/lib/admin/roles";
 import {
@@ -190,10 +191,10 @@ const NAV_GROUPS: NavGroupDefinition[] = [
     icon: HeartIcon,
     items: [
       {
-        title: "Health",
-        href: "/admin/welfare/health",
-        icon: HeartIcon,
-        module: "health",
+        title: "Attend",
+        href: "/admin/welfare/attend",
+        icon: CalendarXIcon,
+        module: "attend",
       },
       {
         title: "Accommodations",
@@ -202,8 +203,8 @@ const NAV_GROUPS: NavGroupDefinition[] = [
         module: "accommodations",
       },
       {
-        title: "Religion",
-        href: "/admin/welfare/religion",
+        title: "Activities",
+        href: "/admin/welfare/religious-activities",
         icon: ChurchIcon,
         module: "religion",
       },

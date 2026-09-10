@@ -23,6 +23,7 @@ export type CurrentAdmin = {
   blueBgPhotoPath: string | null;
   role: AdminRole;
   intakeId: number | null;
+  gender: "MALE" | "FEMALE";
 };
 
 export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
@@ -46,6 +47,7 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
       id: adminUsers.id,
       role: adminUsers.role,
       intakeId: adminUsers.intakeId,
+      gender: members.gender,
     })
     .from(adminUsers)
     .innerJoin(members, eq(adminUsers.memberId, members.id))
@@ -65,6 +67,7 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
     blueBgPhotoPath: admin.blueBgPhotoPath,
     role: admin.role,
     intakeId: admin.intakeId,
+    gender: admin.gender,
   };
 }
 

@@ -85,6 +85,13 @@ export const bmiClassificationEnum = pgEnum("bmi_classification", [
 
 export const assessmentResultEnum = pgEnum("assessment_result", ["PASS", "FAIL"]);
 
+export const attendTypeEnum = pgEnum("attend_type", ["B", "C"]);
+
+export const accommodationTypeEnum = pgEnum("accommodation_type", [
+  "HOSTEL",
+  "RENTAL",
+]);
+
 export const memberRoleEnum = pgEnum("member_role", [
   "OFFICER",
   "INSTRUCTOR",
@@ -1169,4 +1176,70 @@ export const apfaRecordAssessments = pgTable(
     index("apfa_record_assessments_record_id_idx").on(table.recordId),
     index("apfa_record_assessments_cadet_id_idx").on(table.cadetId),
   ],
+);
+
+export const attendRecords = pgTable(
+  "attend_records",
+  {
+    id: serial("id").primaryKey(),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    recordDate: date("record_date").notNull(),
+    attendType: attendTypeEnum("attend_type").notNull(),
+    source: varchar("source", { length: 80 }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("attend_records_cadet_id_idx").on(table.cadetId),
+    index("attend_records_record_date_idx").on(table.recordDate),
+  ],
+);
+
+export const accommodations = pgTable(
+  "accommodations",
+  {
+    id: serial("id").primaryKey(),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    type: accommodationTypeEnum("type").notNull().default("HOSTEL"),
+    address: text("address"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("accommodations_cadet_id_idx").on(table.cadetId),
+  ],
+);
+
+export const religiousActivities = pgTable(
+  "religious_activities",
+  {
+    id: serial("id").primaryKey(),
+    type: varchar("type", { length: 80 }).notNull(),
+    recordDate: date("record_date").notNull(),
+    title: varchar("title", { length: 140 }).notNull(),
+    remarks: text("remarks"),
+    location: text("location").notNull(),
+    meetingLink: text("meeting_link"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("religious_activities_title_idx").on(table.title),
+    index("religious_activities_type_idx").on(table.type),
+    index("religious_activities_record_date_idx").on(table.recordDate),
+  ],
+);
+
+export const religiousActivityPhotos = pgTable(
+  "religious_activity_photos",
+  {
+    id: serial("id").primaryKey(),
+    activityId: integer("activity_id")
+      .notNull()
+      .references(() => religiousActivities.id, { onDelete: "cascade" }),
+    photoPath: text("photo_path").notNull(),
+    ...timestamps,
+  },
+  (table) => [index("religious_activity_photos_activity_id_idx").on(table.activityId)],
 );

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { cadets, intakes, members, platoons } from "@/db/schema";
+import { accommodations, cadets, intakes, members, platoons } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { calculateAge, isValidPersonalEmail, isValidEduEmail } from "@/lib/utils";
@@ -201,19 +201,30 @@ export async function addCadet(formData: FormData) {
 
       if (!memberRow) throw new Error("Failed to create member.");
 
-      await tx.insert(cadets).values({
-        matricNo,
-        isActive,
-        quote: quote ?? null,
-        displayPhotoPath: null,
-        cgpa: null,
-        height: null,
-        weight: null,
-        bmi: null,
-        studyProgramId: null,
-        intakeId: effectiveIntakeId,
-        platoonId: rawPlatoonId,
-        memberId: memberRow.id,
+      const [cadetRow] = await tx
+        .insert(cadets)
+        .values({
+          matricNo,
+          isActive,
+          quote: quote ?? null,
+          displayPhotoPath: null,
+          cgpa: null,
+          height: null,
+          weight: null,
+          bmi: null,
+          studyProgramId: null,
+          intakeId: effectiveIntakeId,
+          platoonId: rawPlatoonId,
+          memberId: memberRow.id,
+        })
+        .returning({ id: cadets.id });
+
+      if (!cadetRow) throw new Error("Failed to create cadet.");
+
+      await tx.insert(accommodations).values({
+        cadetId: cadetRow.id,
+        type: "HOSTEL",
+        address: null,
       });
 
       return [memberRow.id];

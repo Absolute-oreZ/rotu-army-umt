@@ -38,6 +38,9 @@ import {
   DEFAULT_HEALTH_RECORDS,
   DEFAULT_UKA_RECORDS,
   DEFAULT_APFA_RECORDS,
+  DEFAULT_ATTEND_RECORDS,
+  DEFAULT_ACCOMMODATIONS,
+  DEFAULT_RELIGIOUS_ACTIVITIES,
 } from "../lib/data";
 import {
   calculateAgeAt,
@@ -120,6 +123,10 @@ async function seed() {
       apfa_record_assessments,
       uka_records,
       apfa_records,
+      attend_records,
+      accommodations,
+      religious_activity_photos,
+      religious_activities,
       health_record_metrics,
       health_records,
       newsletter_campaign_deliveries,
@@ -544,6 +551,55 @@ async function seed() {
         ${memberRow.id}
       )
     `;
+  }
+
+  const seededCadets = await sql<{ id: number }[]>`
+    select id from cadets order by id
+  `;
+
+  for (const record of DEFAULT_ATTEND_RECORDS) {
+    const cadet = seededCadets[record.cadetIndex];
+
+    if (!cadet) continue;
+
+    await sql`
+      insert into attend_records (cadet_id, record_date, attend_type, source)
+      values (
+        ${cadet.id}, ${record.recordDate}, ${record.attendType}, ${record.source}
+      )
+    `;
+  }
+
+  for (const accommodation of DEFAULT_ACCOMMODATIONS) {
+    const cadet = seededCadets[accommodation.cadetIndex];
+
+    if (!cadet) continue;
+
+    await sql`
+      insert into accommodations (cadet_id, type, address)
+      values (${cadet.id}, ${accommodation.type}, ${accommodation.address})
+    `;
+  }
+
+  for (const activity of DEFAULT_RELIGIOUS_ACTIVITIES) {
+    const title = `${activity.type}-${activity.recordDate}`;
+    const [activityRow] = await sql<[{ id: number }]>`
+      insert into religious_activities (
+        type, record_date, title, remarks, location, meeting_link
+      )
+      values (
+        ${activity.type}, ${activity.recordDate}, ${title}, ${activity.remarks},
+        ${activity.location}, ${activity.meetingLink}
+      )
+      returning id
+    `;
+
+    for (const photoPath of activity.photoPaths) {
+      await sql`
+        insert into religious_activity_photos (activity_id, photo_path)
+        values (${activityRow.id}, ${photoPath})
+      `;
+    }
   }
 
   for (const oi of DEFAULT_OFFICERS_AND_INSTRUCTORS) {

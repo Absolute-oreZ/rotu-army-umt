@@ -728,6 +728,52 @@ export const DEFAULT_APFA_RECORDS = [
   },
 ] as const;
 
+export const DEFAULT_ATTEND_RECORDS = [
+  { cadetIndex: 0, recordDate: "2026-02-03", attendType: "B", source: "RSAK" },
+  { cadetIndex: 1, recordDate: "2026-02-10", attendType: "C", source: "PKU" },
+  { cadetIndex: 3, recordDate: "2026-02-18", attendType: "B", source: "HOSPITAL" },
+  { cadetIndex: 6, recordDate: "2026-03-02", attendType: "C", source: "OTHER" },
+  { cadetIndex: 9, recordDate: "2026-03-09", attendType: "B", source: "RSAK" },
+] as const;
+
+export const DEFAULT_ACCOMMODATIONS = [
+  { cadetIndex: 0, type: "HOSTEL", address: null },
+  { cadetIndex: 1, type: "RENTAL", address: "Jalan Tok Jembal, Kuala Nerus" },
+  { cadetIndex: 3, type: "HOSTEL", address: null },
+  { cadetIndex: 6, type: "RENTAL", address: "Taman Seri Pulau, Kuala Nerus" },
+  { cadetIndex: 9, type: "HOSTEL", address: null },
+] as const;
+
+export const DEFAULT_RELIGIOUS_ACTIVITIES = [
+  {
+    type: "YASIN",
+    recordDate: "2026-01-22",
+    remarks: "Weekly recitation and reflection session.",
+    location: "UMT Surau Al-Hikmah",
+    meetingLink: "https://meet.google.com/seed-yasin-2026",
+    photoPaths: [
+      "religious-activities/seed/yasin-2026-01-22-1.jpg",
+      "religious-activities/seed/yasin-2026-01-22-2.jpg",
+    ],
+  },
+  {
+    type: "TAHLIL",
+    recordDate: "2026-02-19",
+    remarks: "Group tahlil session for cadets.",
+    location: "Markas PALAPES Darat UMT",
+    meetingLink: null,
+    photoPaths: ["religious-activities/seed/tahlil-2026-02-19-1.jpg"],
+  },
+  {
+    type: "YASIN",
+    recordDate: "2026-03-19",
+    remarks: null,
+    location: "UMT Surau Al-Hikmah",
+    meetingLink: "https://meet.google.com/seed-yasin-2026-03",
+    photoPaths: [],
+  },
+] as const;
+
 export const DEFAULT_OFFICERS_AND_INSTRUCTORS = DEFAULT_MEMBERS
   .filter((m) => m.role === "OFFICER" || m.role === "INSTRUCTOR")
   .map((m, i) => ({

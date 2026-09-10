@@ -2,10 +2,12 @@ import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { accommodations, cadets, intakes, members } from "@/db/schema";
+import { attendRecords, cadets, intakes, members } from "@/db/schema";
 import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
+import { getAttendSources } from "@/lib/welfare/attend-sources";
 import {
+  buildDateFilterClause,
   buildEnumFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
@@ -13,16 +15,15 @@ import {
   type FilterCondition,
 } from "@/lib/admin/table-search-params";
 import {
-  ACCOMMODATIONS_SORT_FIELD_MAP,
-  buildAccommodationsTableConfig,
-} from "@/components/admin/welfare/accommodations/table-config";
-import { AccommodationsPageClient } from "@/components/admin/welfare/accommodations/accommodations-page-client";
-import type { AccommodationRow } from "@/components/admin/welfare/accommodations/accommodations-table";
+  ATTEND_SORT_FIELD_MAP,
+  buildAttendTableConfig,
+} from "@/components/admin/welfare/attend/table-config";
+import { AttendPageClient } from "@/components/admin/welfare/attend/attend-page-client";
+import type { AttendRecordRow } from "@/components/admin/welfare/attend/attend-table";
 
 function buildFilters(
   state: { q: string; filters: Record<string, FilterCondition[]> },
   intakeScope: number | null,
-  adminGender: "MALE" | "FEMALE",
 ): SQL[] {
   const clauses: SQL[] = [];
 
@@ -37,20 +38,19 @@ function buildFilters(
   }
 
   clauses.push(...buildEnumFilterClause(state.filters.intakeNo, intakes.intakeNo));
-  clauses.push(...buildEnumFilterClause(state.filters.type, accommodations.type));
+  clauses.push(...buildDateFilterClause(state.filters.date, attendRecords.recordDate));
+  clauses.push(...buildEnumFilterClause(state.filters.attendType, attendRecords.attendType));
+  clauses.push(...buildEnumFilterClause(state.filters.source, attendRecords.source));
   clauses.push(...buildEnumFilterClause(state.filters.rank, members.rank));
-
-  clauses.push(eq(cadets.isActive, true));
 
   if (intakeScope !== null) {
     clauses.push(eq(cadets.intakeId, intakeScope));
-    clauses.push(eq(members.gender, adminGender));
   }
 
   return clauses;
 }
 
-export default async function AccommodationsPage({
+export default async function AttendPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -58,11 +58,16 @@ export default async function AccommodationsPage({
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
-  if (!canAccessAdminModule(admin.role, "accommodations")) {
+  if (!canAccessAdminModule(admin.role, "attend")) {
     notFound();
   }
 
   const raw = await searchParams;
+
+  const sourceFilterOptions = getAttendSources().map((s) => ({
+    value: s,
+    label: s,
+  }));
 
   const intakeRows = await db
     .select({ id: intakes.id, intakeNo: intakes.intakeNo })
@@ -74,65 +79,91 @@ export default async function AccommodationsPage({
     label: i.intakeNo,
   }));
 
-  const config = buildAccommodationsTableConfig(
+  const config = buildAttendTableConfig(
+    sourceFilterOptions,
     intakeScope === null ? intakeFilterOptions : [],
   );
   const state = parseTableSearchParams(raw, config);
-  const filterClauses = buildFilters(state, intakeScope, admin.gender);
+  const filterClauses = buildFilters(state, intakeScope);
   const where = filterClauses.length > 0 ? and(...filterClauses) : undefined;
 
-  const orderBy = buildSortOrderBy(state.sortRules, ACCOMMODATIONS_SORT_FIELD_MAP);
-  orderBy.push(asc(cadets.id));
+  const orderBy = buildSortOrderBy(state.sortRules, ATTEND_SORT_FIELD_MAP);
+  if (orderBy.length === 0) {
+    orderBy.push(desc(attendRecords.recordDate));
+    orderBy.push(desc(attendRecords.id));
+  }
 
-  const [countRow, rowsRaw] = await Promise.all([
+  const cadetOptions = await db
+    .select({ id: cadets.id, name: members.name, armyNo: members.armyNo })
+    .from(cadets)
+    .innerJoin(members, eq(members.id, cadets.memberId))
+    .where(
+      and(
+        eq(cadets.isActive, true),
+        intakeScope !== null ? eq(cadets.intakeId, intakeScope) : undefined,
+      ),
+    )
+    .orderBy(asc(members.name))
+    .limit(500);
+
+  const [countRow, recordRows] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)::int` })
-      .from(cadets)
+      .from(attendRecords)
+      .innerJoin(cadets, eq(cadets.id, attendRecords.cadetId))
       .innerJoin(members, eq(members.id, cadets.memberId))
       .innerJoin(intakes, eq(intakes.id, cadets.intakeId))
-      .leftJoin(accommodations, eq(accommodations.cadetId, cadets.id))
       .where(where),
     db
       .select({
+        id: attendRecords.id,
         cadetId: cadets.id,
         armyNo: members.armyNo,
         rank: members.rank,
         name: members.name,
         avatarPath: members.redBgPhotoPath,
         intakeNo: intakes.intakeNo,
-        accommodationId: accommodations.id,
-        type: accommodations.type,
-        address: accommodations.address,
+        recordDate: attendRecords.recordDate,
+        attendType: attendRecords.attendType,
+        source: attendRecords.source,
+        createdAt: attendRecords.createdAt,
       })
-      .from(cadets)
+      .from(attendRecords)
+      .innerJoin(cadets, eq(cadets.id, attendRecords.cadetId))
       .innerJoin(members, eq(members.id, cadets.memberId))
       .innerJoin(intakes, eq(intakes.id, cadets.intakeId))
-      .leftJoin(accommodations, eq(accommodations.cadetId, cadets.id))
       .where(where)
       .orderBy(...orderBy)
       .limit(state.pageSize)
       .offset((state.page - 1) * state.pageSize),
   ]);
 
-  const rows: AccommodationRow[] = rowsRaw.map((r) => ({
+  const records: AttendRecordRow[] = recordRows.map((r) => ({
+    id: r.id,
     cadetId: r.cadetId,
     armyNo: r.armyNo,
     rank: r.rank,
     name: r.name,
     avatarPath: r.avatarPath,
     intakeNo: r.intakeNo,
-    accommodationId: r.accommodationId,
-    type: r.type,
-    address: r.address,
+    recordDate: r.recordDate,
+    attendType: r.attendType,
+    source: r.source,
+    createdAt: r.createdAt.toISOString(),
   }));
 
   return (
-    <AccommodationsPageClient
+    <AttendPageClient
       searchParams={raw}
-      rows={rows}
+      records={records}
       totalCount={countRow[0]?.count ?? 0}
       isIntakeScoped={intakeScope !== null}
+      sourceFilterOptions={sourceFilterOptions}
       intakeFilterOptions={intakeScope === null ? intakeFilterOptions : []}
+      cadetOptions={cadetOptions.map((c) => ({
+        id: c.id,
+        label: `${c.name} · #${c.armyNo}`,
+      }))}
     />
   );
 }
