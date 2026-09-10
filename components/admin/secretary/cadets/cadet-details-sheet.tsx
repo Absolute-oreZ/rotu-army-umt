@@ -671,6 +671,7 @@ function ImagePreview({ label, url }: { label: string; url: string | null }) {
             src={resolvedUrl}
             alt={label}
             fill
+            sizes="(max-width: 640px) calc((100vw - 4.5rem) / 3), 140px"
             className="object-cover"
           />
         </div>

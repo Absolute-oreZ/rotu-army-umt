@@ -37,6 +37,7 @@ export type CadetRow = {
   avatarPath: string | null;
   intakeNo: string | null;
   platoonName: string | null;
+  matricNo: string | null;
   isActive: boolean;
 };
 
@@ -84,7 +85,7 @@ export function CadetsTable({
     <>
       <TableToolbar
         showRefreshButton
-        searchPlaceholder="Search by name or army no…"
+        searchPlaceholder="Search by name, army no, or matric no…"
         totalCount={totalCount}
         shownCount={cadets.length}
         state={state}
@@ -161,6 +162,7 @@ export function CadetsTable({
                     state={state}
                     onChange={update}
                   />
+                  <TableHead>No. Matric</TableHead>
                   <TableHead className="pr-5 text-right w-35">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -200,6 +202,11 @@ export function CadetsTable({
                       </TableCell>
                       {!isIntakeScoped && <TableCell>{cadet.intakeNo ?? "-"}</TableCell>}
                       <TableCell>{cadet.platoonName ?? "-"}</TableCell>
+                      <TableCell>
+                        <CopyableValue value={cadet.matricNo ?? "-"} valueClassName="font-mono">
+                          {cadet.matricNo ?? "-"}
+                        </CopyableValue>
+                      </TableCell>
                       <TableCell className="pr-5">
                         <div className="flex items-center justify-end gap-0.5">
                           <Tooltip>
@@ -298,6 +305,14 @@ export function CadetsTable({
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p>Intake: {cadet.intakeNo ?? "-"}</p>
                     <p>Platoon: {cadet.platoonName ?? "-"}</p>
+                    <div className="flex items-center gap-1">
+                      <span>No. Matric:</span>
+                      {cadet.matricNo ? (
+                        <CopyableValue value={cadet.matricNo} valueClassName="font-mono">
+                          {cadet.matricNo}
+                        </CopyableValue>
+                      ) : "-"}
+                    </div>
                   </div>
                   <div className="mt-3 flex justify-end gap-0.5">
                     <Tooltip>

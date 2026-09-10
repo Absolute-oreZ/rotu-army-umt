@@ -26,6 +26,7 @@ function buildFilters(state: { q: string; filters: Record<string, FilterConditio
     const searchClause = or(
       ilike(members.name, contains),
       sql`${members.armyNo}::text ILIKE ${prefix}`,
+      ilike(cadets.matricNo, contains),
     );
     if (searchClause) clauses.push(searchClause);
   }
@@ -54,6 +55,7 @@ function buildBaseQuery() {
       avatarPath: members.redBgPhotoPath,
       intakeNo: intakes.intakeNo,
       platoonName: platoons.displayName,
+      matricNo: cadets.matricNo,
       isActive: cadets.isActive,
     })
     .from(cadets)

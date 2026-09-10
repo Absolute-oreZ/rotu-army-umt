@@ -34,7 +34,7 @@ export function buildCadetsTableConfig(intakeOptions?: IntakeOption[], prefix?: 
     sortKeys: ["name", "armyNo", "rank", "intakeNo", "platoon"],
     sortLabels: { name: "Name", armyNo: "Army No", platoon: "Platoon" },
     filterColumns,
-    copyableColumns: ["armyNo", "name"],
+    copyableColumns: ["armyNo", "name", "matricNo"],
     pageSizeOptions: [10, 25, 50],
   };
 }
