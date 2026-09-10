@@ -37,6 +37,27 @@ export default async function ApfaPage({
     .from(intakes)
     .orderBy(desc(intakes.startYear));
 
+  const historyRows = await db
+    .select({ id: apfaRecords.id, intakeId: apfaRecords.intakeId, year: apfaRecords.year, session: apfaRecords.session, recordDate: apfaRecords.recordDate })
+    .from(apfaRecords)
+    .orderBy(asc(apfaRecords.intakeId), asc(apfaRecords.year), asc(apfaRecords.session));
+  const previousSessionDatesByRecordId: Record<string, string> = {};
+  const latestSessionDates: Record<string, string> = {};
+  let historyGroup = "";
+  let previousDate: string | undefined;
+  for (const row of historyRows) {
+    const group = `${row.intakeId}:${row.year}`;
+    if (group !== historyGroup) {
+      historyGroup = group;
+      previousDate = undefined;
+    }
+    if (previousDate) {
+      previousSessionDatesByRecordId[String(row.id)] = previousDate;
+    }
+    previousDate = row.recordDate;
+    latestSessionDates[`${row.intakeId}:${row.year}`] = row.recordDate;
+  }
+
   const intakeFilterOptions = intakeRows.map((i) => ({
     value: i.intakeNo,
     label: i.intakeNo,
@@ -46,7 +67,7 @@ export default async function ApfaPage({
 
   const clauses: SQL[] = [];
   if (state.q) {
-    clauses.push(ilike(intakes.intakeNo, wrapLikePattern(state.q, "contains")));
+    clauses.push(ilike(sql`'APFA-' || ${apfaRecords.session}::text || '-' || ${apfaRecords.year}::text`, wrapLikePattern(state.q, "contains")));
   }
   clauses.push(...buildEnumFilterClause(state.filters.intakeNo, intakes.intakeNo));
   clauses.push(...buildNumberFilterClause(state.filters.year, apfaRecords.year));
@@ -66,6 +87,7 @@ export default async function ApfaPage({
     db
       .select({
         id: apfaRecords.id,
+        intakeId: apfaRecords.intakeId,
         intakeNo: intakes.intakeNo,
         recordDate: apfaRecords.recordDate,
         session: apfaRecords.session,
@@ -81,16 +103,22 @@ export default async function ApfaPage({
       .limit(state.pageSize)
       .offset((state.page - 1) * state.pageSize),
   ]);
+  const recordsWithPreviousDates = recordRows.map((row) => ({
+    ...row,
+    previousSessionDate: previousSessionDatesByRecordId[String(row.id)] ?? null,
+  }));
 
   return (
     <RecordsPageClient
       recordType="APFA"
       searchParams={raw}
-      records={recordRows}
+      records={recordsWithPreviousDates}
       totalCount={countRows[0]?.count ?? 0}
       isIntakeScoped={intakeScope !== null}
       intakeOptions={intakeRows}
       intakeFilterOptions={intakeScope === null ? intakeFilterOptions : []}
+      scopedIntakeId={intakeScope}
+      latestSessionDates={latestSessionDates}
     />
   );
 }

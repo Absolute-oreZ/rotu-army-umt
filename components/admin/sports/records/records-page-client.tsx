@@ -21,6 +21,8 @@ type RecordsPageClientProps = {
   isIntakeScoped: boolean;
   intakeOptions: DialogIntakeOption[];
   intakeFilterOptions: IntakeOption[];
+  scopedIntakeId: number | null;
+  latestSessionDates: Record<string, string>;
 };
 
 export function RecordsPageClient({
@@ -31,6 +33,8 @@ export function RecordsPageClient({
   isIntakeScoped,
   intakeOptions,
   intakeFilterOptions,
+  scopedIntakeId,
+  latestSessionDates,
 }: RecordsPageClientProps) {
   const [deleteTarget, setDeleteTarget] = useState<RecordListRow | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -43,6 +47,8 @@ export function RecordsPageClient({
           recordType={recordType}
           intakeOptions={intakeOptions}
           isAdminIntakeScoped={isIntakeScoped}
+          scopedIntakeId={scopedIntakeId}
+          latestSessionDates={latestSessionDates}
           trigger={
             <Button size="sm">
               <PlusIcon className="size-4" data-icon="inline-start" />

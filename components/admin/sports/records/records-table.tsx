@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardCheckIcon, ClipboardListIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, ClipboardCheckIcon, ClipboardListIcon, EditIcon, Loader2Icon, Trash2Icon, XIcon } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -22,11 +22,34 @@ import { useTableURL } from "@/lib/admin/use-table-url";
 import { isTableStateDefault, type IntakeOption } from "@/lib/admin/table-search-params";
 import { Empty } from "@/components/ui/empty";
 import { buildRecordsTableConfig } from "./table-config";
+import { updateAssessmentRecord } from "@/app/admin/sports/assessments/actions";
+import { DatePicker } from "@/components/ui/date-picker";
+
+function parseRecordDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatRecordDateInput(value: Date | undefined) {
+  if (!value) return "";
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function dayAfter(value: string) {
+  const date = parseRecordDate(value);
+  date.setDate(date.getDate() + 1);
+  return date;
+}
 
 export type RecordListRow = {
   id: number;
+  intakeId: number;
   intakeNo: string;
   recordDate: string;
+  previousSessionDate: string | null;
   session: number;
   year: number;
   recordedCount: number;
@@ -72,7 +95,7 @@ export function RecordsTable({
     <>
       <TableToolbar
         showRefreshButton
-        searchPlaceholder="Search by intake..."
+        searchPlaceholder="Search by title..."
         totalCount={totalCount}
         shownCount={rows.length}
         state={state}
@@ -150,11 +173,12 @@ function RecordsTableBody({
   onDelete: (row: RecordListRow) => void;
   onEnter: (href: string) => void;
 }) {
+  const [editingId, setEditingId] = useState<number | null>(null);
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Label</TableHead>
+          <TableHead>Title</TableHead>
           {!isIntakeScoped && <TableHead>Intake</TableHead>}
           <SortableHead columnKey="recordDate" label="Record Date" state={state} onChange={onChange} />
           <SortableHead columnKey="session" label="Session" state={state} onChange={onChange} />
@@ -170,6 +194,10 @@ function RecordsTableBody({
             recordType={recordType}
             row={row}
             isIntakeScoped={isIntakeScoped}
+            isEditing={editingId === row.id}
+            editDisabled={editingId !== null && editingId !== row.id}
+            onEdit={() => setEditingId(row.id)}
+            onEditEnd={() => setEditingId(null)}
             onDelete={onDelete}
             onEnter={onEnter}
           />
@@ -183,16 +211,81 @@ function RecordRow({
   recordType,
   row,
   isIntakeScoped,
+  isEditing,
+  editDisabled,
+  onEdit,
+  onEditEnd,
   onDelete,
   onEnter,
 }: {
   recordType: "UKA" | "APFA";
   row: RecordListRow;
   isIntakeScoped: boolean;
+  isEditing: boolean;
+  editDisabled: boolean;
+  onEdit: () => void;
+  onEditEnd: () => void;
   onDelete: (row: RecordListRow) => void;
   onEnter: (href: string) => void;
 }) {
+  const router = useRouter();
   const label = `${recordType}-${row.session}-${row.year}`;
+  const [recordDate, setRecordDate] = useState(row.recordDate);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSave() {
+    if (!recordDate || isPending) return;
+    setError(null);
+    const formData = new FormData();
+    formData.set("recordType", recordType);
+    formData.set("recordId", String(row.id));
+    formData.set("recordDate", recordDate);
+    startTransition(async () => {
+      const result = await updateAssessmentRecord(formData);
+      if (result.success) {
+        onEditEnd();
+        router.refresh();
+      } else {
+        setError(result.error ?? "Failed to update record.");
+      }
+    });
+  }
+
+  if (isEditing) {
+    return (
+      <TableRow>
+        <TableCell className="font-medium">{label}</TableCell>
+        {!isIntakeScoped && <TableCell>{row.intakeNo}</TableCell>}
+        <TableCell>
+          <div className="flex flex-col gap-1">
+            <DatePicker
+              value={parseRecordDate(recordDate)}
+              onChange={(date) => setRecordDate(formatRecordDateInput(date))}
+              minDate={row.previousSessionDate ? dayAfter(row.previousSessionDate) : new Date(row.year, 0, 1)}
+              maxDate={new Date(row.year, 11, 31)}
+              className="h-8 w-36"
+              disabled={isPending}
+            />
+            {error && <span className="text-xs text-red-500">{error}</span>}
+          </div>
+        </TableCell>
+        <TableCell className="tabular-nums">{row.session}</TableCell>
+        <TableCell className="tabular-nums">{row.year}</TableCell>
+        <TableCell className="tabular-nums">{row.recordedCount}</TableCell>
+        <TableCell className="pr-5">
+          <div className="flex items-center justify-end gap-1">
+            <Button variant="ghost" size="icon-xs" className="hover:text-emerald-600" onClick={handleSave} disabled={isPending || !recordDate} aria-label="Save record">
+              {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : <CheckIcon className="size-3.5" />}
+            </Button>
+            <Button variant="ghost" size="icon-xs" className="hover:text-red-600" onClick={onEditEnd} disabled={isPending} aria-label="Cancel record edit">
+              <XIcon className="size-3.5" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  }
 
   return (
     <TableRow>
@@ -208,6 +301,14 @@ function RecordRow({
       <TableCell className="tabular-nums">{row.recordedCount}</TableCell>
       <TableCell className="pr-5">
         <div className="flex items-center justify-end gap-1">
+          <Tooltip>
+            <TooltipTrigger>
+              <Button variant="ghost" size="icon-xs" className="hover:text-sky-600" onClick={onEdit} disabled={editDisabled}>
+                <EditIcon className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Edit record</TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger>
               <Button

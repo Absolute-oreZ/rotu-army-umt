@@ -18,6 +18,8 @@ type DatePickerProps = {
   maxDate?: Date;
   minDate?: Date;
   className?: string;
+  disabled?: boolean;
+  isDateDisabled?: (date: Date) => boolean;
 };
 
 export function DatePicker({
@@ -27,6 +29,8 @@ export function DatePicker({
   maxDate,
   minDate,
   className,
+  disabled = false,
+  isDateDisabled,
 }: DatePickerProps) {
   return (
     <Popover>
@@ -34,6 +38,7 @@ export function DatePicker({
         <Button
           variant="outline"
           data-empty={!value}
+          disabled={disabled}
           className={cn(
             "w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground",
             className,
@@ -49,6 +54,7 @@ export function DatePicker({
           onChange={onChange}
           maxDate={maxDate}
           minDate={minDate}
+          isDateDisabled={isDateDisabled}
         />
       </PopoverContent>
     </Popover>

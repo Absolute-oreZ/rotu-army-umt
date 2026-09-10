@@ -37,6 +37,27 @@ export default async function UkaPage({
     .from(intakes)
     .orderBy(desc(intakes.startYear));
 
+  const historyRows = await db
+    .select({ id: ukaRecords.id, intakeId: ukaRecords.intakeId, year: ukaRecords.year, session: ukaRecords.session, recordDate: ukaRecords.recordDate })
+    .from(ukaRecords)
+    .orderBy(asc(ukaRecords.intakeId), asc(ukaRecords.year), asc(ukaRecords.session));
+  const previousSessionDatesByRecordId: Record<string, string> = {};
+  const latestSessionDates: Record<string, string> = {};
+  let historyGroup = "";
+  let previousDate: string | undefined;
+  for (const row of historyRows) {
+    const group = `${row.intakeId}:${row.year}`;
+    if (group !== historyGroup) {
+      historyGroup = group;
+      previousDate = undefined;
+    }
+    if (previousDate) {
+      previousSessionDatesByRecordId[String(row.id)] = previousDate;
+    }
+    previousDate = row.recordDate;
+    latestSessionDates[`${row.intakeId}:${row.year}`] = row.recordDate;
+  }
+
   const intakeFilterOptions = intakeRows.map((i) => ({
     value: i.intakeNo,
     label: i.intakeNo,
@@ -46,7 +67,7 @@ export default async function UkaPage({
 
   const clauses: SQL[] = [];
   if (state.q) {
-    clauses.push(ilike(intakes.intakeNo, wrapLikePattern(state.q, "contains")));
+    clauses.push(ilike(sql`'UKA-' || ${ukaRecords.session}::text || '-' || ${ukaRecords.year}::text`, wrapLikePattern(state.q, "contains")));
   }
   clauses.push(...buildEnumFilterClause(state.filters.intakeNo, intakes.intakeNo));
   clauses.push(...buildNumberFilterClause(state.filters.year, ukaRecords.year));
@@ -66,6 +87,7 @@ export default async function UkaPage({
     db
       .select({
         id: ukaRecords.id,
+        intakeId: ukaRecords.intakeId,
         intakeNo: intakes.intakeNo,
         recordDate: ukaRecords.recordDate,
         session: ukaRecords.session,
@@ -81,16 +103,22 @@ export default async function UkaPage({
       .limit(state.pageSize)
       .offset((state.page - 1) * state.pageSize),
   ]);
+  const recordsWithPreviousDates = recordRows.map((row) => ({
+    ...row,
+    previousSessionDate: previousSessionDatesByRecordId[String(row.id)] ?? null,
+  }));
 
   return (
     <RecordsPageClient
       recordType="UKA"
       searchParams={raw}
-      records={recordRows}
+      records={recordsWithPreviousDates}
       totalCount={countRows[0]?.count ?? 0}
       isIntakeScoped={intakeScope !== null}
       intakeOptions={intakeRows}
       intakeFilterOptions={intakeScope === null ? intakeFilterOptions : []}
+      scopedIntakeId={intakeScope}
+      latestSessionDates={latestSessionDates}
     />
   );
 }

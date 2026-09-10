@@ -20,6 +20,28 @@ import {
 } from "@/components/ui/select";
 import { createAssessmentRecord } from "@/app/admin/sports/assessments/actions";
 import { Field } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
+
+function parseRecordDate(value: string) {
+  if (!value) return undefined;
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatRecordDate(value: Date | undefined) {
+  if (!value) return "";
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function dateKey(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 type DialogIntakeOption = {
   id: number;
@@ -31,22 +53,29 @@ export function CreateRecordDialog({
   intakeOptions,
   isAdminIntakeScoped,
   trigger,
+  scopedIntakeId,
+  latestSessionDates,
 }: {
   recordType: "UKA" | "APFA";
   intakeOptions: DialogIntakeOption[];
   isAdminIntakeScoped: boolean;
   trigger: ReactNode;
+  scopedIntakeId: number | null;
+  latestSessionDates: Record<string, string>;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [intakeId, setIntakeId] = useState("");
+  const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const formValid = isAdminIntakeScoped || intakeId !== "";
+  const formValid = (isAdminIntakeScoped || intakeId !== "") && recordDate !== "";
+  const selectedIntakeId = intakeId || (scopedIntakeId === null ? "" : String(scopedIntakeId));
 
   function resetForm() {
     setIntakeId("");
+    setRecordDate(new Date().toISOString().slice(0, 10));
     setError(null);
   }
 
@@ -57,6 +86,7 @@ export function CreateRecordDialog({
     const fd = new FormData();
     fd.set("recordType", recordType);
     if (!isAdminIntakeScoped) fd.set("intakeId", intakeId);
+    fd.set("recordDate", recordDate);
 
     startTransition(async () => {
       const result = await createAssessmentRecord(fd);
@@ -110,9 +140,19 @@ export function CreateRecordDialog({
               </Select>
             </Field>
           )}
-          <p className="text-xs text-muted-foreground">
-            The record date, session number, and year are set automatically.
-          </p>
+          <Field label="Record Date" required>
+            <DatePicker
+              value={parseRecordDate(recordDate)}
+              onChange={(date) => setRecordDate(formatRecordDate(date))}
+              placeholder="Select record date"
+              isDateDisabled={(date) => {
+                if (!selectedIntakeId) return false;
+                const previousDate = latestSessionDates[`${selectedIntakeId}:${date.getFullYear()}`];
+                return previousDate ? dateKey(date) <= previousDate : false;
+              }}
+            />
+          </Field>
+          <p className="text-xs text-muted-foreground">The session number and year are calculated from the selected date.</p>
         </div>
 
         <DialogFooter>

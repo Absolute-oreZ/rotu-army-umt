@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, max } from "drizzle-orm";
+import { and, desc, eq, max, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   apfaRecordAssessments,
@@ -44,6 +44,13 @@ function parseRecordId(formData: FormData): number | null {
   if (!raw) return null;
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function isValidRecordDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime())
+    && date.toISOString().slice(0, 10) === value;
 }
 
 function parseCadetId(formData: FormData): number | null {
@@ -92,19 +99,61 @@ async function getNextSession(
   recordType: AssessmentRecordType,
   intakeId: number,
   year: number,
+  excludeRecordId?: number,
 ): Promise<number> {
   if (recordType === "UKA") {
     const [row] = await db
       .select({ highestSession: max(ukaRecords.session) })
       .from(ukaRecords)
-      .where(and(eq(ukaRecords.intakeId, intakeId), eq(ukaRecords.year, year)));
+      .where(and(
+        eq(ukaRecords.intakeId, intakeId),
+        eq(ukaRecords.year, year),
+        excludeRecordId === undefined ? undefined : ne(ukaRecords.id, excludeRecordId),
+      ));
     return (row?.highestSession ?? 0) + 1;
   }
   const [row] = await db
     .select({ highestSession: max(apfaRecords.session) })
     .from(apfaRecords)
-    .where(and(eq(apfaRecords.intakeId, intakeId), eq(apfaRecords.year, year)));
+    .where(and(
+      eq(apfaRecords.intakeId, intakeId),
+      eq(apfaRecords.year, year),
+      excludeRecordId === undefined ? undefined : ne(apfaRecords.id, excludeRecordId),
+    ));
   return (row?.highestSession ?? 0) + 1;
+}
+
+async function getPreviousSessionDate(
+  recordType: AssessmentRecordType,
+  intakeId: number,
+  year: number,
+  session?: number,
+) {
+  if (recordType === "UKA") {
+    const [row] = await db
+      .select({ recordDate: ukaRecords.recordDate })
+      .from(ukaRecords)
+      .where(and(
+        eq(ukaRecords.intakeId, intakeId),
+        eq(ukaRecords.year, year),
+        session === undefined ? undefined : sql`${ukaRecords.session} < ${session}`,
+      ))
+      .orderBy(desc(ukaRecords.session))
+      .limit(1);
+    return row?.recordDate ?? null;
+  }
+
+  const [row] = await db
+    .select({ recordDate: apfaRecords.recordDate })
+    .from(apfaRecords)
+    .where(and(
+      eq(apfaRecords.intakeId, intakeId),
+      eq(apfaRecords.year, year),
+      session === undefined ? undefined : sql`${apfaRecords.session} < ${session}`,
+    ))
+    .orderBy(desc(apfaRecords.session))
+    .limit(1);
+  return row?.recordDate ?? null;
 }
 
 async function insertRecord(
@@ -148,10 +197,19 @@ export async function createAssessmentRecord(formData: FormData) {
   const resolved = resolveScopedIntakeId(formData, intakeScope);
   if (!resolved.ok) return { error: resolved.error };
 
-  const recordDate = new Date().toISOString().slice(0, 10);
+  const submittedDate = takeString(formData.get("recordDate"));
+  const recordDate = submittedDate || new Date().toISOString().slice(0, 10);
+  if (!isValidRecordDate(recordDate)) {
+    return { error: "Record date is invalid." };
+  }
   const year = Number(recordDate.slice(0, 4));
 
   try {
+    const previousSessionDate = await getPreviousSessionDate(recordType, resolved.intakeId, year);
+    if (previousSessionDate && recordDate <= previousSessionDate) {
+      return { error: `Record date must be after the previous session (${previousSessionDate}).` };
+    }
+
     for (let attempt = 0; attempt < 3; attempt++) {
       const session = await getNextSession(recordType, resolved.intakeId, year);
       const id = await insertRecord(recordType, resolved.intakeId, recordDate, session, year);
@@ -476,4 +534,45 @@ export async function saveApfaAssessment(formData: FormData) {
 
   revalidateSportsPaths();
   return { success: true as const };
+}
+
+export async function updateAssessmentRecord(formData: FormData) {
+  const admin = await requireCurrentAdmin();
+  const intakeScope = getIntakeScope(admin);
+  const recordType = parseRecordType(takeString(formData.get("recordType")));
+  if (!recordType) return { error: "Invalid record type." };
+  if (!canAccessAdminModule(admin.role, RECORD_MODULE[recordType])) {
+    return { error: `You do not have permission to manage ${recordType} records.` };
+  }
+
+  const recordId = parseRecordId(formData);
+  const recordDate = takeString(formData.get("recordDate"));
+  if (recordId === null || !recordDate) return { error: "Record and date are required." };
+    if (!isValidRecordDate(recordDate)) {
+    return { error: "Record date is invalid." };
+  }
+  try {
+    const existing = recordType === "UKA"
+      ? (await db.select({ intakeId: ukaRecords.intakeId, year: ukaRecords.year, session: ukaRecords.session }).from(ukaRecords).where(eq(ukaRecords.id, recordId)).limit(1))[0]
+      : (await db.select({ intakeId: apfaRecords.intakeId, year: apfaRecords.year, session: apfaRecords.session }).from(apfaRecords).where(eq(apfaRecords.id, recordId)).limit(1))[0];
+    if (!existing) return { error: "Record not found." };
+    const ownershipError = assertIntakeOwnership(existing.intakeId, intakeScope);
+    if (ownershipError) return { error: ownershipError };
+    const year = Number(recordDate.slice(0, 4));
+    if (year !== existing.year) return { error: `Record date must remain within ${existing.year}.` };
+    const previousSessionDate = await getPreviousSessionDate(recordType, existing.intakeId, existing.year, existing.session);
+    if (previousSessionDate && recordDate <= previousSessionDate) {
+      return { error: `Record date must be after the previous session (${previousSessionDate}).` };
+    }
+
+    const updated = recordType === "UKA"
+      ? await db.update(ukaRecords).set({ recordDate }).where(eq(ukaRecords.id, recordId)).returning({ id: ukaRecords.id })
+      : await db.update(apfaRecords).set({ recordDate }).where(eq(apfaRecords.id, recordId)).returning({ id: apfaRecords.id });
+    if (!updated[0]) return { error: "Record not found." };
+    revalidateSportsPaths();
+    return { success: true as const };
+  } catch (err) {
+    console.error("updateAssessmentRecord failed", err);
+    return { error: "Failed to update record." };
+  }
 }

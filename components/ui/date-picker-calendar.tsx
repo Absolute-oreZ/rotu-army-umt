@@ -14,6 +14,7 @@ type DatePickerCalendarProps = {
   onChange: (date: Date | undefined) => void;
   maxDate?: Date;
   minDate?: Date;
+  isDateDisabled?: (date: Date) => boolean;
 };
 
 type View = "days" | "months" | "years";
@@ -41,6 +42,7 @@ export function DatePickerCalendar({
   onChange,
   maxDate,
   minDate,
+  isDateDisabled,
 }: DatePickerCalendarProps) {
   const [view, setView] = useState<View>("days");
   const [displayMonth, setDisplayMonth] = useState(() => {
@@ -56,6 +58,7 @@ export function DatePickerCalendar({
   function isDisabled(dateStr: string) {
     if (maxStr && dateStr > maxStr) return true;
     if (minStr && dateStr < minStr) return true;
+    if (isDateDisabled && isDateDisabled(parseDateStr(dateStr))) return true;
     return false;
   }
 
