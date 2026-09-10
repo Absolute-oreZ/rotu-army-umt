@@ -9,11 +9,13 @@ import {
   eventTags,
   eventTagTranslations,
   eventsToTags,
+  eventDisplayPhotos,
 } from "@/db/schema";
 import { requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage } from "@/lib/supabase/storage";
+import { uploadToStorage, deleteFromStorage } from "@/lib/supabase/storage";
+import { extractStoragePath } from "@/lib/supabase/storage-public";
 import {
   takeString,
   takeNumber,
@@ -41,6 +43,7 @@ export type StoryDetails = {
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   createdAt: string;
   updatedAt: string;
+  displayPhotos: Array<{ id: number; photoPath: string }>;
   translations: {
     en: { title: string; summary: string };
     ms: { title: string; summary: string };
@@ -106,6 +109,8 @@ export async function createStory(formData: FormData) {
   const coverPhotoFile = takeFile(formData.get("coverPhoto"));
   const coverPhotoWidth = takeNumber(formData.get("coverPhotoWidth"));
   const coverPhotoHeight = takeNumber(formData.get("coverPhotoHeight"));
+  const displayPhotoEntries = formData.getAll("displayPhotos");
+  const displayPhotoFiles = displayPhotoEntries.filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   if (!name) return { error: "Internal name is required." };
   if (!slug) return { error: "Slug is required." };
@@ -209,6 +214,18 @@ export async function createStory(formData: FormData) {
       if (!uploadedVideoPath) throw new Error("Video upload failed.");
       await db.update(events).set({ videoPath: uploadedVideoPath }).where(eq(events.id, event.id));
     }
+
+    if (displayPhotoFiles.length > 0) {
+      const supabase = createSupabaseAdminClient();
+      for (const [index, file] of displayPhotoFiles.entries()) {
+        const ext = getFileExtension(file);
+        const path = `events/${event.id}/gallery/${Date.now()}_${index}.${ext}`;
+        const photoPath = await uploadToStorage(supabase, file, path);
+        if (photoPath) {
+          await db.insert(eventDisplayPhotos).values({ eventId: event.id, photoPath });
+        }
+      }
+    }
   } catch (err) {
     console.error("createStory failed", err);
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -285,17 +302,26 @@ export async function getStoryDetails(storyId: number): Promise<{ data: StoryDet
     };
   }
 
-  // Fetch tags
-  const tagRows = await db
-    .select({
-      id: eventTags.id,
-      slug: eventTags.slug,
-      name: eventTagTranslations.name,
-    })
-    .from(eventTags)
-    .innerJoin(eventsToTags, eq(eventsToTags.tagId, eventTags.id))
-    .innerJoin(eventTagTranslations, eq(eventTagTranslations.tagId, eventTags.id))
-    .where(and(eq(eventsToTags.eventId, storyId), eq(eventTagTranslations.locale, "en")));
+  const [tagRows, displayPhotoRows] = await Promise.all([
+    db
+      .select({
+        id: eventTags.id,
+        slug: eventTags.slug,
+        name: eventTagTranslations.name,
+      })
+      .from(eventTags)
+      .innerJoin(eventsToTags, eq(eventsToTags.tagId, eventTags.id))
+      .innerJoin(eventTagTranslations, eq(eventTagTranslations.tagId, eventTags.id))
+      .where(and(eq(eventsToTags.eventId, storyId), eq(eventTagTranslations.locale, "en"))),
+    db
+      .select({
+        id: eventDisplayPhotos.id,
+        photoPath: eventDisplayPhotos.photoPath,
+      })
+      .from(eventDisplayPhotos)
+      .where(eq(eventDisplayPhotos.eventId, storyId))
+      .orderBy(eventDisplayPhotos.id),
+  ]);
 
   return {
     data: {
@@ -305,6 +331,7 @@ export async function getStoryDetails(storyId: number): Promise<{ data: StoryDet
       endDate: eventRow.endDate.toISOString(),
       createdAt: eventRow.createdAt.toISOString(),
       updatedAt: eventRow.updatedAt.toISOString(),
+      displayPhotos: displayPhotoRows,
       translations,
       tags: tagRows,
     },
@@ -320,7 +347,7 @@ export async function updateStory(storyId: number, formData: FormData) {
   }
 
   const [existing] = await db
-    .select({ id: events.id, coverPhotoPath: events.coverPhotoPath, videoPath: events.videoPath })
+    .select({ id: events.id })
     .from(events)
     .where(eq(events.id, storyId))
     .limit(1);
@@ -344,6 +371,11 @@ export async function updateStory(storyId: number, formData: FormData) {
   const coverPhoto = takeFile(formData.get("coverPhoto"));
   const coverPhotoWidth = takeNumber(formData.get("coverPhotoWidth"));
   const coverPhotoHeight = takeNumber(formData.get("coverPhotoHeight"));
+  const newDisplayPhotoEntries = formData.getAll("displayPhotos");
+  const newDisplayPhotoFiles = newDisplayPhotoEntries.filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const removeDisplayPhotoIds = Array.from(new Set(
+    formData.getAll("removeDisplayPhoto").map((value) => Number(value)).filter((id) => Number.isInteger(id) && id > 0),
+  ));
 
   if (!name) return { error: "Internal name is required." };
   if (!slug) return { error: "Slug is required." };
@@ -400,9 +432,9 @@ export async function updateStory(storyId: number, formData: FormData) {
           endDate: new Date(endDate),
           location,
           participantCount,
-          videoPath: removeVideo ? null : existing.videoPath,
           status: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
           ...(removeCover ? { coverPhotoPath: null, coverPhotoWidth: null, coverPhotoHeight: null } : {}),
+          ...(removeVideo ? { videoPath: null } : {}),
         })
         .where(eq(events.id, storyId));
 
@@ -433,6 +465,30 @@ export async function updateStory(storyId: number, formData: FormData) {
         await tx.insert(eventsToTags).values(tagValues);
       }
 
+      if (removeDisplayPhotoIds.length > 0) {
+        const rowsToDelete = await tx
+          .select({ id: eventDisplayPhotos.id, photoPath: eventDisplayPhotos.photoPath })
+          .from(eventDisplayPhotos)
+          .where(eq(eventDisplayPhotos.eventId, storyId));
+
+        const idsToDelete = new Set(removeDisplayPhotoIds);
+        for (const row of rowsToDelete) {
+          if (idsToDelete.has(row.id)) {
+            const storagePath = extractStoragePath(row.photoPath);
+            if (storagePath) {
+              const supabase = createSupabaseAdminClient();
+              await deleteFromStorage(supabase, storagePath);
+            }
+          }
+        }
+
+        await tx.delete(eventDisplayPhotos).where(eq(eventDisplayPhotos.eventId, storyId));
+        const remaining = rowsToDelete.filter((row) => !idsToDelete.has(row.id));
+        if (remaining.length > 0) {
+          await tx.insert(eventDisplayPhotos).values(remaining.map((row) => ({ eventId: storyId, photoPath: row.photoPath })));
+        }
+      }
+
       // Upload new cover photo if provided
       if (coverPhoto) {
         const ext = getFileExtension(coverPhoto);
@@ -451,6 +507,20 @@ export async function updateStory(storyId: number, formData: FormData) {
         const uploadedVideoPath = await uploadToStorage(supabase, videoFile, path, videoFile.type);
         if (!uploadedVideoPath) throw new Error("Video upload failed.");
         await tx.update(events).set({ videoPath: uploadedVideoPath }).where(eq(events.id, storyId));
+      }
+
+      if (newDisplayPhotoFiles.length > 0) {
+        const supabase = createSupabaseAdminClient();
+        const rows = await tx.select({ id: eventDisplayPhotos.id }).from(eventDisplayPhotos).where(eq(eventDisplayPhotos.eventId, storyId));
+        const startIndex = rows.length;
+        for (const [index, file] of newDisplayPhotoFiles.entries()) {
+          const ext = getFileExtension(file);
+          const path = `events/${storyId}/gallery/${Date.now()}_${startIndex + index}.${ext}`;
+          const photoPath = await uploadToStorage(supabase, file, path);
+          if (photoPath) {
+            await tx.insert(eventDisplayPhotos).values({ eventId: storyId, photoPath });
+          }
+        }
       }
     });
   } catch (err) {

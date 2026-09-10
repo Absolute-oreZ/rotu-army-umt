@@ -70,16 +70,16 @@ export function MultiFileField({
           className="group relative w-full overflow-hidden rounded-xl border border-dashed border-border bg-background text-left transition-colors hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),transparent_35%,rgba(255,255,255,0.02))] opacity-0 transition-opacity group-hover:opacity-100">
-            <div className="relative flex items-center gap-4 px-4 py-4 sm:px-5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/60 text-muted-foreground shadow-sm transition-colors group-hover:text-primary">
-                <UploadIcon className="size-5" />
+          </div>
+          <div className="relative flex items-center gap-4 px-4 py-4 sm:px-5">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/60 text-muted-foreground shadow-sm transition-colors group-hover:text-primary">
+              <UploadIcon className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">{addLabel}</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">{addLabel}</span>
-                </div>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{helperText}</p>
-              </div>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{helperText}</p>
             </div>
           </div>
         </button>

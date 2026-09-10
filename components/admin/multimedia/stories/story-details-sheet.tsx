@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { format } from "date-fns";
 import { PencilIcon, Loader2Icon, AlertCircleIcon, TagIcon } from "lucide-react";
 import {
@@ -23,6 +23,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { SingleFileField } from "@/components/ui/single-file-field";
+import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
 import { storageUrl } from "@/lib/supabase/storage-public";
 import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
 import {
@@ -245,6 +246,29 @@ function ViewMode({ details, onEdit }: { details: StoryDetails; onEdit: () => vo
 
           <section className="flex flex-col gap-3">
             <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Display Photos
+            </h3>
+            {d.displayPhotos.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {d.displayPhotos.map((photo) => (
+                  <div key={photo.id} className="overflow-hidden rounded-lg border border-border bg-muted">
+                    <Image
+                      src={storageUrl(photo.photoPath)}
+                      alt="Story display photo"
+                      width={240}
+                      height={180}
+                      className="h-28 w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">No display photos uploaded.</span>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Tags
             </h3>
             {d.tags.length > 0 ? (
@@ -310,6 +334,22 @@ function EditMode({
   const [videoPreview, setVideoPreview] = useState<string | null>(() =>
     details.videoPath ? storageUrl(details.videoPath) : null,
   );
+  const [displayFiles, setDisplayFiles] = useState<File[]>([]);
+  const [removeDisplayPhotoIds, setRemoveDisplayPhotoIds] = useState<number[]>([]);
+  const displayFileItems = useMemo<MultiFileFieldItem[]>(
+    () => displayFiles.map((file, index) => ({
+      id: `${file.name}-${file.lastModified}-${index}`,
+      file,
+      url: URL.createObjectURL(file),
+    })),
+    [displayFiles],
+  );
+
+  useEffect(() => {
+    return () => {
+      displayFileItems.forEach((item) => URL.revokeObjectURL(item.url));
+    };
+  }, [displayFileItems]);
 
   useEffect(() => {
     return () => {
@@ -364,6 +404,8 @@ function EditMode({
     }
     if (removeVideo) fd.set("removeVideo", "true");
     if (videoFile) fd.set("video", videoFile);
+    displayFiles.forEach((photo) => fd.append("displayPhotos", photo));
+    removeDisplayPhotoIds.forEach((id) => fd.append("removeDisplayPhoto", String(id)));
 
     startTransition(async () => {
       const result = await updateStory(details.id, fd);
@@ -537,6 +579,72 @@ function EditMode({
                 JPG, PNG, or WebP. Max 5 MB. Leave empty to keep current.
               </p>
             </Field>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="mb-4 text-lg font-semibold">Display Photos</h3>
+            <div className="space-y-4">
+              <MultiFileField
+                label="Add New Display Photos"
+                items={displayFileItems}
+                onAddFiles={(files) => {
+                  const valid = files.filter((file) => file.size <= 5 * 1024 * 1024 && !!getAllowedImageExtension(file));
+                  if (files.length !== valid.length) {
+                    setError("Display photos must be JPG, PNG, or WebP images under 5 MB each.");
+                    return;
+                  }
+                  setDisplayFiles((current) => [...current, ...valid]);
+                  setError(null);
+                }}
+                onReplaceFile={(id, file) => {
+                  if (!file) return;
+                  if (file.size > 5 * 1024 * 1024 || !getAllowedImageExtension(file)) {
+                    setError("Display photos must be JPG, PNG, or WebP images under 5 MB each.");
+                    return;
+                  }
+                  setDisplayFiles((current) => current.map((currentFile, index) =>
+                    `${currentFile.name}-${currentFile.lastModified}-${index}` === id ? file : currentFile,
+                  ));
+                  setError(null);
+                }}
+                onRemoveFile={(id) => {
+                  setDisplayFiles((current) => current.filter((file, index) =>
+                    `${file.name}-${file.lastModified}-${index}` !== id,
+                  ));
+                }}
+                helperText="JPG, PNG, or WebP. Max 5 MB each."
+                addLabel="Add display photos"
+              />
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {details.displayPhotos.map((photo) => {
+                  const isMarkedForRemoval = removeDisplayPhotoIds.includes(photo.id);
+                  return (
+                    <div key={photo.id} className={`relative overflow-hidden rounded-lg border ${isMarkedForRemoval ? "border-red-400 opacity-40" : "border-border"}`}>
+                      <Image
+                        src={storageUrl(photo.photoPath)}
+                        alt="Story display photo"
+                        width={240}
+                        height={180}
+                        className="h-28 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRemoveDisplayPhotoIds((current) =>
+                            current.includes(photo.id) ? current.filter((id) => id !== photo.id) : [...current, photo.id],
+                          );
+                        }}
+                        className="absolute right-2 top-2 rounded-full bg-black/60 px-1.5 py-1 text-[10px] text-white"
+                      >
+                        {isMarkedForRemoval ? "Restore" : "Remove"}
+                      </button>
+                    </div>
+                  );
+                })}
+
+              </div>
+            </div>
           </div>
 
           <div className="border-t pt-4">

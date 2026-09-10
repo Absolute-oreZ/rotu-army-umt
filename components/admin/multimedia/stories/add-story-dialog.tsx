@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useMemo, useState, useTransition, useEffect } from "react";
 import { AlertCircleIcon, Loader2Icon } from "lucide-react";
 import {
   Dialog,
@@ -20,9 +20,10 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { SingleFileField } from "@/components/ui/single-file-field";
+import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
 import { createStory } from "@/app/admin/multimedia/stories/actions";
 import { slugify } from "@/lib/slugify";
-import { digitsOnly } from "@/lib/admin/form-helpers";
+import { digitsOnly, getAllowedImageExtension } from "@/lib/admin/form-helpers";
 import { Field } from "@/components/ui/field";
 import { Stepper } from "@/components/ui/stepper";
 import { locales } from "@/lib/i18n/config";
@@ -38,7 +39,7 @@ type StoryDialogProps = {
 function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
-    const image = new Image();
+    const image = new window.Image();
     image.onload = () => {
       URL.revokeObjectURL(url);
       resolve({ width: image.naturalWidth, height: image.naturalHeight });
@@ -65,6 +66,23 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
   const [coverPhotoWidth, setCoverPhotoWidth] = useState<number | null>(null);
   const [coverPhotoHeight, setCoverPhotoHeight] = useState<number | null>(null);
   const [coverPhotoPreview, setCoverPhotoPreview] = useState<string | null>(null);
+
+  // Display photo state
+  const [displayPhotos, setDisplayPhotos] = useState<File[]>([]);
+  const displayPhotoItems = useMemo<MultiFileFieldItem[]>(
+    () => displayPhotos.map((file, index) => ({
+      id: `${file.name}-${file.lastModified}-${index}`,
+      file,
+      url: URL.createObjectURL(file),
+    })),
+    [displayPhotos],
+  );
+
+  useEffect(() => {
+    return () => {
+      displayPhotoItems.forEach((item) => URL.revokeObjectURL(item.url));
+    };
+  }, [displayPhotoItems]);
 
   useEffect(() => {
     return () => {
@@ -195,6 +213,7 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
     setCoverPhotoWidth(null);
     setCoverPhotoHeight(null);
     setCoverPhotoPreview(null);
+    setDisplayPhotos([]);
     setError(null);
     setCurrentStep(0);
   }
@@ -277,6 +296,7 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
       fd.set("coverPhotoHeight", String(coverPhotoHeight));
     }
     if (videoFile) fd.set("video", videoFile);
+    displayPhotos.forEach((photo) => fd.append("displayPhotos", photo));
     fd.set("translations", JSON.stringify(formData.translations));
     fd.set("tagIds", JSON.stringify(formData.tagIds));
 
@@ -428,6 +448,38 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
                     </div>
                   </div>
                 </Field>
+
+                <MultiFileField
+                  label="Display Photos"
+                  items={displayPhotoItems}
+                  onAddFiles={(files) => {
+                    const valid = files.filter((file) => file.size <= 5 * 1024 * 1024 && !!getAllowedImageExtension(file));
+                    if (files.length !== valid.length) {
+                      setError("Display photos must be JPG, PNG, or WebP images under 5 MB each.");
+                      return;
+                    }
+                    setDisplayPhotos((current) => [...current, ...valid]);
+                    setError(null);
+                  }}
+                  onReplaceFile={(id, file) => {
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024 || !getAllowedImageExtension(file)) {
+                      setError("Display photos must be JPG, PNG, or WebP images under 5 MB each.");
+                      return;
+                    }
+                    setDisplayPhotos((current) => current.map((currentFile, index) =>
+                      `${currentFile.name}-${currentFile.lastModified}-${index}` === id ? file : currentFile,
+                    ));
+                    setError(null);
+                  }}
+                  onRemoveFile={(id) => {
+                    setDisplayPhotos((current) => current.filter((file, index) =>
+                      `${file.name}-${file.lastModified}-${index}` !== id,
+                    ));
+                  }}
+                  helperText="JPG, PNG, or WebP. Max 5 MB each."
+                  addLabel="Add display photos"
+                />
               </div>
             )}
 
