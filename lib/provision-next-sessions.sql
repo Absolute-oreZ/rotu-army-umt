@@ -42,6 +42,59 @@ begin
 end;
 $$;
 
+-- Function to populate academic_results and academic_timetables for eligible active cadets
+create or replace function public.provision_session_cadet_records(p_session_id int)
+returns void language plpgsql as $$
+declare
+  v_intake_id int;
+  v_intake_start_year int;
+  v_calendar_year int;
+begin
+  select ay.intake_id, i.start_year, ay.calendar_year
+  into v_intake_id, v_intake_start_year, v_calendar_year
+  from sessions s
+  join academic_years ay on ay.id = s.academic_year_id
+  join intakes i on i.id = ay.intake_id
+  where s.id = p_session_id;
+
+  if v_intake_id is null then
+    return;
+  end if;
+
+  insert into academic_results (session_id, cadet_id)
+  select p_session_id, c.id
+  from cadets c
+  left join study_programs sp on sp.id = c.study_program_id
+  where c.intake_id = v_intake_id
+    and c.is_active = true
+    and (v_calendar_year - v_intake_start_year + 1) <= coalesce(sp.completion_year, 3)
+  on conflict (session_id, cadet_id) do nothing;
+
+  insert into academic_timetables (session_id, cadet_id, occupied_slots)
+  select p_session_id, c.id, '[]'::jsonb
+  from cadets c
+  left join study_programs sp on sp.id = c.study_program_id
+  where c.intake_id = v_intake_id
+    and c.is_active = true
+    and (v_calendar_year - v_intake_start_year + 1) <= coalesce(sp.completion_year, 3)
+  on conflict (session_id, cadet_id) do nothing;
+end;
+$$;
+
+-- Trigger to auto-provision cadet records whenever a session is created
+create or replace function public.trg_auto_provision_session_cadet_records()
+returns trigger language plpgsql as $$
+begin
+  perform public.provision_session_cadet_records(new.id);
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sessions_auto_provision on public.sessions;
+create trigger trg_sessions_auto_provision
+after insert on public.sessions
+for each row execute function public.trg_auto_provision_session_cadet_records();
+
 -- Schedule: run at midnight on Oct 1 and Apr 1 every year
 select cron.schedule('provision-oct-session', '0 0 1 10 *', 'select public.provision_next_sessions()');
 select cron.schedule('provision-apr-session', '0 0 1 4 *',  'select public.provision_next_sessions()');

@@ -91,6 +91,7 @@ export function SingleFileField({
                   src={previewUrl}
                   alt={file?.name ?? "Selected file"}
                   fill
+                  sizes="(min-width: 640px) 448px, calc(100vw - 4rem)"
                   unoptimized
                   className="object-cover"
                 />

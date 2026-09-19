@@ -167,6 +167,7 @@ function ViewMode({ details, onEdit }: { details: ExpenseDetails; onEdit: () => 
                           src={url}
                           alt=""
                           fill
+                          sizes="(min-width: 1024px) 130px, (min-width: 640px) 190px, calc(100vw - 6rem)"
                           className="object-cover"
                         />
                       ) : (
@@ -343,6 +344,7 @@ function EditMode({
                             src={url}
                             alt=""
                             fill
+                            sizes="(min-width: 1024px) 130px, (min-width: 640px) 190px, calc(100vw - 6rem)"
                             className="object-cover"
                           />
                         ) : (

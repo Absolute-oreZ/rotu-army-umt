@@ -162,7 +162,7 @@ export function ReligiousActivitiesTableRow({
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="hover:text-sky-600"
+                  className="hover:text-emerald-600"
                   onClick={() => onViewPhotos(activity)}
                   disabled={editDisabled}
                   aria-label={`View photos for ${activity.title}`}

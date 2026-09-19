@@ -109,6 +109,7 @@ export function ClaimDetailSheet({
                               src={url}
                               alt="Receipt"
                               fill
+                              sizes="(min-width: 640px) 400px, calc(100vw - 4rem)"
                               className="object-cover"
                             />
                           ) : null;
@@ -139,6 +140,7 @@ export function ClaimDetailSheet({
                             src={url}
                             alt="Bank QR code"
                             fill
+                            sizes="(min-width: 640px) 400px, calc(100vw - 4rem)"
                             className="object-cover"
                           />
                         ) : null;

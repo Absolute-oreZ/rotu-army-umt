@@ -39,6 +39,20 @@ export type RawSearchParams = Record<string, string | string[] | undefined>;
 
 export const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 
+export const CADET_RANK_FILTER_OPTIONS: FilterColumn = {
+  key: "rank",
+  label: "Rank",
+  type: "enum",
+  options: [
+    { value: "SENIOR_UNDER_OFFICER", label: "SENIOR UNDER OFFICER" },
+    { value: "JUNIOR_UNDER_OFFICER", label: "JUNIOR UNDER OFFICER" },
+    { value: "SERGEANT_CADET", label: "SERGEANT CADET" },
+    { value: "KOPERAL_CADET", label: "KOPERAL CADET" },
+    { value: "PK", label: "PK" },
+    { value: "PKW", label: "PKW" },
+  ],
+};
+
 const DEFAULT_OPS: Record<FilterColumn["type"], string> = {
   enum: "in",
   number: "eq",
@@ -58,6 +72,13 @@ const VALID_OPS: Record<FilterColumn["type"], string[]> = {
 export function takeString(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
+}
+
+export function takePositiveInt(value: string | string[] | undefined): number | null {
+  const str = takeString(value);
+  if (!str) return null;
+  const num = Number(str);
+  return Number.isInteger(num) && num > 0 ? num : null;
 }
 
 function takeAll(value: string | string[] | undefined): string[] {

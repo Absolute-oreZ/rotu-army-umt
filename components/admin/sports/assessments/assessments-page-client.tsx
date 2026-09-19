@@ -3,12 +3,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardCheckIcon } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { Empty } from "@/components/ui/empty";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
@@ -17,6 +11,7 @@ import type { AssessmentStandard } from "@/lib/assessment/types";
 import { AssessmentsTable, type AssessmentRow } from "./assessments-table";
 import { EditAssessmentDialog } from "./edit-assessment-dialog";
 import { buildAssessmentsTableConfig } from "./table-config";
+import { SearchableSelect } from "@/components/admin/academic/shared/searchable-select";
 
 export type AssessmentRecordOption = {
   key: string;
@@ -68,7 +63,6 @@ export function AssessmentsPageClient({
   const [editTarget, setEditTarget] = useState<AssessmentRow | null>(null);
   const [pendingRecordId, setPendingRecordId] = useState<string | null>(null);
 
-  const selectedRecord = records.find((r) => r.key === recordKey) ?? null;
   const hasUnsavedEdit = editingCadetId !== null || editTarget !== null;
 
   const navigateToRecord = useCallback(
@@ -110,24 +104,18 @@ export function AssessmentsPageClient({
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="w-72">
-          <Select
-            value={recordKey ?? ""}
-            onValueChange={requestRecordNavigation}
-          >
-            <SelectTrigger>
-              {selectedRecord?.label ?? "Select record"}
-            </SelectTrigger>
-            <SelectContent>
-              {records.map((r) => (
-                <SelectItem key={r.key} value={r.key}>
-                  {r.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+              <div className="w-72">
+                <SearchableSelect
+                  value={recordKey ?? ""}
+                  options={records.map((r) => ({ value: r.key, label: r.label }))}
+                  onChange={requestRecordNavigation}
+                  placeholder="Select record…"
+                  searchPlaceholder="Search record…"
+                  emptyLabel="No records found"
+                  ariaLabel="Select assessment record"
+                />
+              </div>
+            </div>
 
       {records.length === 0 ? (
         <Empty

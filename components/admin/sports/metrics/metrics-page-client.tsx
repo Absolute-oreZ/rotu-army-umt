@@ -3,12 +3,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HeartPulseIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Empty } from "@/components/ui/empty";
@@ -20,6 +14,7 @@ import { CreateRecordDialog } from "./create-record-dialog";
 import { EditMetricDialog } from "./edit-metric-dialog";
 import { DeleteRecordDialog } from "./delete-record-dialog";
 import { buildMetricsTableConfig } from "./table-config";
+import { SearchableSelect } from "@/components/admin/academic/shared/searchable-select";
 
 export type RecordOption = {
   id: number;
@@ -121,23 +116,17 @@ export function MetricsPageClient({
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="w-64">
-          <Select
-            value={recordId !== null ? String(recordId) : ""}
-            onValueChange={requestRecordNavigation}
-          >
-            <SelectTrigger>
-              {selectedRecord?.label ?? "Select record"}
-            </SelectTrigger>
-            <SelectContent>
-              {records.map((r) => (
-                <SelectItem key={r.id} value={String(r.id)}>
-                  {r.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <div className="w-64">
+                <SearchableSelect
+                  value={recordId !== null ? String(recordId) : ""}
+                  options={records.map((r) => ({ value: String(r.id), label: r.label }))}
+                  onChange={requestRecordNavigation}
+                  placeholder="Select record…"
+                  searchPlaceholder="Search record…"
+                  emptyLabel="No records found"
+                  ariaLabel="Select health record"
+                />
+              </div>
 
         {selectedRecord && (
           <Tooltip>

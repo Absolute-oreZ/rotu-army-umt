@@ -2,16 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { CreditCardIcon } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
 import { PaymentsTable, type Payment } from "@/components/admin/treasurer/payments/payments-table";
 import { ReceiptPreviewDialog } from "@/components/admin/treasurer/payments/receipt-preview-dialog";
+import { SearchableSelect } from "@/components/admin/academic/shared/searchable-select";
 
 type Collection = {
   id: number;
@@ -65,25 +60,17 @@ export function PaymentsPageClient({
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
-        <div className="w-64">
-          <Select
-            value={collectionId !== null ? String(collectionId) : ""}
-            onValueChange={handleCollectionChange}
-          >
-            <SelectTrigger>
-              {collectionId !== null
-                ? collections.find((c) => c.id === collectionId)?.title ?? "Select collection"
-                : "Select collection"}
-            </SelectTrigger>
-            <SelectContent>
-              {collections.map((c) => (
-                <SelectItem key={c.id} value={String(c.id)}>
-                  {c.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <div className="w-64">
+                <SearchableSelect
+                  value={collectionId !== null ? String(collectionId) : ""}
+                  options={collections.map((c) => ({ value: String(c.id), label: c.title }))}
+                  onChange={handleCollectionChange}
+                  placeholder="Select collection…"
+                  searchPlaceholder="Search collection…"
+                  emptyLabel="No collections found"
+                  ariaLabel="Select collection"
+                />
+              </div>
 
         {summary && (
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">

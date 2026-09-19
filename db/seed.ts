@@ -133,6 +133,8 @@ async function seed() {
       newsletter_campaign_attachments,
       newsletter_campaign_translations,
       newsletter_campaigns,
+      academic_results,
+      academic_timetables,
       academic_exam_results,
       exams,
       cadet_accounts,
@@ -148,8 +150,8 @@ async function seed() {
 
   for (const program of DEFAULT_STUDY_PROGRAMS) {
     const [row] = await sql<[{ id: number }]>`
-      insert into study_programs (slug, name, is_active)
-      values (${program.slug}, ${program.name}, true)
+      insert into study_programs (slug, name, completion_year, is_supported)
+      values (${program.slug}, ${program.name}, ${program.completionYear}, ${program.isSupported})
       returning id
     `;
 
@@ -1091,6 +1093,80 @@ async function seed() {
     }
   }
 
+  const allSessions = await sql<
+    Array<{
+      sessionId: number;
+      intakeId: number;
+      startYear: number;
+      calendarYear: number;
+      sessionNumber: number;
+    }>
+  >`
+    select
+      s.id as "sessionId",
+      ay.intake_id as "intakeId",
+      i.start_year as "startYear",
+      ay.calendar_year as "calendarYear",
+      s.session_number as "sessionNumber"
+    from sessions s
+    join academic_years ay on ay.id = s.academic_year_id
+    join intakes i on i.id = ay.intake_id
+    order by ay.calendar_year, s.session_number
+  `;
+
+  const allCadets = await sql<
+    Array<{
+      id: number;
+      intakeId: number;
+      cgpa: string | null;
+      completionYear: number;
+    }>
+  >`
+    select
+      c.id,
+      c.intake_id as "intakeId",
+      c.cgpa,
+      coalesce(sp.completion_year, 3) as "completionYear"
+    from cadets c
+    left join study_programs sp on sp.id = c.study_program_id
+    where c.is_active = true
+  `;
+
+  const sampleSlotsPool = [
+    ["SUN_0800", "SUN_0830", "SUN_0900", "MON_1000", "MON_1030", "WED_1400", "WED_1430", "WED_1500"],
+    ["SUN_1000", "SUN_1030", "TUE_0830", "TUE_0900", "TUE_0930", "THU_1400", "THU_1430"],
+    ["MON_0800", "MON_0830", "MON_0900", "TUE_1000", "TUE_1030", "WED_1100", "WED_1130"],
+    ["SUN_1400", "SUN_1430", "SUN_1500", "TUE_1400", "TUE_1430", "THU_0900", "THU_0930", "THU_1000"],
+    ["MON_1400", "MON_1430", "WED_0830", "WED_0900", "THU_1030", "THU_1100", "THU_1130"],
+  ];
+
+  for (const session of allSessions) {
+    const elapsedYears = session.calendarYear - session.startYear + 1;
+    const eligibleCadets = allCadets.filter(
+      (c) => c.intakeId === session.intakeId && elapsedYears <= c.completionYear
+    );
+
+    for (let cIdx = 0; cIdx < eligibleCadets.length; cIdx++) {
+      const cadet = eligibleCadets[cIdx];
+      const baseCgpa = cadet.cgpa ? parseFloat(cadet.cgpa) : 3.25;
+      const gpaVariation = ((cIdx % 5) - 2) * 0.12;
+      const gpa = Math.min(4.0, Math.max(2.1, parseFloat((baseCgpa + gpaVariation).toFixed(2))));
+      const currentCgpa = parseFloat(((baseCgpa + gpa) / 2).toFixed(2));
+      const slots = sampleSlotsPool[cIdx % sampleSlotsPool.length];
+
+      await sql`
+        insert into academic_results (session_id, cadet_id, gpa, cgpa)
+        values (${session.sessionId}, ${cadet.id}, ${gpa}, ${currentCgpa})
+        on conflict (session_id, cadet_id) do nothing
+      `;
+
+      await sql`
+        insert into academic_timetables (session_id, cadet_id, occupied_slots)
+        values (${session.sessionId}, ${cadet.id}, ${JSON.stringify(slots)}::jsonb)
+        on conflict (session_id, cadet_id) do nothing
+      `;
+    }
+  }
 }
 
 seed()

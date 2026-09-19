@@ -41,6 +41,7 @@ export type AdminModule =
   | "attend"
   | "accommodations"
   | "religion"
+  | "courses"
   | "results"
   | "timetables";
 
@@ -75,7 +76,7 @@ const roleModules = {
   MULTIMEDIA: ["portfolio", "stories", "newsletters"],
   SPORTS: ["metrics", "uka", "apfa", "assessments"],
   WELFARE: ["attend", "accommodations", "religion"],
-  ACADEMIC: ["results", "timetables"],
+  ACADEMIC: ["courses", "results", "timetables"],
 } satisfies Record<AdminRole, AdminModule[]>;
 
 export const ROLE_MODULES: Record<AdminRole, AdminModule[]> = roleModules;

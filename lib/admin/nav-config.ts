@@ -216,6 +216,12 @@ const NAV_GROUPS: NavGroupDefinition[] = [
     icon: GraduationCapIcon,
     items: [
       {
+        title: "Courses",
+        href: "/admin/academic/courses",
+        icon: BookOpenIcon,
+        module: "courses",
+      },
+      {
         title: "Results",
         href: "/admin/academic/results",
         icon: GraduationCapIcon,

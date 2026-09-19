@@ -73,7 +73,7 @@ export function JoinTheRanks({ title, intro, steps }: JoinTheRanksProps) {
                       style={{ backgroundColor: color }}
                     />
                     <div className="relative mx-auto aspect-4/3 w-full max-w-sm">
-                      <Image src={image} alt={`Join the ranks step ${idx + 1}`} fill className="object-contain" />
+                      <Image src={image} alt={`Join the ranks step ${idx + 1}`} fill sizes="(min-width: 640px) 384px, calc(100vw - 2rem)" className="object-contain" />
                     </div>
                   </div>
                 </article>

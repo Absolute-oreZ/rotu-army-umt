@@ -88,14 +88,14 @@ A shared component system for admin list/table pages with server-side filtering,
 - `FilterPill` — removable badge showing active filter with operator and values.
 - `SortControl` — popover for managing multi-column sort rules with drag-reorder.
 - `SortableHead` — table header cell with click-to-sort, direction indicator, and priority number.
-- `CopyableColumn` — table value cell with click-to-copy
+- `CopyableValue` — inline value cell with hover-revealed click-to-copy button.
 - `Pagination` — page size selector and prev/next navigation.
 
 **Config pattern**: Each table page defines a `buildXTableConfig(options?)` function returning a `TableConfig` with defaults, sort keys, filter columns, page size options, and optional prefix. A companion `X_SORT_FIELD_MAP` maps sort keys to Drizzle column references. Tables may declare an optional `editMode` (`DIALOG` | `SHEET` | `INLINE`): `INLINE` tables render single-row inline editing on desktop (dialog fallback on mobile) and wrap every table-state change in an unsaved-changes confirmation while a row edit is active.
 
 **Data flow**: Server page reads `searchParams` → `parseTableSearchParams` → SQL WHERE/ORDER BY/LIMIT/OFFSET → passes rows + `RawSearchParams` + `totalCount` to client. Client uses `useTableURL` for URL-driven state and shared components for UI.
 
-**Usage**: Secretary rank-holders (admin users + audit log tabs), Secretary cadets, Treasurer accounts, Treasurer collections, Treasurer payments, Sports metrics, Sports assessment records, Sports assessments (UKA/APFA result entry).
+**Usage**: Secretary rank-holders (admin users + audit log tabs), Secretary cadets, Treasurer accounts, Treasurer collections, Treasurer payments, Sports metrics, Sports assessment records, Sports assessments (UKA/APFA result entry), Academic courses (cadet courses + course management tabs), Academic results.
 
 ### 3.6 Admin Module Component Structure Convention
 Admin list/entity pages must be split into small, single-purpose components under `components/admin/<module>/`. **Never** place a monolithic `client.tsx` directly under `app/admin/<role>/<page>/` — the server `page.tsx` is the only file that belongs there.
@@ -215,6 +215,20 @@ Helper functions are organized by domain. **Always check here before writing inl
 **`lib/welfare/religious-activity-types.ts`** — Server-only Religious Activities type options:
 - `getReligiousActivityTypes()` — reads `WELFARE_REGLIGIOUS_ACTIVITIES_TYPES` (comma-separated, uppercased) with fallback `YASIN, TAHLIL`.
 
+**`lib/academic/helpers.ts`** — Academic module helpers (framework-agnostic, importable by client components):
+- `calculateCadetCurrentYear(intakeStartYear, asOf?)` — cadet's current academic year with the October 1 academic-year boundary.
+- `formatCadetYearRatio(currentYear, completionYear)` — progress ratio string (`2/3`).
+- `isCadetCourseCompleted(currentYear, completionYear)` — true when `currentYear > completionYear`.
+- `formatAcademicSessionTitle(intakeNo, calendarYear, sessionNumber)` — session label `[intakeNo]-[calendarYear]-[sessionNumber]` (e.g. `2/44-2026-1`).
+- `getGpaTier(score)` / `GPA_TIER_CLASSES` — GPA/CGPA color tiers (danger ≤ 2.50, success ≤ 3.00, warning ≤ 3.50, primary > 3.50, muted for null).
+- `TIMETABLE_DAYS` / `TIMETABLE_SLOT_TIMES` / `LUNCH_BREAK_SLOTS` / `isLunchBreakSlot(time)` — UMT schedule grid (Sunday–Thursday, 8:00 AM–6:00 PM, locked 1:00–2:00 PM lunch).
+- `makeSlotKey(day, time)` / `parseSlotKey(slotKey)` — slot key serialization (`SUN_0800`).
+- `formatSlotTime(time)` / `formatSlotRange(startTime, durationUnits)` — 12-hour slot label helpers.
+- `isAcademicManualProvisionEnabled()` — reads `ACADEMIC_MANUAL_PROVISION` (default false).
+
+**`lib/academic/sync.ts`** — Server-only on-demand provisioning sync:
+- `ensureCadetSessionRecords(sessionId)` — idempotently inserts missing `academic_results` / `academic_timetables` rows (`ON CONFLICT DO NOTHING`) for active, uncompleted cadets of the session's intake. Called when the Results or Timetables page opens and by `provisionSessionAction`.
+
 **`lib/admin/roles.ts`** — Role definitions:
 - `ADMIN_ROLES` array and `AdminRole` union type.
 - `FULL_ACCESS_ADMIN_ROLES` — `["OFFICER", "INSTRUCTOR"]`.
@@ -303,8 +317,9 @@ Current implemented routes:
 - `/admin/welfare/attend` (Welfare: cadet attend records)
 - `/admin/welfare/accommodations` (Welfare: cadet accommodation records, gender-scoped for intake admins)
 - `/admin/welfare/religious-activities` (Welfare: religious activities records with display photos)
-- `/admin/academic/results` (Academic: results)
-- `/admin/academic/timetables` (Academic: timetables)
+- `/admin/academic/courses` (Academic: cadet course assignments + course/program management)
+- `/admin/academic/results` (Academic: per-session cadet GPA/CGPA results with result slips)
+- `/admin/academic/timetables` (Academic: per-cadet session timetables with slot editor and PDF)
 - `/auth/callback` (OAuth code exchange)
 
 ### 4.3 Cadet Routes (Non-localized, Auth-Guarded)
@@ -396,9 +411,12 @@ Primary schema domains in `db/schema.ts`:
 - Public intakes and translations:
   - `intakes`, `intake_translations`, `intake_patch_explanations`, `intake_patch_explanation_translations`, `intake_display_photos`.
 - Academic structure:
-  - `academic_years`, `sessions`, `exams`, `academic_exam_results`.
+  - `academic_years` (per intake, year number + calendar year), `sessions` (per academic year, session number), `exams`, `academic_exam_results`.
+  - `academic_results` (per session+cadet: GPA, CGPA, result slip path; unique per session+cadet). Saving scores syncs `cadets.cgpa`.
+  - `academic_timetables` (per session+cadet: `occupied_slots` jsonb string array of slot keys like `SUN_0800`, timetable PDF path; unique per session+cadet). Lunch slots (`1300`, `1330`) are never occupied.
+  - Session provisioning: `public.provision_next_sessions()` (pg_cron Oct 1 / Apr 1), an after-insert trigger on `sessions`, the seed script, and `ensureCadetSessionRecords()` all insert initial result/timetable rows for active cadets whose `calendarYear - intakeStartYear + 1 <= completionYear`.
 - Members and cadet data:
-  - `members` (with birthdate, age, kor/regiment fields), `cadets` (with physical metrics: height, weight, BMI, CGPA), `study_programs`, `officers_and_instructors`.
+  - `members` (with birthdate, age, kor/regiment fields), `cadets` (with physical metrics: height, weight, BMI, CGPA), `study_programs` (with `completion_year` default 3 and `is_supported` flag; `is_active` removed), `officers_and_instructors`.
   - `platoons` (normalized platoon entity) with nullable `cadets.platoon_id` assignment.
   - Secretary module operates exclusively on cadets; rank-holders filters admin users to cadets only.
 - Newsletter:
@@ -518,7 +536,8 @@ Based on `TASKS.md` and codebase review:
 - Treasurer lifecycle cleanup: treasury accounts deleted when role changes away from Treasurer.
 - Sports Metrics module: health record sessions with per-cadet metrics (age at record date, height, weight, BMI + classification), intake-scoped, record selector above the table (Officer/Instructor select intake; Sport role scope inferred).
 - Sports assessments: UKA/APFA record lists with auto session numbering (`UKA-1-2026`), combined Assessments entry page with inline per-cadet result editing (desktop) and dialog fallback (mobile), gender-based env thresholds with defaults, and per-item/overall pass evaluation stored at write time.
-- Placeholder pages for remaining admin modules across other role groups.
+- Academic modules: Courses (cadet course assignment tab + course/program management tab with enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 30-minute slot editor with locked lunch break, drag-range selection, timetable PDFs), intake-scoped record selection with `ACADEMIC_MANUAL_PROVISION` provisioning dialog.
+- Placeholder pages for remaining admin modules across other role groups (Academic placeholders replaced by real modules).
 
 ### Pending
 - Public SEO completeness: per-page canonical/hreflang audit.

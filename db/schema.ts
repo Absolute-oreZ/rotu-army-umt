@@ -6,6 +6,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -407,13 +408,14 @@ export const studyPrograms = pgTable(
     id: serial("id").primaryKey(),
     slug: varchar("slug", { length: 220 }).notNull(),
     name: varchar("name", { length: 220 }).notNull(),
-    isActive: boolean("is_active").default(true).notNull(),
+    completionYear: integer("completion_year").default(3).notNull(),
+    isSupported: boolean("is_supported").default(true).notNull(),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("study_programs_slug_idx").on(table.slug),
     uniqueIndex("study_programs_name_idx").on(table.name),
-    index("study_programs_is_active_idx").on(table.isActive),
+    index("study_programs_is_supported_idx").on(table.isSupported),
   ],
 );
 
@@ -510,6 +512,55 @@ export const academicExamResults = pgTable(
       table.cadetId,
     ),
     index("academic_exam_results_cadet_id_idx").on(table.cadetId),
+  ],
+);
+
+export const academicResults = pgTable(
+  "academic_results",
+  {
+    id: serial("id").primaryKey(),
+    sessionId: integer("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    gpa: numeric("gpa", { precision: 3, scale: 2 }),
+    cgpa: numeric("cgpa", { precision: 3, scale: 2 }),
+    resultSlipPath: text("result_slip_path"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("academic_results_session_cadet_idx").on(
+      table.sessionId,
+      table.cadetId,
+    ),
+    index("academic_results_session_id_idx").on(table.sessionId),
+    index("academic_results_cadet_id_idx").on(table.cadetId),
+  ],
+);
+
+export const academicTimetables = pgTable(
+  "academic_timetables",
+  {
+    id: serial("id").primaryKey(),
+    sessionId: integer("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    cadetId: integer("cadet_id")
+      .notNull()
+      .references(() => cadets.id, { onDelete: "cascade" }),
+    occupiedSlots: jsonb("occupied_slots").$type<string[]>().default([]).notNull(),
+    timetablePdfPath: text("timetable_pdf_path"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("academic_timetables_session_cadet_idx").on(
+      table.sessionId,
+      table.cadetId,
+    ),
+    index("academic_timetables_session_id_idx").on(table.sessionId),
+    index("academic_timetables_cadet_id_idx").on(table.cadetId),
   ],
 );
 

@@ -225,7 +225,7 @@ function AttendRecordRowView({
               <Button
                 variant="ghost"
                 size="icon-xs"
-                className="hover:text-sky-600"
+                className="hover:text-emerald-600"
                 onClick={() => onView(record)}
                 aria-label={`View attend record for ${record.name}`}
               >

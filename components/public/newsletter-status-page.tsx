@@ -32,6 +32,7 @@ export function NewsletterStatusPage({
                 src={imageSrc}
                 alt={imageAlt}
                 fill
+                sizes="(min-width: 640px) 448px, calc(100vw - 2rem)"
                 className="object-cover"
                 priority
               />

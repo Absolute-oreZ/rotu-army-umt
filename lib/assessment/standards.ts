@@ -1,4 +1,6 @@
-import "server-only";
+
+// Removed "server-only" directive to allow import by seed script (db/seed.ts)
+// which runs outside the Next.js server context.
 
 import type {
   AssessmentGender,
