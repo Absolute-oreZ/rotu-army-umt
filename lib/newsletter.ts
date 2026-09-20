@@ -18,7 +18,7 @@ function randomDelay() {
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
+  process.env.NEXT_PUBLIC_RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

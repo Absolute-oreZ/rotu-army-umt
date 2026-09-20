@@ -3,7 +3,7 @@ import { escapeHtml } from "../utils";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
+  process.env.NEXT_PUBLIC_RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
 
 export async function sendAdminInvitationEmail({
   to,

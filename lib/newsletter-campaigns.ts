@@ -9,7 +9,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 
 const RESEND_BATCH_URL = "https://api.resend.com/emails/batch";
-const DEFAULT_FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
+const DEFAULT_FROM_EMAIL = process.env.NEXT_PUBLIC_RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const BATCH_SIZE = 50;
 

@@ -57,7 +57,7 @@ Core platform choices:
 - Supabase:
   - Browser/server/admin clients in `lib/supabase/*`.
   - Auth callback routes at `app/auth/callback/route.ts` (admin) and `app/auth/callback/cadet/route.ts` (cadet).
-  - Storage uses two buckets: public (`NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH`) and private (`SUPABASE_PRIVATE_STORAGE_ROOT_PATH`). Bucket routing is by first path segment via `resolveVisibility()`; every prefix not in `PUBLIC_STORAGE_PREFIXES` is private (fail-closed).
+  - Storage uses two buckets: public (`NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH`) and private (`NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH`). Bucket routing is by first path segment via `resolveVisibility()`; every prefix not in `PUBLIC_STORAGE_PREFIXES` is private (fail-closed).
 - PostgreSQL:
   - Accessed through `postgres` driver + Drizzle.
 
@@ -544,7 +544,7 @@ This supports early public page delivery while admin-managed content modules are
   - `npm run storage:migrate-private` (`scripts/migrate-private-objects.ts`; add `--apply` to copy, `--delete-source` after production verification)
 - Environment separation:
   - Env rules live in `lib/env/schema.ts`; `scripts/check-env.ts` validates them (`npm run env:check`; add `--production` for production rules).
-  - `lib/env/public.ts` exposes `getPublicEnv()` and `getSiteUrl()`; `lib/env/server.ts` exposes `getServerEnv()` (requires `SUPABASE_PRIVATE_STORAGE_ROOT_PATH`).
+  - `lib/env/public.ts` exposes `getPublicEnv()` and `getSiteUrl()`; `lib/env/server.ts` exposes `getServerEnv()` (requires `NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH`).
 - Remote images currently allow Supabase storage host via `next.config.ts`.
 - Database connection pool: `postgres` driver with `max: 20` connections (supports concurrent queries via `Promise.all` in admin pages). Uses Supabase transaction-mode pooler. Lower to `max: 5` if deploying to serverless (Vercel/Lambda).
 - Server Actions body size limit: configured to `5mb` in `next.config.ts` for document uploads.

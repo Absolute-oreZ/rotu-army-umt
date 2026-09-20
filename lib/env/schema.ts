@@ -12,7 +12,7 @@ export type EnvCheckOptions = {
 export const REQUIRED_ENV_KEYS = [
   "DATABASE_URL",
   "SUPABASE_SECRET_KEY",
-  "SUPABASE_PRIVATE_STORAGE_ROOT_PATH",
+  "NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH",
@@ -21,7 +21,7 @@ export const REQUIRED_ENV_KEYS = [
 export const PRODUCTION_REQUIRED_ENV_KEYS = [
   "NEXT_PUBLIC_SITE_URL",
   "RESEND_API_KEY",
-  "RESEND_FROM_EMAIL",
+  "NEXT_PUBLIC_RESEND_FROM_EMAIL",
   "CRON_SECRET",
   "NEWSLETTER_UNSUBSCRIBE_SECRET",
 ] as const;
@@ -101,10 +101,10 @@ export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvI
   }
 
   const publicBucket = read(env, "NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH");
-  const privateBucket = read(env, "SUPABASE_PRIVATE_STORAGE_ROOT_PATH");
+  const privateBucket = read(env, "NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH");
   if (publicBucket && privateBucket && publicBucket === privateBucket) {
     push(
-      "SUPABASE_PRIVATE_STORAGE_ROOT_PATH",
+      "NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH",
       "must name a different bucket than NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH",
     );
   }
@@ -131,9 +131,9 @@ export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvI
     push("NEWSLETTER_UNSUBSCRIBE_SECRET", "must differ from CRON_SECRET");
   }
 
-  const fromEmail = read(env, "RESEND_FROM_EMAIL");
+  const fromEmail = read(env, "NEXT_PUBLIC_RESEND_FROM_EMAIL");
   if (fromEmail && !FROM_EMAIL_PATTERN.test(fromEmail)) {
-    push("RESEND_FROM_EMAIL", 'must look like "Name <address@example.com>" or "address@example.com"');
+    push("NEXT_PUBLIC_RESEND_FROM_EMAIL", 'must look like "Name <address@example.com>" or "address@example.com"');
   }
 
   for (const key of THRESHOLD_ENV_KEYS) {
