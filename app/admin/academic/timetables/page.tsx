@@ -1,5 +1,5 @@
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
+
 import { takePositiveInt } from "@/lib/admin/table-search-params";
 import { TimetablesPageClient } from "@/components/admin/academic/timetables/timetables-page-client";
 import type { CadetSummary } from "@/components/admin/academic/timetables/timetables-page-client";
@@ -11,7 +11,7 @@ import {
 } from "@/lib/academic/helpers";
 import { getIntakeAndSessionOptions } from "@/lib/academic/queries";
 import { and, asc, eq } from "drizzle-orm";
-import { notFound } from "next/navigation";
+
 import { db } from "@/db";
 import {
   academicTimetables,
@@ -30,14 +30,9 @@ export default async function TimetablesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
-  const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "timetables")) {
-    notFound();
-  }
-
   const raw = await searchParams;
+  const admin = await requireAdminModule("timetables");
+  const intakeScope = getIntakeScope(admin);
   const requestedSessionId = takePositiveInt(raw.sessionId);
   const requestedCadetId = takePositiveInt(raw.cadetId);
 

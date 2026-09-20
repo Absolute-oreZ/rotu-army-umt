@@ -189,6 +189,10 @@ export const adminUsers = pgTable(
     uniqueIndex("admin_users_email_idx").on(table.email),
     index("admin_users_role_idx").on(table.role),
     index("admin_users_intake_id_idx").on(table.intakeId),
+    check(
+      "admin_users_intake_scope_check",
+      sql`(${table.role} in ('SECRETARY', 'TREASURER', 'SPORTS', 'WELFARE', 'ACADEMIC') and ${table.intakeId} is not null) or (${table.role} in ('OFFICER', 'INSTRUCTOR', 'MULTIMEDIA') and ${table.intakeId} is null)`,
+    ),
   ],
 );
 

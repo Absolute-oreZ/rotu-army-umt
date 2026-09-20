@@ -1,6 +1,4 @@
-import { requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { requireAdminModule } from "@/lib/admin/rbac";
 import { getPortfolioData, getAllMembers } from "@/app/admin/multimedia/portfolio/actions";
 import { PortfolioPageClient } from "@/components/admin/multimedia/portfolio/portfolio-page-client";
 
@@ -9,12 +7,7 @@ export default async function PortfolioPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
-
-  if (!canAccessAdminModule(admin.role, "portfolio")) {
-    notFound();
-  }
-
+  await requireAdminModule("portfolio");
   const raw = await searchParams;
 
   const [portfolioData, membersResult] = await Promise.all([

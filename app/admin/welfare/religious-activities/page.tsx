@@ -1,10 +1,8 @@
 import { and, desc, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { religiousActivities } from "@/db/schema";
-import { requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
+import { requireAdminModule } from "@/lib/admin/rbac";
 import { getReligiousActivityTypes } from "@/lib/welfare/religious-activity-types";
 import {
   buildDateFilterClause,
@@ -47,12 +45,7 @@ export default async function ReligiousActivitiesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
-
-  if (!canAccessAdminModule(admin.role, "religion")) {
-    notFound();
-  }
-
+  await requireAdminModule("religion");
   const raw = await searchParams;
 
   const typeOptions = getReligiousActivityTypes().map((t) => ({

@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import { db } from "@/db";
 import {
   apfaRecordAssessments,
@@ -12,8 +12,6 @@ import {
   ukaRecordAssessments,
   ukaRecords,
 } from "@/db/schema";
-import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -76,13 +74,8 @@ export default async function AssessmentsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("assessments");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "assessments")) {
-    notFound();
-  }
-
   const raw = await searchParams;
 
   const rawRecord = takeString(raw.record);

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   intakes,
@@ -14,10 +14,9 @@ import {
 import { requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage, deleteFromStorage } from "@/lib/supabase/storage";
-import { extractStoragePath } from "@/lib/supabase/storage-public";
+import { deleteManyFromStorage, saveImage } from "@/lib/supabase/storage";
 import { slugify } from "@/lib/slugify";
-import { takeString, takeNumber, takeFile, getFileExtension } from "@/lib/admin/form-helpers";
+import { takeString, takeNumber, takeFile } from "@/lib/admin/form-helpers";
 
 type PublicationStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type Locale = "en" | "ms" | "zh" | "ta";
@@ -26,15 +25,6 @@ type ExplanationKey = "ANIMAL" | "COLOR" | "PHILOSOPHY";
 const LOCALES: Locale[] = ["en", "ms", "zh", "ta"];
 const EXPLANATION_KEYS: ExplanationKey[] = ["ANIMAL", "COLOR", "PHILOSOPHY"];
 const VALID_STATUSES: PublicationStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
-
-async function uploadImage(file: File, path: string): Promise<string | null> {
-  try {
-    const supabase = createSupabaseAdminClient();
-    return await uploadToStorage(supabase, file, path);
-  } catch {
-    return null;
-  }
-}
 
 const INTAKE_NO_RE = /^\d+\/\d+$/;
 
@@ -251,40 +241,72 @@ export async function createIntake(formData: FormData) {
     return { error: "Failed to create intake. Please try again." };
   }
 
-  const timestamp = Date.now();
+  const supabase = createSupabaseAdminClient();
+  const pendingPaths: string[] = [];
   const photoUpdates: Record<string, string> = {};
 
-  if (coverFile) {
-    const ext = getFileExtension(coverFile);
-    const path = await uploadImage(coverFile, `intakes/${intakeId}/cover/${timestamp}.${ext}`);
-    if (path) photoUpdates.coverPhotoPath = path;
-  }
-  if (patchFile) {
-    const ext = getFileExtension(patchFile);
-    const path = await uploadImage(patchFile, `intakes/${intakeId}/patch/${timestamp}.${ext}`);
-    if (path) photoUpdates.patchPhotoPath = path;
-  }
-  if (innerFile) {
-    const ext = getFileExtension(innerFile);
-    const path = await uploadImage(innerFile, `intakes/${intakeId}/inner/${timestamp}.${ext}`);
-    if (path) photoUpdates.innerPhotoPath = path;
-  }
-  if (tshirtFile) {
-    const ext = getFileExtension(tshirtFile);
-    const path = await uploadImage(tshirtFile, `intakes/${intakeId}/tshirt/${timestamp}.${ext}`);
-    if (path) photoUpdates.tshirtPhotoPath = path;
+  const photoFields = [
+    { file: coverFile, stem: "cover", key: "coverPhotoPath" },
+    { file: patchFile, stem: "patch", key: "patchPhotoPath" },
+    { file: innerFile, stem: "inner", key: "innerPhotoPath" },
+    { file: tshirtFile, stem: "tshirt", key: "tshirtPhotoPath" },
+  ] as const;
+
+  for (const field of photoFields) {
+    if (!field.file) continue;
+
+    const saved = await saveImage({
+      supabase,
+      file: field.file,
+      prefix: `intakes/${intakeId}/${field.stem}`,
+      stem: field.stem,
+    });
+
+    if (!saved.ok) {
+      await deleteManyFromStorage(supabase, pendingPaths);
+      return { error: saved.error };
+    }
+
+    pendingPaths.push(saved.path);
+    photoUpdates[field.key] = saved.path;
   }
 
   if (Object.keys(photoUpdates).length > 0) {
-    await db.update(intakes).set(photoUpdates).where(eq(intakes.id, intakeId));
+    try {
+      await db.update(intakes).set(photoUpdates).where(eq(intakes.id, intakeId));
+    } catch (err) {
+      console.error("Failed to save intake photos", {
+        intakeId,
+        paths: pendingPaths,
+        message: err instanceof Error ? err.message : "Unknown error",
+      });
+      await deleteManyFromStorage(supabase, pendingPaths);
+      return { error: "Failed to save intake photos. Please try again." };
+    }
   }
 
-  for (let j = 0; j < galleryFiles.length; j++) {
-    const f = galleryFiles[j];
-    const ext = getFileExtension(f);
-    const path = await uploadImage(f, `intakes/${intakeId}/gallery/${timestamp}_${j}.${ext}`);
-    if (path) {
-      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: path });
+  for (const [index, file] of galleryFiles.entries()) {
+    const saved = await saveImage({
+      supabase,
+      file,
+      prefix: `intakes/${intakeId}/gallery`,
+      stem: `gallery-${index + 1}`,
+    });
+
+    if (!saved.ok) {
+      return { error: saved.error };
+    }
+
+    try {
+      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: saved.path });
+    } catch (err) {
+      console.error("Failed to record intake gallery photo", {
+        intakeId,
+        path: saved.path,
+        message: err instanceof Error ? err.message : "Unknown error",
+      });
+      await deleteManyFromStorage(supabase, [saved.path]);
+      return { error: "Failed to save intake gallery photo. Please try again." };
     }
   }
 
@@ -370,44 +392,116 @@ export async function updateIntake(formData: FormData) {
     ri++;
   }
 
+  const [existingIntake] = await db
+    .select({
+      coverPhotoPath: intakes.coverPhotoPath,
+      patchPhotoPath: intakes.patchPhotoPath,
+      innerPhotoPath: intakes.innerPhotoPath,
+      tshirtPhotoPath: intakes.tshirtPhotoPath,
+    })
+    .from(intakes)
+    .where(eq(intakes.id, intakeId))
+    .limit(1);
+
+  if (!existingIntake) {
+    return { error: "Intake not found." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
+  const obsoletePaths: string[] = [];
+  const photoUpdates: Record<string, string | null> = {};
+
+  const photoFields = [
+    {
+      file: coverFile,
+      stem: "cover",
+      key: "coverPhotoPath",
+      current: existingIntake.coverPhotoPath,
+      remove: removeCoverPhoto,
+    },
+    {
+      file: patchFile,
+      stem: "patch",
+      key: "patchPhotoPath",
+      current: existingIntake.patchPhotoPath,
+      remove: removePatchPhoto,
+    },
+    {
+      file: innerFile,
+      stem: "inner",
+      key: "innerPhotoPath",
+      current: existingIntake.innerPhotoPath,
+      remove: removeInnerPhoto,
+    },
+    {
+      file: tshirtFile,
+      stem: "tshirt",
+      key: "tshirtPhotoPath",
+      current: existingIntake.tshirtPhotoPath,
+      remove: removeTshirtPhoto,
+    },
+  ] as const;
+
+  for (const field of photoFields) {
+    if (field.file) {
+      const saved = await saveImage({
+        supabase,
+        file: field.file,
+        prefix: `intakes/${intakeId}/${field.stem}`,
+        stem: field.stem,
+      });
+
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+
+      uploadedPaths.push(saved.path);
+      photoUpdates[field.key] = saved.path;
+      if (field.current) obsoletePaths.push(field.current);
+      continue;
+    }
+
+    if (field.remove && field.current) {
+      photoUpdates[field.key] = null;
+      obsoletePaths.push(field.current);
+    }
+  }
+
+  const galleryPaths: string[] = [];
+
+  for (const [index, file] of galleryFiles.entries()) {
+    const saved = await saveImage({
+      supabase,
+      file,
+      prefix: `intakes/${intakeId}/gallery`,
+      stem: `gallery-${index + 1}`,
+    });
+
+    if (!saved.ok) {
+      await deleteManyFromStorage(supabase, [...uploadedPaths, ...galleryPaths]);
+      return { error: saved.error };
+    }
+
+    galleryPaths.push(saved.path);
+  }
+
+  const galleryRowsToRemove =
+    removedGalleryIds.length > 0
+      ? await db
+          .select({ id: intakeDisplayPhotos.id, photoPath: intakeDisplayPhotos.photoPath })
+          .from(intakeDisplayPhotos)
+          .where(
+            and(
+              eq(intakeDisplayPhotos.intakeId, intakeId),
+              inArray(intakeDisplayPhotos.id, removedGalleryIds),
+            ),
+          )
+      : [];
+
   try {
     await db.transaction(async (tx) => {
-      const supabase = createSupabaseAdminClient();
-      const photoUpdates: Record<string, string | null> = {};
-
-      if (removeCoverPhoto) {
-        const [existing] = await tx.select({ coverPhotoPath: intakes.coverPhotoPath }).from(intakes).where(eq(intakes.id, intakeId)).limit(1);
-        if (existing?.coverPhotoPath) {
-          const path = extractStoragePath(existing.coverPhotoPath);
-          if (path) await deleteFromStorage(supabase, path);
-        }
-        photoUpdates.coverPhotoPath = null;
-      }
-      if (removePatchPhoto) {
-        const [existing] = await tx.select({ patchPhotoPath: intakes.patchPhotoPath }).from(intakes).where(eq(intakes.id, intakeId)).limit(1);
-        if (existing?.patchPhotoPath) {
-          const path = extractStoragePath(existing.patchPhotoPath);
-          if (path) await deleteFromStorage(supabase, path);
-        }
-        photoUpdates.patchPhotoPath = null;
-      }
-      if (removeInnerPhoto) {
-        const [existing] = await tx.select({ innerPhotoPath: intakes.innerPhotoPath }).from(intakes).where(eq(intakes.id, intakeId)).limit(1);
-        if (existing?.innerPhotoPath) {
-          const path = extractStoragePath(existing.innerPhotoPath);
-          if (path) await deleteFromStorage(supabase, path);
-        }
-        photoUpdates.innerPhotoPath = null;
-      }
-      if (removeTshirtPhoto) {
-        const [existing] = await tx.select({ tshirtPhotoPath: intakes.tshirtPhotoPath }).from(intakes).where(eq(intakes.id, intakeId)).limit(1);
-        if (existing?.tshirtPhotoPath) {
-          const path = extractStoragePath(existing.tshirtPhotoPath);
-          if (path) await deleteFromStorage(supabase, path);
-        }
-        photoUpdates.tshirtPhotoPath = null;
-      }
-
       await tx
         .update(intakes)
         .set({ intakeNo, displayName, slug, status, startYear, tagLine, ...photoUpdates })
@@ -455,69 +549,36 @@ export async function updateIntake(formData: FormData) {
         }
       }
 
-      if (removedGalleryIds.length > 0) {
-        const removedRows = await tx
-          .select()
-          .from(intakeDisplayPhotos)
-          .where(eq(intakeDisplayPhotos.intakeId, intakeId));
+      if (galleryRowsToRemove.length > 0) {
+        await tx
+          .delete(intakeDisplayPhotos)
+          .where(
+            and(
+              eq(intakeDisplayPhotos.intakeId, intakeId),
+              inArray(
+                intakeDisplayPhotos.id,
+                galleryRowsToRemove.map((row) => row.id),
+              ),
+            ),
+          );
+      }
 
-        for (const row of removedRows) {
-          if (removedGalleryIds.includes(row.id)) {
-            const path = extractStoragePath(row.photoPath);
-            if (path) await deleteFromStorage(supabase, path);
-          }
-        }
-
-        await tx.delete(intakeDisplayPhotos).where(
-          and(
-            eq(intakeDisplayPhotos.intakeId, intakeId),
-          ),
-        );
+      for (const photoPath of galleryPaths) {
+        await tx.insert(intakeDisplayPhotos).values({ intakeId, photoPath });
       }
     });
   } catch (err: unknown) {
+    await deleteManyFromStorage(supabase, [...uploadedPaths, ...galleryPaths]);
     if (err instanceof Error && err.message?.includes("duplicate key")) {
       return { error: "An intake with this number, name, or slug already exists." };
     }
     return { error: "Failed to update intake. Please try again." };
   }
 
-  const timestamp = Date.now();
-  const photoUpdates: Record<string, string> = {};
-
-  if (coverFile) {
-    const ext = getFileExtension(coverFile);
-    const path = await uploadImage(coverFile, `intakes/${intakeId}/cover/${timestamp}.${ext}`);
-    if (path) photoUpdates.coverPhotoPath = path;
-  }
-  if (patchFile) {
-    const ext = getFileExtension(patchFile);
-    const path = await uploadImage(patchFile, `intakes/${intakeId}/patch/${timestamp}.${ext}`);
-    if (path) photoUpdates.patchPhotoPath = path;
-  }
-  if (innerFile) {
-    const ext = getFileExtension(innerFile);
-    const path = await uploadImage(innerFile, `intakes/${intakeId}/inner/${timestamp}.${ext}`);
-    if (path) photoUpdates.innerPhotoPath = path;
-  }
-  if (tshirtFile) {
-    const ext = getFileExtension(tshirtFile);
-    const path = await uploadImage(tshirtFile, `intakes/${intakeId}/tshirt/${timestamp}.${ext}`);
-    if (path) photoUpdates.tshirtPhotoPath = path;
-  }
-
-  if (Object.keys(photoUpdates).length > 0) {
-    await db.update(intakes).set(photoUpdates).where(eq(intakes.id, intakeId));
-  }
-
-  for (let j = 0; j < galleryFiles.length; j++) {
-    const f = galleryFiles[j];
-    const ext = getFileExtension(f);
-    const path = await uploadImage(f, `intakes/${intakeId}/gallery/${timestamp}_${j}.${ext}`);
-    if (path) {
-      await db.insert(intakeDisplayPhotos).values({ intakeId, photoPath: path });
-    }
-  }
+  await deleteManyFromStorage(supabase, [
+    ...obsoletePaths,
+    ...galleryRowsToRemove.map((row) => row.photoPath),
+  ]);
 
   revalidatePath("/admin/secretary/intakes");
   return { success: true };

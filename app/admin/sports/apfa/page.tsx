@@ -1,10 +1,8 @@
 import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { apfaRecordAssessments, apfaRecords, intakes } from "@/db/schema";
-import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildNumberFilterClause,
@@ -23,13 +21,8 @@ export default async function ApfaPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("apfa");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "apfa")) {
-    notFound();
-  }
-
   const raw = await searchParams;
 
   const intakeRows = await db

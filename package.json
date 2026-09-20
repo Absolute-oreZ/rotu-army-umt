@@ -9,6 +9,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx db/seed.ts",
     "db:studio": "drizzle-kit studio",
+    "env:check": "tsx scripts/check-env.ts",
     "start": "next start",
     "lint": "eslint"
   },

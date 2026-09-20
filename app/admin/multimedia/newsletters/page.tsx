@@ -2,9 +2,7 @@ import { and, desc, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterCampaigns, newsletterSubscribers } from "@/db/schema";
-import { requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { requireAdminModule } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildDateFilterClause,
@@ -98,12 +96,7 @@ export default async function NewslettersPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
-
-  if (!canAccessAdminModule(admin.role, "newsletters")) {
-    notFound();
-  }
-
+  await requireAdminModule("newsletters");
   const raw = await searchParams;
   const tab = (takeString(raw.tab) === "subscribers" ? "subscribers" : "campaigns") as NewsletterTab;
 

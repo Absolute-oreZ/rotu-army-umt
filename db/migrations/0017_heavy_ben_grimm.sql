@@ -1,0 +1,1 @@
+ALTER TABLE "admin_users" ADD CONSTRAINT "admin_users_intake_scope_check" CHECK (("admin_users"."role" in ('SECRETARY', 'TREASURER', 'SPORTS', 'WELFARE', 'ACADEMIC') and "admin_users"."intake_id" is not null) or ("admin_users"."role" in ('OFFICER', 'INSTRUCTOR', 'MULTIMEDIA') and "admin_users"."intake_id" is null));

@@ -19,6 +19,7 @@ const errorMessages: Record<string, string> = {
   "not-umt-email": "Please sign in with your UMT Google account (@ocean.umt.edu.my).",
   "member-not-found": "No member record found for this account. Contact the Secretary.",
   "not-a-cadet": "This account is not registered as a cadet.",
+  "inactive-cadet": "Your cadet account is inactive. Contact the Secretary.",
 };
 
 export default async function CadetLoginPage({

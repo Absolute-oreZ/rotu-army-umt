@@ -8,8 +8,7 @@ import type {
   AssessmentStandard,
 } from "./types";
 
-function readThreshold(key: string, fallback: number): number {
-  const raw = process.env[key];
+function readThreshold(raw: string | undefined, fallback: number): number {
   if (!raw) return fallback;
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
@@ -28,8 +27,8 @@ export function getAssessmentStandards(
 
   if (recordType === "UKA") {
     const runMinutes = isMale
-      ? readThreshold("SPORTS_UKA_RUN_MALE", 12)
-      : readThreshold("SPORTS_UKA_RUN_FEMALE", 14);
+      ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_UKA_RUN_MALE, 12)
+      : readThreshold(process.env.NEXT_PUBLIC_SPORTS_UKA_RUN_FEMALE, 14);
     return [
       {
         key: "pushUp",
@@ -37,8 +36,8 @@ export function getAssessmentStandards(
         unit: "count",
         direction: "min",
         threshold: isMale
-          ? readThreshold("SPORTS_UKA_PUSHUP_MALE", 40)
-          : readThreshold("SPORTS_UKA_PUSHUP_FEMALE", 40),
+          ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_UKA_PUSHUP_MALE, 40)
+          : readThreshold(process.env.NEXT_PUBLIC_SPORTS_UKA_PUSHUP_FEMALE, 40),
       },
       {
         key: "sitUp",
@@ -46,8 +45,8 @@ export function getAssessmentStandards(
         unit: "count",
         direction: "min",
         threshold: isMale
-          ? readThreshold("SPORTS_UKA_SITUP_MALE", 60)
-          : readThreshold("SPORTS_UKA_SITUP_FEMALE", 40),
+          ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_UKA_SITUP_MALE, 60)
+          : readThreshold(process.env.NEXT_PUBLIC_SPORTS_UKA_SITUP_FEMALE, 40),
       },
       {
         key: "run",
@@ -60,11 +59,11 @@ export function getAssessmentStandards(
   }
 
   const runMinutes = isMale
-    ? readThreshold("SPORTS_APFA_RUN_MALE", 6)
-    : readThreshold("SPORTS_APFA_RUN_FEMALE", 8);
+    ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_RUN_MALE, 6)
+    : readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_RUN_FEMALE, 8);
   const floatingMinutes = isMale
-    ? readThreshold("SPORTS_APFA_FLOATING_MALE", 3)
-    : readThreshold("SPORTS_APFA_FLOATING_FEMALE", 2);
+    ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_FLOATING_MALE, 3)
+    : readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_FLOATING_FEMALE, 2);
 
   return [
     {
@@ -80,8 +79,8 @@ export function getAssessmentStandards(
       unit: "count",
       direction: "min",
       threshold: isMale
-        ? readThreshold("SPORTS_APFA_PULLUP_MALE", 20)
-        : readThreshold("SPORTS_APFA_PULLUP_FEMALE", 10),
+        ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_PULLUP_MALE, 20)
+        : readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_PULLUP_FEMALE, 10),
     },
     {
       key: "swimming",
@@ -89,8 +88,8 @@ export function getAssessmentStandards(
       unit: "metres",
       direction: "min",
       threshold: isMale
-        ? readThreshold("SPORTS_APFA_SWIMMING_MALE", 100)
-        : readThreshold("SPORTS_APFA_SWIMMING_FEMALE", 100),
+        ? readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_SWIMMING_MALE, 100)
+        : readThreshold(process.env.NEXT_PUBLIC_SPORTS_APFA_SWIMMING_FEMALE, 100),
     },
     {
       key: "floating",

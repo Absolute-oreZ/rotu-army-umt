@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { db } from "@/db";
-import { adminUsers, adminInvitations, adminRoleAuditLogs, members } from "@/db/schema";
+import { adminUsers, adminInvitations, adminRoleAuditLogs, cadets, members } from "@/db/schema";
+import { resolveAdminAccess } from "@/lib/admin/rbac";
+import { isIntakeScopedRole } from "@/lib/admin/roles";
 
 function getSafeNextPath(value: string | null) {
   if (!value?.startsWith("/") || value.startsWith("//")) {
@@ -35,14 +37,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const [admin] = await db
-    .select({ id: adminUsers.id })
-    .from(adminUsers)
-    .where(eq(adminUsers.authUserId, user.id))
-    .limit(1);
+  const access = await resolveAdminAccess(user.id);
 
-  if (admin) {
+  if (access.status === "ok") {
     return NextResponse.redirect(new URL(next, requestUrl.origin));
+  }
+
+  if (access.status === "inactive-cadet" || access.status === "missing-intake") {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(
+      new URL(`/admin/login?error=${access.status}`, requestUrl.origin),
+    );
   }
 
   const userEmail = user.email?.toLowerCase();
@@ -53,12 +58,16 @@ export async function GET(request: NextRequest) {
         memberId: adminInvitations.memberId,
         email: adminInvitations.email,
         role: adminInvitations.role,
-        intakeId: adminInvitations.intakeId,
         invitedByAuthUserId: adminInvitations.invitedByAuthUserId,
         memberName: members.name,
+        memberRole: members.role,
+        cadetId: cadets.id,
+        cadetIsActive: cadets.isActive,
+        cadetIntakeId: cadets.intakeId,
       })
       .from(adminInvitations)
-      .innerJoin(members, eq(members.id, adminInvitations.memberId))
+      .leftJoin(members, eq(members.id, adminInvitations.memberId))
+      .leftJoin(cadets, eq(cadets.memberId, adminInvitations.memberId))
       .where(
         and(
           eq(adminInvitations.email, userEmail),
@@ -68,13 +77,39 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     if (invitation) {
+      if (invitation.memberRole !== "CADET" || invitation.cadetId === null) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          new URL("/admin/login?error=not-a-cadet", requestUrl.origin),
+        );
+      }
+
+      if (invitation.cadetIsActive === false) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          new URL("/admin/login?error=inactive-cadet", requestUrl.origin),
+        );
+      }
+
+      const scoped = isIntakeScopedRole(invitation.role);
+      const intakeId = scoped ? invitation.cadetIntakeId : null;
+
+      if (scoped && intakeId === null) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          new URL("/admin/login?error=missing-intake", requestUrl.origin),
+        );
+      }
+
+      const memberName = invitation.memberName ?? "Unknown";
+
       await db.transaction(async (tx) => {
         await tx.insert(adminUsers).values({
           authUserId: user.id,
           memberId: invitation.memberId,
           email: invitation.email,
           role: invitation.role,
-          intakeId: invitation.intakeId,
+          intakeId,
           invitedByAuthUserId: invitation.invitedByAuthUserId,
         });
 
@@ -87,7 +122,7 @@ export async function GET(request: NextRequest) {
           action: "ACCEPTED",
           changedByAdminUserId: user.id,
           targetAdminUserId: user.id,
-          targetMemberName: invitation.memberName,
+          targetMemberName: memberName,
           newRole: invitation.role,
         });
       });
@@ -100,3 +135,4 @@ export async function GET(request: NextRequest) {
     new URL("/admin/login?error=not-authorized", requestUrl.origin),
   );
 }
+

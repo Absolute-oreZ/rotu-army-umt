@@ -3,7 +3,7 @@ import "server-only";
 const DEFAULT_RELIGIOUS_ACTIVITY_TYPES = ["YASIN", "TAHLIL"];
 
 export function getReligiousActivityTypes(): string[] {
-  const raw = process.env.WELFARE_REGLIGIOUS_ACTIVITIES_TYPES;
+  const raw = process.env.NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES;
   if (!raw) return DEFAULT_RELIGIOUS_ACTIVITY_TYPES;
 
   const parsed = Array.from(
@@ -17,3 +17,4 @@ export function getReligiousActivityTypes(): string[] {
 
   return parsed.length > 0 ? parsed : DEFAULT_RELIGIOUS_ACTIVITY_TYPES;
 }
+

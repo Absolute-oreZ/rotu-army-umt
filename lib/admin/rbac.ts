@@ -2,7 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/db";
-import { adminUsers, members } from "@/db/schema";
+import { adminUsers, cadets, members } from "@/db/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   canAccessAdminModule,
@@ -26,18 +26,14 @@ export type CurrentAdmin = {
   gender: "MALE" | "FEMALE";
 };
 
-export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+export type AdminAccess =
+  | { status: "ok"; admin: CurrentAdmin }
+  | { status: "not-admin" }
+  | { status: "inactive-cadet" }
+  | { status: "missing-intake" };
 
-  if (error || !user) {
-    return null;
-  }
-
-  const [admin] = await db
+export async function resolveAdminAccess(authUserId: string): Promise<AdminAccess> {
+  const [row] = await db
     .select({
       authUserId: adminUsers.authUserId,
       email: adminUsers.email,
@@ -48,37 +44,81 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
       role: adminUsers.role,
       intakeId: adminUsers.intakeId,
       gender: members.gender,
+      cadetIsActive: cadets.isActive,
     })
     .from(adminUsers)
     .innerJoin(members, eq(adminUsers.memberId, members.id))
-    .where(eq(adminUsers.authUserId, user.id))
+    .leftJoin(cadets, eq(cadets.memberId, members.id))
+    .where(eq(adminUsers.authUserId, authUserId))
     .limit(1);
 
-  if (!admin) {
-    return null;
+  if (!row) {
+    return { status: "not-admin" };
+  }
+
+  if (row.cadetIsActive === false) {
+    return { status: "inactive-cadet" };
+  }
+
+  const scoped = isIntakeScopedRole(row.role);
+
+  if (scoped && row.intakeId === null) {
+    console.error(`Admin ${row.id} (${row.role}) is intake-scoped but has no intake assigned; access denied.`);
+    return { status: "missing-intake" };
   }
 
   return {
-    authUserId: admin.authUserId,
-    email: admin.email,
-    fullName: admin.fullName,
-    id: admin.id,
-    redBgPhotoPath: admin.redBgPhotoPath,
-    blueBgPhotoPath: admin.blueBgPhotoPath,
-    role: admin.role,
-    intakeId: admin.intakeId,
-    gender: admin.gender,
+    status: "ok",
+    admin: {
+      authUserId: row.authUserId,
+      email: row.email,
+      fullName: row.fullName,
+      id: row.id,
+      redBgPhotoPath: row.redBgPhotoPath,
+      blueBgPhotoPath: row.blueBgPhotoPath,
+      role: row.role,
+      intakeId: scoped ? row.intakeId : null,
+      gender: row.gender,
+    },
   };
 }
 
-export async function requireCurrentAdmin() {
-  const admin = await getCurrentAdmin();
+export async function getCurrentAdminAccess(): Promise<AdminAccess> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  if (!admin) {
-    redirect("/admin/login");
+  if (error || !user) {
+    return { status: "not-admin" };
   }
 
-  return admin;
+  return resolveAdminAccess(user.id);
+}
+
+export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
+  const access = await getCurrentAdminAccess();
+
+  return access.status === "ok" ? access.admin : null;
+}
+
+function adminLoginPath(access: AdminAccess): string {
+  if (access.status === "inactive-cadet" || access.status === "missing-intake") {
+    return `/admin/login?error=${access.status}`;
+  }
+
+  return "/admin/login";
+}
+
+export async function requireCurrentAdmin() {
+  const access = await getCurrentAdminAccess();
+
+  if (access.status !== "ok") {
+    redirect(adminLoginPath(access));
+  }
+
+  return access.admin;
 }
 
 export async function requireAdminModule(module: AdminModule) {
@@ -120,5 +160,11 @@ export function getIntakeScope(admin: CurrentAdmin): number | null {
   if (!isIntakeScopedRole(admin.role)) {
     return null;
   }
+
+  if (admin.intakeId === null) {
+    throw new Error(`Invariant violated: intake-scoped admin ${admin.id} has no intake assignment.`);
+  }
+
   return admin.intakeId;
 }
+

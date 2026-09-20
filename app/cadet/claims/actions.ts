@@ -6,15 +6,8 @@ import { db } from "@/db";
 import { bankEnum, cadetAccounts, claims } from "@/db/schema";
 import { requireCurrentCadet } from "@/lib/auth/cadet";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage } from "@/lib/supabase/storage";
-import {
-  getAllowedImageExtension,
-  sanitizeMoney,
-  takeFile,
-  takeString,
-} from "@/lib/admin/form-helpers";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+import { deleteFromStorage, deleteManyFromStorage, saveImage, saveUpload } from "@/lib/supabase/storage";
+import { sanitizeMoney, takeFile, takeString } from "@/lib/admin/form-helpers";
 
 function takeBoolean(value: FormDataEntryValue | null): boolean {
   return typeof value === "string" && value === "true";
@@ -58,14 +51,8 @@ export async function createClaim(formData: FormData) {
 
   const receiptFile = takeFile(formData.get("receipt"));
   if (!receiptFile) return { error: "Receipt is required." };
-  if (receiptFile.size > MAX_FILE_SIZE) {
-    return { error: "Receipt must be under 5 MB." };
-  }
 
   const qrFile = takeFile(formData.get("qrCode"));
-  if (qrFile && qrFile.size > MAX_FILE_SIZE) {
-    return { error: "QR code must be under 5 MB." };
-  }
 
   const saveAccount = takeBoolean(formData.get("saveAccount"));
   const description = takeString(formData.get("description"));
@@ -79,30 +66,46 @@ export async function createClaim(formData: FormData) {
     .where(eq(cadetAccounts.memberId, cadet.memberId))
     .limit(1);
 
-  const timestamp = Date.now();
-  const basePath = `claims/${cadet.intakeId}/${cadet.memberId}/${timestamp}`;
   const supabase = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
 
-  const receiptExt = getAllowedImageExtension(receiptFile) ?? "jpg";
-  const receiptPath = await uploadToStorage(
+  const savedReceipt = await saveUpload({
     supabase,
-    receiptFile,
-    `${basePath}/receipt.${receiptExt}`,
-  );
-  if (!receiptPath) return { error: "Failed to upload receipt." };
+    file: receiptFile,
+    prefix: `claims/${cadet.intakeId}/${cadet.memberId}`,
+    stem: "receipt",
+    kinds: ["image", "pdf"],
+  });
+
+  if (!savedReceipt.ok) {
+    return { error: savedReceipt.error };
+  }
+
+  uploadedPaths.push(savedReceipt.path);
 
   let qrCodePath = existingAccount?.qrCodePath ?? null;
+  let obsoleteQrPath: string | null = null;
+
   if (qrFile) {
-    const qrExt = getAllowedImageExtension(qrFile) ?? "jpg";
-    qrCodePath = await uploadToStorage(
+    const savedQr = await saveImage({
       supabase,
-      qrFile,
-      `${basePath}/qr.${qrExt}`,
-    );
-    if (!qrCodePath) return { error: "Failed to upload QR code." };
+      file: qrFile,
+      prefix: `claims/${cadet.intakeId}/${cadet.memberId}`,
+      stem: "qr",
+    });
+
+    if (!savedQr.ok) {
+      await deleteManyFromStorage(supabase, uploadedPaths);
+      return { error: savedQr.error };
+    }
+
+    uploadedPaths.push(savedQr.path);
+    qrCodePath = savedQr.path;
+    if (existingAccount?.qrCodePath) obsoleteQrPath = existingAccount.qrCodePath;
   }
 
   if (!qrCodePath) {
+    await deleteManyFromStorage(supabase, uploadedPaths);
     return { error: "QR code is required." };
   }
 
@@ -112,7 +115,7 @@ export async function createClaim(formData: FormData) {
       intakeId: cadet.intakeId,
       title,
       amount,
-      receiptPath,
+      receiptPath: savedReceipt.path,
       qrCodePath,
       description,
     });
@@ -141,7 +144,20 @@ export async function createClaim(formData: FormData) {
     }
   } catch (err) {
     console.error("createClaim failed", err);
+    await deleteManyFromStorage(supabase, uploadedPaths);
     return { error: "Failed to create claim." };
+  }
+
+  if (obsoleteQrPath) {
+    const [stillReferenced] = await db
+      .select({ id: claims.id })
+      .from(claims)
+      .where(eq(claims.qrCodePath, obsoleteQrPath))
+      .limit(1);
+
+    if (!stillReferenced) {
+      await deleteFromStorage(supabase, obsoleteQrPath);
+    }
   }
 
   revalidatePath("/cadet/claims");

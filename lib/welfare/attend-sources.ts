@@ -3,7 +3,7 @@ import "server-only";
 const DEFAULT_ATTEND_SOURCES = ["RSAK", "PKU", "HOSPITAL", "OTHER"];
 
 export function getAttendSources(): string[] {
-  const raw = process.env.WELFARE_ATTEND_SOURCES;
+  const raw = process.env.NEXT_PUBLIC_WELFARE_ATTEND_SOURCES;
   if (!raw) return DEFAULT_ATTEND_SOURCES;
 
   const parsed = Array.from(

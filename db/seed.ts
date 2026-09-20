@@ -76,16 +76,73 @@ function loadDotEnv() {
 
 loadDotEnv();
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required to seed the database.");
+function isLocalHostname(hostname: string) {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]"
+  );
 }
 
-const sql = postgres(process.env.DATABASE_URL, {
+function describeDatabaseTarget(databaseUrl: string) {
+  try {
+    const url = new URL(databaseUrl);
+    return `${url.hostname}${url.port ? `:${url.port}` : ""}${url.pathname}`;
+  } catch {
+    return "an unparseable DATABASE_URL";
+  }
+}
+
+function assertSeedAllowed(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required to seed the database.");
+  }
+
+  if (process.env.ALLOW_SEED !== "1") {
+    throw new Error("Refusing to seed: this script truncates every table. Set ALLOW_SEED=1 to confirm it is intentional.");
+  }
+
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") {
+    throw new Error("Refusing to seed: NODE_ENV or VERCEL_ENV indicates a production environment.");
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+  if (siteUrl) {
+    let siteHost: string | null = null;
+
+    try {
+      siteHost = new URL(siteUrl).hostname;
+    } catch {
+      siteHost = null;
+    }
+
+    if (siteHost === null || !isLocalHostname(siteHost)) {
+      throw new Error(`Refusing to seed: NEXT_PUBLIC_SITE_URL (${siteUrl}) is not a local host, so this looks like a deployed configuration.`);
+    }
+  }
+
+  return databaseUrl;
+}
+
+async function announceSeedTarget(databaseUrl: string) {
+  console.warn(`About to TRUNCATE and re-seed ${describeDatabaseTarget(databaseUrl)}. Press Ctrl+C within 5 seconds to abort.`);
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 5000));
+}
+
+const databaseUrl = assertSeedAllowed();
+
+const sql = postgres(databaseUrl, {
   max: 1,
   prepare: false,
 });
 
 async function seed() {
+  await announceSeedTarget(databaseUrl);
+
   await sql`
     TRUNCATE TABLE
       platoons,

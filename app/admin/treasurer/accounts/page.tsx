@@ -2,9 +2,7 @@ import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { treasuryAccounts, intakes, adminUsers, members } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -81,14 +79,8 @@ export default async function AccountsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("accounts");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "accounts")) {
-    notFound();
-  }
-
-  const raw = await searchParams;
 
   const intakeRows = await db
     .select({ id: intakes.id, intakeNo: intakes.intakeNo, startYear: intakes.startYear })
@@ -105,6 +97,7 @@ export default async function AccountsPage({
     intakeNo: i.intakeNo,
   }));
 
+  const raw = await searchParams;
   const config = buildAccountsTableConfig(
     intakeScope !== null ? undefined : intakeOptions,
   );

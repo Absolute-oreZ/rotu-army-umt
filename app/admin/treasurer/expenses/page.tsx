@@ -1,10 +1,4 @@
-import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
-import type { SQL } from "drizzle-orm";
-import { db } from "@/db";
-import { expenses, expenseReceipts, intakes } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildDateFilterClause,
@@ -19,6 +13,10 @@ import { ExpensesPageClient } from "@/components/admin/treasurer/expenses/expens
 import type { Expense } from "@/components/admin/treasurer/expenses/expenses-table";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { db } from "@/db";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+import { intakes, expenses, expenseReceipts } from "@/db/schema";
 
 function buildFilters(
   state: { q: string; filters: Record<string, FilterCondition[]> },
@@ -52,12 +50,8 @@ export default async function ExpensesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("expenses");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "expenses")) {
-    notFound();
-  }
 
   const raw = await searchParams;
 

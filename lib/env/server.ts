@@ -1,26 +1,24 @@
 import "server-only";
 import { getPublicEnv } from "@/lib/env/public";
 
-const serverEnv = {
-  databaseUrl: process.env.DATABASE_URL,
-  supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
-};
-
 export function getServerEnv() {
-  const missing = Object.entries(serverEnv)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+  const databaseUrl = process.env.DATABASE_URL;
+  const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+  const supabasePrivateStorageRootPath = process.env.SUPABASE_PRIVATE_STORAGE_ROOT_PATH;
 
-  if (missing.length > 0) {
+  if (!databaseUrl || !supabaseSecretKey || !supabasePrivateStorageRootPath) {
+    const missing: string[] = [];
+    if (!databaseUrl) missing.push("DATABASE_URL");
+    if (!supabaseSecretKey) missing.push("SUPABASE_SECRET_KEY");
+    if (!supabasePrivateStorageRootPath) missing.push("SUPABASE_PRIVATE_STORAGE_ROOT_PATH");
     throw new Error(`Missing server environment variables: ${missing.join(", ")}`);
   }
 
   return {
     ...getPublicEnv(),
-    ...(serverEnv as {
-      databaseUrl: string;
-      directUrl: string;
-      supabaseSecretKey: string;
-    }),
+    databaseUrl,
+    supabaseSecretKey,
+    supabasePrivateStorageRootPath,
   };
 }
+

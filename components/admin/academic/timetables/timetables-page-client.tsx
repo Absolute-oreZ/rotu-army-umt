@@ -109,7 +109,7 @@ export function TimetablesPageClient({
     setPdfTitle(`Timetable — ${selectedCadet.name} (${selectedSession.title})`);
 
     startTransition(async () => {
-      const res = await getTimetablePdfSignedUrlAction(timetable.timetablePdfPath ?? "");
+      const res = await getTimetablePdfSignedUrlAction(timetable.id);
       if (!res.success || !res.data) {
         setError(res.success ? "Could not generate download URL." : res.error);
         setPdfTitle(null);
@@ -180,8 +180,6 @@ export function TimetablesPageClient({
     <TimetableInlineEditor
       key={timetable.id}
       timetableId={timetable.id}
-      sessionId={selectedSession.id}
-      cadetId={selectedCadet?.cadetId ?? 0}
       occupiedSlots={timetable.occupiedSlots}
       onExit={() => setEditMode(false)}
     />
@@ -299,19 +297,19 @@ export function TimetablesPageClient({
         timetableContent
       )}
 
-      {selectedCadet && timetable && (
-        <UploadTimetablePdfDialog
-          row={{
-            timetableId: timetable.id,
-            sessionId: sessionId ?? 0,
-            cadetId: selectedCadet.cadetId,
-            name: selectedCadet.name,
-            hasSlip: timetable.timetablePdfPath !== null,
-          }}
-          open={uploadOpen}
-          onOpenChange={setUploadOpen}
-        />
-      )}
+      {selectedCadet && timetable && selectedSession && (
+              <UploadTimetablePdfDialog
+                row={{
+                  timetableId: timetable.id,
+                  sessionId: selectedSession.id,
+                  cadetId: selectedCadet.cadetId,
+                  name: selectedCadet.name,
+                  hasSlip: timetable.timetablePdfPath !== null,
+                }}
+                open={uploadOpen}
+                onOpenChange={setUploadOpen}
+              />
+            )}
 
       {pdfTitle && (
         <PdfPreviewDialog

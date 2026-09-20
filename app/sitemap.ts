@@ -3,14 +3,15 @@ import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { events, intakes } from "@/db/schema";
 import { locales } from "@/lib/i18n/config";
+import { getSiteUrl } from "@/lib/env/public";
 
 export const revalidate = 3600;
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 const DEFAULT_PATHS = ["", "intakes", "stories", "contact"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const SITE_URL = getSiteUrl();
+
   const [intakeRows, storyRows] = await Promise.all([
     db
       .select({ slug: intakes.slug, updatedAt: intakes.updatedAt })

@@ -34,7 +34,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 ### 2.3 Operating Environment
 - Modern desktop/mobile browsers.
 - Node.js runtime for Next.js server rendering/actions.
-- Supabase project for Auth and Storage.
+- Supabase project for Auth and Storage (public and private buckets).
 - PostgreSQL database.
 
 ### 2.4 Constraints
@@ -93,6 +93,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 2. System shall process OAuth callback and establish server session.
 3. System shall deny admin access when session is absent.
 4. System shall check for a pending invitation on first Google login. If a matching invitation exists, the system shall atomically create the admin record, accept the invitation, and log the event. Uninvited users shall be redirected with an authorization error.
+5. System shall deny admin access to admins whose cadet record is inactive.
 
 ### 3.6 Authorization (RBAC)
 1. System shall assign exactly one admin role per admin user.
@@ -118,18 +119,21 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 13. Officer and Instructor shall bypass intake restrictions and access all intakes.
 14. Multimedia role shall remain unrestricted across all intakes.
 15. System shall validate intake ownership on all write operations in intake-scoped modules.
+16. Secretary may invite an admin with any role.
+17. The Intakes module shall be global (not intake-scoped) for all roles that can access it.
+18. Intake-scoped admins shall always be assigned an intake; an unassigned scoped admin shall be denied access.
 
 ### 3.7 Admin Modules
 1. System shall provide role-aware module access:
-   - Secretary: rank holders (cadet admin users only), intakes, cadets (cadet management), admin invitations (cadets only).
+   - Secretary: rank holders (cadet admin users only), intakes (global), cadets (cadet management), admin invitations (cadets only).
    - Treasurer: account management (bank/QR), collection creation and management, payment ledger, expenses.
    - Multimedia: portfolio, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed), application deadline configuration.
    - Sports: metrics (cadet health metric records), UKA records, APFA records, assessments (per-cadet UKA/APFA result entry).
-   - Welfare: attend (cadet absence records, Attend B/C with env-based sources), accommodations (gender-scoped for intake-scoped admins), religious activities (env-based types, photo gallery).
+   - Welfare: attend (cadet absence records, Attend B/C with env-based sources (`NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`)), accommodations (gender-scoped for intake-scoped admins), religious activities (env-based types (`NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`), photo gallery).
    - Academic: results, timetables.
 2. Full-access roles (OFFICER, INSTRUCTOR) shall access all modules.
 3. System shall support inline row editing in the Sports metrics table on desktop, fall back to dialog editing on mobile, and confirm with the user before discarding an unsaved row edit when the table state or selected record changes.
-4. System shall support UKA and APFA assessment records — one record per intake per session per year, auto-numbered and labeled `UKA-1-2026` style — with per-cadet results per assessment item (UKA: push-up, sit-up, 2.4km run; APFA: 1.6km run, pull-up, swimming, floating), gender-based passing thresholds read from environment variables with hardcoded defaults, per-item pass evaluation, and an overall PASS/FAIL result finalized only when all items are recorded.
+4. System shall support UKA and APFA assessment records — one record per intake per session per year, auto-numbered and labeled `UKA-1-2026` style — with per-cadet results per assessment item (UKA: push-up, sit-up, 2.4km run; APFA: 1.6km run, pull-up, swimming, floating), gender-based passing thresholds read from environment variables (`NEXT_PUBLIC_SPORTS_*`) with hardcoded defaults, per-item pass evaluation, and an overall PASS/FAIL result finalized only when all items are recorded.
 
 ### 3.8 Newsletter
 1. System shall collect newsletter subscriptions from contact page.
@@ -164,6 +168,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 4. System shall verify the member role is `CADET` and a cadet record exists.
 5. System shall redirect unauthorized users to the cadet login page with an appropriate error message.
 6. System shall enforce cadet auth per-page (not in the layout) to avoid redirect loops.
+7. System shall deny cadet sign-in and portal access when the cadet record is inactive.
 
 ### 3.13 Treasurer Payment System
 1. System shall allow Treasurers to manage treasury accounts (bank name, account number, QR code, DuitNow ID) scoped to their intake.
@@ -173,7 +178,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 5. System shall provide a cadet self-service payment page at `/cadet/collections/[slug]` showing collection details, payment account info, and QR code.
 6. System shall allow cadets to record payments with amount (if flexible) and receipt upload (if required).
 7. System shall prevent duplicate payments per cadet per collection via a unique constraint.
-8. System shall store payment receipts in Supabase Storage at structured paths.
+8. System shall store payment receipts in the private storage bucket and serve them only through short-lived signed URLs.
 9. System shall provide a payments ledger for Treasurers showing all payments across collections, filterable by collection.
 10. System shall show summary statistics (total collected, paid count vs. expected count) for selected collections.
 11. System shall track and display unpaid cadets for each collection.
@@ -215,8 +220,8 @@ System data model shall include at minimum:
 - Cadet accounts (one-to-one by memberId: bank name, account number, DuitNow ID, QR code path) for pre-filling claim bank details.
 - Claims (reimbursement claims: title, amount, description, receipt path, QR code path, status, intake-scoped).
 - Claim status enum: `PENDING`, `FULFILLED`, `REJECTED`.
-- Attend records (per cadet: date, Attend B / Attend C, source from env `WELFARE_ATTEND_SOURCES`) and accommodations (one per cadet: HOSTEL / RENTAL type, address).
-- Religious activities (Welfare module, not intake-scoped: type from env `WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`, record date, autogenerated `{TYPE}-{YYYY-MM-DD}` title with unique guard, remarks, location, nullable meeting link) with per-activity display photos (upload at creation only, view-only carousel afterwards).
+- Attend records (per cadet: date, Attend B / Attend C, source from env `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`) and accommodations (one per cadet: HOSTEL / RENTAL type, address).
+- Religious activities (Welfare module, not intake-scoped: type from env `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`, record date, autogenerated `{TYPE}-{YYYY-MM-DD}` title with unique guard, remarks, location, nullable meeting link) with per-activity display photos (upload at creation only, view-only carousel afterwards).
 - Health records (one per intake per day) and per-cadet health metrics (age at record date, height, weight, BMI, BMI classification).
 - UKA/APFA assessment records (intake, session number, year, record date) and per-cadet assessment results (item values, stored pass flags, overall PASS/FAIL).
 - Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
@@ -227,7 +232,8 @@ System data model shall include at minimum:
 
 ### 4.3 Media Storage
 1. System shall store file paths/storage keys or URLs for managed assets.
-2. Images on public pages shall use `next/image` with allowed remote host rules.
+2. Sensitive documents (payment receipts, treasury and cadet bank QR codes, claim documents, result slips, timetables, expense receipts, newsletter attachments) shall be stored in a private bucket.
+3. Images on public pages shall use `next/image` with allowed remote host rules.
 
 ## 5. Non-Functional Requirements
 
@@ -235,6 +241,8 @@ System data model shall include at minimum:
 1. System shall never expose server secrets to client.
 2. Authorization shall not rely solely on client-side hiding.
 3. Sensitive tokens shall be stored as hashes where applicable.
+4. Deployment configuration shall be validated against a documented schema; production shall not fall back to localhost URLs.
+5. Uploaded files shall be validated by content signature, size and type on the server.
 
 ### 5.2 Performance
 1. Public pages should prefer Server Components and server-side data reads.
@@ -266,7 +274,7 @@ System data model shall include at minimum:
 
 ### 6.2 Software Interfaces
 - Supabase Auth for Google login.
-- Supabase Storage for hosted media.
+- Supabase Storage for hosted media (public and private buckets).
 - PostgreSQL via Drizzle ORM.
 - Planned: Resend for email sending.
 
@@ -298,6 +306,7 @@ System data model shall include at minimum:
 - Sports Metrics module: health record sessions with per-cadet metrics (age, height, weight, BMI + classification), intake-scoped with record selection, inline table editing on desktop (dialog on mobile) with unsaved-changes confirmation.
 - Sports assessments: UKA/APFA record lists with auto session numbering and combined per-cadet result entry page (inline editing, env-based thresholds with defaults).
 - Welfare module: Attend (cadet absence records with env-based sources), Accommodations (auto-created on cadet creation, gender-scoped for intake-scoped admins), and Religious Activities (env-based types, autogenerated type-date titles with unique guard, photo upload at creation, view-only photo carousel).
+- Phase 1 hardening: environment schema and validation script, private-bucket storage routing with object migration, fail-closed intake scope with inactive-cadet blocking, and seed script safety guard.
 - Academic modules: Courses (cadet course assignment + course/program management with completion years, supported flags, and enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 30-minute slot editor for Sunday–Thursday 8:00 AM–6:00 PM with locked 1:00–2:00 PM lunch break, drag-range selection, timetable PDFs). Session provisioning via pg_cron function, sessions trigger, seed script, and on-demand sync.
 - Placeholder pages for remaining admin modules across other role groups (Academic placeholders replaced by real modules).
 

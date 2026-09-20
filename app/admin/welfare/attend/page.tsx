@@ -1,10 +1,8 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { attendRecords, cadets, intakes, members } from "@/db/schema";
-import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import { getAttendSources } from "@/lib/welfare/attend-sources";
 import {
   buildDateFilterClause,
@@ -55,13 +53,8 @@ export default async function AttendPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("attend");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "attend")) {
-    notFound();
-  }
-
   const raw = await searchParams;
 
   const sourceFilterOptions = getAttendSources().map((s) => ({

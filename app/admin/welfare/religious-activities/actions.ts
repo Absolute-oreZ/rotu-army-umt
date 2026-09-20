@@ -8,7 +8,7 @@ import { requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { getReligiousActivityTypes } from "@/lib/welfare/religious-activity-types";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage, deleteFromStorage } from "@/lib/supabase/storage";
+import { deleteManyFromStorage, saveImage } from "@/lib/supabase/storage";
 import {
   takeString,
   takeFile,
@@ -66,15 +66,26 @@ async function uploadPhotos(
   supabase: Awaited<ReturnType<typeof createSupabaseAdminClient>>,
   activityId: number,
   files: File[],
-): Promise<string[]> {
+): Promise<{ ok: true; paths: string[] } | { ok: false; error: string }> {
   const paths: string[] = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const path = `religious-activities/${activityId}/photos/${i + 1}.${getAllowedImageExtension(file)}`;
-    const uploaded = await uploadToStorage(supabase, file, path, file.type || undefined);
-    if (uploaded) paths.push(uploaded);
+
+  for (const [index, file] of files.entries()) {
+    const saved = await saveImage({
+      supabase,
+      file,
+      prefix: `religious-activities/${activityId}/photos`,
+      stem: `photo-${index + 1}`,
+    });
+
+    if (!saved.ok) {
+      await deleteManyFromStorage(supabase, paths);
+      return { ok: false, error: saved.error };
+    }
+
+    paths.push(saved.path);
   }
-  return paths;
+
+  return { ok: true, paths };
 }
 
 function duplicateError(type: string, recordDate: string, title: string) {
@@ -109,6 +120,10 @@ export async function createReligiousActivity(formData: FormData) {
   const photosResult = validatePhotos(formData);
   if ("error" in photosResult) return { error: photosResult.error };
 
+  const supabase = createSupabaseAdminClient();
+  let activityId: number | null = null;
+  let uploadedPhotoPaths: string[] = [];
+
   try {
     const inserted = await db
       .insert(religiousActivities)
@@ -128,17 +143,27 @@ export async function createReligiousActivity(formData: FormData) {
       return { error: duplicateError(type, recordDate, title) };
     }
 
+    activityId = activity.id;
+
     if (photosResult.files.length > 0) {
-      const supabase = await createSupabaseAdminClient();
-      const paths = await uploadPhotos(supabase, activity.id, photosResult.files);
-      if (paths.length > 0) {
-        await db
-          .insert(religiousActivityPhotos)
-          .values(paths.map((photoPath) => ({ activityId: activity.id, photoPath })));
+      const uploaded = await uploadPhotos(supabase, activity.id, photosResult.files);
+      if (!uploaded.ok) {
+        await db.delete(religiousActivities).where(eq(religiousActivities.id, activity.id));
+        return { error: uploaded.error };
       }
+
+      uploadedPhotoPaths = uploaded.paths;
+
+      await db
+        .insert(religiousActivityPhotos)
+        .values(uploaded.paths.map((photoPath) => ({ activityId: activity.id, photoPath })));
     }
   } catch (err) {
     console.error("createReligiousActivity failed", err);
+    await deleteManyFromStorage(supabase, uploadedPhotoPaths);
+    if (activityId !== null) {
+      await db.delete(religiousActivities).where(eq(religiousActivities.id, activityId));
+    }
     return { error: "Failed to create religious activity." };
   }
 
@@ -240,12 +265,10 @@ export async function deleteReligiousActivity(formData: FormData) {
 
     await db.delete(religiousActivities).where(eq(religiousActivities.id, activityId));
 
-    if (photoRows.length > 0) {
-      const supabase = await createSupabaseAdminClient();
-      for (const row of photoRows) {
-        await deleteFromStorage(supabase, row.photoPath);
-      }
-    }
+    await deleteManyFromStorage(
+      createSupabaseAdminClient(),
+      photoRows.map((row) => row.photoPath),
+    );
   } catch (err) {
     console.error("deleteReligiousActivity failed", err);
     return { error: "Failed to delete religious activity." };

@@ -7,8 +7,7 @@ import { treasuryAccounts, collections, intakes, adminUsers, members } from "@/d
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage } from "@/lib/supabase/storage";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { deleteFromStorage, saveImage, signedStorageUrl } from "@/lib/supabase/storage";
 import { bankEnum } from "@/db/schema";
 import {
   assertIntakeOwnership,
@@ -139,17 +138,30 @@ export async function createTreasuryAccount(formData: FormData) {
     }
 
     if (qrFile) {
-      const ext = getAllowedImageExtension(qrFile);
-      if (ext) {
-        const path = `treasury/${effectiveIntakeId}/accounts/${account.id}/qr.${ext}`;
-        const supabase = createSupabaseAdminClient();
-        const qrCodePath = await uploadToStorage(supabase, qrFile, path);
-        if (qrCodePath) {
-          await db
-            .update(treasuryAccounts)
-            .set({ qrCodePath })
-            .where(eq(treasuryAccounts.id, account.id));
-        }
+      const saved = await saveImage({
+        supabase: createSupabaseAdminClient(),
+        file: qrFile,
+        prefix: `treasury/${effectiveIntakeId}/accounts/${account.id}`,
+        stem: "qr",
+      });
+
+      if (!saved.ok) {
+        return { error: saved.error };
+      }
+
+      try {
+        await db
+          .update(treasuryAccounts)
+          .set({ qrCodePath: saved.path })
+          .where(eq(treasuryAccounts.id, account.id));
+      } catch (err) {
+        console.error("createTreasuryAccount QR save failed", {
+          accountId: account.id,
+          path: saved.path,
+          message: err instanceof Error ? err.message : "Unknown error",
+        });
+        await deleteFromStorage(createSupabaseAdminClient(), saved.path);
+        return { error: "Failed to save the QR code. Please try again." };
       }
     }
   } catch (err) {
@@ -180,7 +192,11 @@ export async function updateTreasuryAccount(formData: FormData) {
   }
 
   const [existing] = await db
-    .select({ id: treasuryAccounts.id, intakeId: treasuryAccounts.intakeId })
+    .select({
+      id: treasuryAccounts.id,
+      intakeId: treasuryAccounts.intakeId,
+      qrCodePath: treasuryAccounts.qrCodePath,
+    })
     .from(treasuryAccounts)
     .where(eq(treasuryAccounts.id, accountId))
     .limit(1);
@@ -221,31 +237,49 @@ export async function updateTreasuryAccount(formData: FormData) {
     }
   }
 
+  const supabase = createSupabaseAdminClient();
+  let uploadedQrPath: string | null = null;
+  let obsoleteQrPath: string | null = null;
+
+  if (qrFile) {
+    const saved = await saveImage({
+      supabase,
+      file: qrFile,
+      prefix: `treasury/${existing.intakeId}/accounts/${accountId}`,
+      stem: "qr",
+    });
+
+    if (!saved.ok) {
+      return { error: saved.error };
+    }
+
+    uploadedQrPath = saved.path;
+    if (existing.qrCodePath) obsoleteQrPath = existing.qrCodePath;
+  } else if (removeQr && existing.qrCodePath) {
+    obsoleteQrPath = existing.qrCodePath;
+  }
+
   try {
     await db.update(treasuryAccounts).set({
       bankName: bankName as (typeof bankEnum.enumValues)[number],
       accountNumber,
       duitNowId,
-      ...(removeQr ? { qrCodePath: null } : {}),
+      ...(uploadedQrPath !== null
+        ? { qrCodePath: uploadedQrPath }
+        : removeQr
+          ? { qrCodePath: null }
+          : {}),
     }).where(eq(treasuryAccounts.id, accountId));
-
-    if (qrFile) {
-      const ext = getAllowedImageExtension(qrFile);
-      if (ext) {
-        const path = `treasury/${existing.intakeId}/accounts/${accountId}/qr.${ext}`;
-        const supabase = createSupabaseAdminClient();
-        const qrCodePath = await uploadToStorage(supabase, qrFile, path);
-        if (qrCodePath) {
-          await db
-            .update(treasuryAccounts)
-            .set({ qrCodePath })
-            .where(eq(treasuryAccounts.id, accountId));
-        }
-      }
-    }
   } catch (err) {
+    if (uploadedQrPath) {
+      await deleteFromStorage(supabase, uploadedQrPath);
+    }
     console.error("updateTreasuryAccount failed", err);
     return { error: "Failed to update account." };
+  }
+
+  if (obsoleteQrPath) {
+    await deleteFromStorage(supabase, obsoleteQrPath);
   }
 
   revalidatePath("/admin/treasurer/accounts");
@@ -271,7 +305,11 @@ export async function deleteTreasuryAccount(formData: FormData) {
   }
 
   const [existing] = await db
-    .select({ id: treasuryAccounts.id, intakeId: treasuryAccounts.intakeId })
+    .select({
+      id: treasuryAccounts.id,
+      intakeId: treasuryAccounts.intakeId,
+      qrCodePath: treasuryAccounts.qrCodePath,
+    })
     .from(treasuryAccounts)
     .where(eq(treasuryAccounts.id, accountId))
     .limit(1);
@@ -303,6 +341,10 @@ export async function deleteTreasuryAccount(formData: FormData) {
   } catch (err) {
     console.error("deleteTreasuryAccount failed", err);
     return { error: "Failed to delete account." };
+  }
+
+  if (existing.qrCodePath) {
+    await deleteFromStorage(createSupabaseAdminClient(), existing.qrCodePath);
   }
 
   revalidatePath("/admin/treasurer/accounts");

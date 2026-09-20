@@ -1,10 +1,8 @@
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { cadets, intakes, members, studyPrograms } from "@/db/schema";
-import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule, isFullAccessAdminRole } from "@/lib/admin/roles";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -29,13 +27,9 @@ export default async function CoursesPage(props: {
   searchParams: Promise<RawSearchParams>;
 }) {
   const searchParams = await props.searchParams;
-  const admin = await requireCurrentAdmin();
-  if (!canAccessAdminModule(admin.role, "courses")) {
-    notFound();
-  }
-
+  const admin = await requireAdminModule("courses");
   const intakeScope = getIntakeScope(admin);
-  const isFullAccess = isFullAccessAdminRole(admin.role);
+  const isFullAccess = admin.role === "OFFICER" || admin.role === "INSTRUCTOR";
   const activeTab = searchParams.tab === "courses" ? "courses" : "cadets";
 
   const allStudyPrograms = await db

@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { accommodations, cadets, intakes, members, platoons } from "@/db/schema";
+import { accommodations, adminInvitations, adminUsers, cadets, intakes, members, platoons } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
+import { canAccessAdminModule, INTAKE_SCOPED_ROLES } from "@/lib/admin/roles";
 import { calculateAge, isValidPersonalEmail, isValidEduEmail } from "@/lib/utils";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage } from "@/lib/supabase/storage";
-import { takeString, takeNumber, takeFile, getFileExtension } from "@/lib/admin/form-helpers";
+import { deleteManyFromStorage, saveImage } from "@/lib/supabase/storage";
+import { takeString, takeNumber, takeFile } from "@/lib/admin/form-helpers";
 import {
   genderEnum,
   memberRankEnum,
@@ -68,18 +68,6 @@ export async function toggleCadetActive(formData: FormData) {
 
   revalidatePath("/admin/secretary/cadets");
   return { success: true };
-}
-
-async function uploadImage(
-  file: File,
-  path: string,
-): Promise<string | null> {
-  try {
-    const supabase = createSupabaseAdminClient();
-    return await uploadToStorage(supabase, file, path);
-  } catch {
-    return null;
-  }
 }
 
 export async function addCadet(formData: FormData) {
@@ -174,8 +162,38 @@ export async function addCadet(formData: FormData) {
   let displayPhotoPath: string | null = null;
 
   const storageBase = `intakes/${effectiveIntakeId}/cadets/${rawArmyNo}`;
+  const supabase = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
 
   try {
+    if (redBgFile) {
+      const saved = await saveImage({ supabase, file: redBgFile, prefix: storageBase, stem: "red-bg" });
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+      uploadedPaths.push(saved.path);
+      redBgPhotoPath = saved.path;
+    }
+    if (blueBgFile) {
+      const saved = await saveImage({ supabase, file: blueBgFile, prefix: storageBase, stem: "blue-bg" });
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+      uploadedPaths.push(saved.path);
+      blueBgPhotoPath = saved.path;
+    }
+    if (displayFile) {
+      const saved = await saveImage({ supabase, file: displayFile, prefix: storageBase, stem: "display" });
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+      uploadedPaths.push(saved.path);
+      displayPhotoPath = saved.path;
+    }
+
     const [memberId] = await db.transaction(async (tx) => {
       const [memberRow] = await tx
         .insert(members)
@@ -230,19 +248,6 @@ export async function addCadet(formData: FormData) {
       return [memberRow.id];
     });
 
-    if (redBgFile) {
-      const ext = getFileExtension(redBgFile);
-      redBgPhotoPath = await uploadImage(redBgFile, `${storageBase}/red-bg.${ext}`);
-    }
-    if (blueBgFile) {
-      const ext = getFileExtension(blueBgFile);
-      blueBgPhotoPath = await uploadImage(blueBgFile, `${storageBase}/blue-bg.${ext}`);
-    }
-    if (displayFile) {
-      const ext = getFileExtension(displayFile);
-      displayPhotoPath = await uploadImage(displayFile, `${storageBase}/display.${ext}`);
-    }
-
     const memberUpdates: Record<string, string | null> = {};
     if (redBgPhotoPath) memberUpdates.redBgPhotoPath = redBgPhotoPath;
     if (blueBgPhotoPath) memberUpdates.blueBgPhotoPath = blueBgPhotoPath;
@@ -256,6 +261,7 @@ export async function addCadet(formData: FormData) {
         .where(eq(cadets.memberId, memberId));
     }
   } catch (err) {
+    await deleteManyFromStorage(supabase, uploadedPaths);
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("unique") || message.includes("duplicate")) {
       return { error: "A member with this army number or email already exists." };
@@ -372,8 +378,16 @@ export async function updateCadet(formData: FormData) {
   }
 
   const [existing] = await db
-    .select({ cadetId: cadets.id, memberId: cadets.memberId, intakeId: cadets.intakeId })
+    .select({
+      cadetId: cadets.id,
+      memberId: cadets.memberId,
+      intakeId: cadets.intakeId,
+      displayPhotoPath: cadets.displayPhotoPath,
+      redBgPhotoPath: members.redBgPhotoPath,
+      blueBgPhotoPath: members.blueBgPhotoPath,
+    })
     .from(cadets)
+    .innerJoin(members, eq(members.id, cadets.memberId))
     .where(eq(cadets.id, rawCadetInfoId))
     .limit(1);
 
@@ -465,8 +479,57 @@ export async function updateCadet(formData: FormData) {
   const displayFile = takeFile(formData.get("displayPhoto"));
 
   const storageBase = `intakes/${effectiveIntakeId}/cadets/${rawArmyNo}`;
+  const supabase = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
+  const obsoletePaths: string[] = [];
+
+  let redBgPhotoPath: string | null | undefined;
+  let blueBgPhotoPath: string | null | undefined;
+  let displayPhotoPath: string | null | undefined;
 
   try {
+    if (redBgFile) {
+      const saved = await saveImage({ supabase, file: redBgFile, prefix: storageBase, stem: "red-bg" });
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+      uploadedPaths.push(saved.path);
+      redBgPhotoPath = saved.path;
+      if (existing.redBgPhotoPath) obsoletePaths.push(existing.redBgPhotoPath);
+    } else if (removeRedBg && existing.redBgPhotoPath) {
+      redBgPhotoPath = null;
+      obsoletePaths.push(existing.redBgPhotoPath);
+    }
+
+    if (blueBgFile) {
+      const saved = await saveImage({ supabase, file: blueBgFile, prefix: storageBase, stem: "blue-bg" });
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+      uploadedPaths.push(saved.path);
+      blueBgPhotoPath = saved.path;
+      if (existing.blueBgPhotoPath) obsoletePaths.push(existing.blueBgPhotoPath);
+    } else if (removeBlueBg && existing.blueBgPhotoPath) {
+      blueBgPhotoPath = null;
+      obsoletePaths.push(existing.blueBgPhotoPath);
+    }
+
+    if (displayFile) {
+      const saved = await saveImage({ supabase, file: displayFile, prefix: storageBase, stem: "display" });
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        return { error: saved.error };
+      }
+      uploadedPaths.push(saved.path);
+      displayPhotoPath = saved.path;
+      if (existing.displayPhotoPath) obsoletePaths.push(existing.displayPhotoPath);
+    } else if (removeDisplay && existing.displayPhotoPath) {
+      displayPhotoPath = null;
+      obsoletePaths.push(existing.displayPhotoPath);
+    }
+
     await db.transaction(async (tx) => {
       const memberUpdates: Record<string, unknown> = {
         name,
@@ -483,37 +546,49 @@ export async function updateCadet(formData: FormData) {
         rank: rank as (typeof memberRankEnum.enumValues)[number],
       };
 
-      if (removeRedBg) memberUpdates.redBgPhotoPath = null;
-      if (removeBlueBg) memberUpdates.blueBgPhotoPath = null;
+      if (redBgPhotoPath !== undefined) memberUpdates.redBgPhotoPath = redBgPhotoPath;
+      if (blueBgPhotoPath !== undefined) memberUpdates.blueBgPhotoPath = blueBgPhotoPath;
 
       await tx.update(members).set(memberUpdates).where(eq(members.id, rawMemberId));
 
-      await tx.update(cadets).set({
+      const cadetUpdates: Record<string, unknown> = {
         matricNo,
         isActive,
         quote: quote ?? null,
         intakeId: effectiveIntakeId,
         platoonId: rawPlatoonId,
-        ...(removeDisplay ? { displayPhotoPath: null } : {}),
-      }).where(eq(cadets.id, rawCadetInfoId));
+      };
+
+      if (displayPhotoPath !== undefined) cadetUpdates.displayPhotoPath = displayPhotoPath;
+
+      await tx.update(cadets).set(cadetUpdates).where(eq(cadets.id, rawCadetInfoId));
+
+      if (existing.intakeId !== effectiveIntakeId) {
+        await tx
+          .update(adminUsers)
+          .set({ intakeId: effectiveIntakeId })
+          .where(
+            and(
+              eq(adminUsers.memberId, rawMemberId),
+              inArray(adminUsers.role, [...INTAKE_SCOPED_ROLES]),
+            ),
+          );
+
+        await tx
+          .update(adminInvitations)
+          .set({ intakeId: effectiveIntakeId })
+          .where(
+            and(
+              eq(adminInvitations.memberId, rawMemberId),
+              isNull(adminInvitations.acceptedAt),
+              inArray(adminInvitations.role, [...INTAKE_SCOPED_ROLES]),
+            ),
+          );
+      }
     });
 
-    if (redBgFile) {
-      const ext = getFileExtension(redBgFile);
-      const path = await uploadImage(redBgFile, `${storageBase}/red-bg.${ext}`);
-      if (path) await db.update(members).set({ redBgPhotoPath: path }).where(eq(members.id, rawMemberId));
-    }
-    if (blueBgFile) {
-      const ext = getFileExtension(blueBgFile);
-      const path = await uploadImage(blueBgFile, `${storageBase}/blue-bg.${ext}`);
-      if (path) await db.update(members).set({ blueBgPhotoPath: path }).where(eq(members.id, rawMemberId));
-    }
-    if (displayFile) {
-      const ext = getFileExtension(displayFile);
-      const path = await uploadImage(displayFile, `${storageBase}/display.${ext}`);
-      if (path) await db.update(cadets).set({ displayPhotoPath: path }).where(eq(cadets.id, rawCadetInfoId));
-    }
   } catch (err) {
+    await deleteManyFromStorage(supabase, uploadedPaths);
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("unique") || message.includes("duplicate")) {
       return { error: "A member with this army number or email already exists." };
@@ -524,6 +599,8 @@ export async function updateCadet(formData: FormData) {
     console.error("Error updating cadet:", err);
     return { error: "Failed to update cadet. Please try again." };
   }
+
+  await deleteManyFromStorage(supabase, obsoletePaths);
 
   revalidatePath("/admin/secretary/cadets");
   return { success: true };

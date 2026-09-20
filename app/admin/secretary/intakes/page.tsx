@@ -2,7 +2,7 @@ import { asc, desc, and, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { intakes } from "@/db/schema";
-import { requireCurrentAdmin } from "@/lib/admin/rbac";
+import { requireAdminModule } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -64,7 +64,7 @@ export default async function IntakesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireCurrentAdmin();
+  await requireAdminModule("intakes");
   const raw = await searchParams;
 
   const config = buildIntakesTableConfig();

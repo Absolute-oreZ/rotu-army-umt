@@ -3,7 +3,7 @@ import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { adminUsers, adminInvitations, adminRoleAuditLogs, cadets, intakes, members } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildDateFilterClause,
@@ -126,7 +126,7 @@ export default async function RankHoldersPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("rank-holders");
   const intakeScope = getIntakeScope(admin);
   const raw = await searchParams;
 

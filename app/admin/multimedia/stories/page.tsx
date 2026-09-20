@@ -2,9 +2,7 @@ import { and, desc, ilike, or, sql } from "drizzle-orm";
 import { events } from "@/db/schema";
 import { db } from "@/db";
 import type { SQL } from "drizzle-orm";
-import { requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { requireAdminModule } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildDateFilterClause,
@@ -64,12 +62,7 @@ export default async function StoriesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
-
-  if (!canAccessAdminModule(admin.role, "stories")) {
-    notFound();
-  }
-
+  await requireAdminModule("stories");
   const raw = await searchParams;
 
   const config = buildStoriesTableConfig();

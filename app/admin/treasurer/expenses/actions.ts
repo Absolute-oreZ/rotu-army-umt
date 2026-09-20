@@ -14,8 +14,7 @@ import {
   takeString,
 } from "@/lib/admin/form-helpers";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { deleteFromStorage, signedStorageUrl, uploadToStorage } from "@/lib/supabase/storage";
-import { slugify } from "@/lib/slugify";
+import { deleteFromStorage, saveImage, signedStorageUrl } from "@/lib/supabase/storage";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
@@ -44,11 +43,6 @@ function takeFiles(values: FormDataEntryValue[]): File[] {
   return values.filter((value): value is File => value instanceof File && value.size > 0);
 }
 
-function getFileStem(file: File) {
-  const name = file.name.replace(/\.[^.]+$/, "");
-  return slugify(name) || "receipt";
-}
-
 function validateReceipts(files: File[]): string | null {
   for (const file of files) {
     if (!getAllowedImageExtension(file)) {
@@ -74,21 +68,25 @@ async function uploadExpenseReceipts(
   expenseId: number,
 ): Promise<{ rows: ReceiptInsert[]; paths: string[] }> {
   const paths: string[] = [];
-  const staged: Array<{ filePath: string; ext: string; stem: string }> = [];
+  const rows: ReceiptInsert[] = [];
 
   for (const file of files) {
-    const ext = getAllowedImageExtension(file) ?? "jpg";
-    const stem = getFileStem(file);
-    const path = `expenses/${intakeId}/${expenseId}/${stem}.${ext}`;
-    const uploaded = await uploadToStorage(supabase, file, path);
-    if (!uploaded) {
-      throw new Error("Failed to upload receipt.");
+    const saved = await saveImage({
+      supabase,
+      file,
+      prefix: `expenses/${intakeId}/${expenseId}`,
+      stem: "receipt",
+    });
+
+    if (!saved.ok) {
+      await deleteReceiptFiles(paths);
+      throw new Error(saved.error);
     }
-    paths.push(uploaded);
-    staged.push({ filePath: uploaded, ext, stem });
+
+    paths.push(saved.path);
+    rows.push({ expenseId, filePath: saved.path });
   }
 
-  const rows = staged.map((s) => ({ expenseId, filePath: s.filePath }));
   return { rows, paths };
 }
 

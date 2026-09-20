@@ -45,12 +45,12 @@ export async function getCurrentCadet(): Promise<CurrentCadet | null> {
   }
 
   const [cadet] = await db
-    .select({ intakeId: cadets.intakeId })
+    .select({ intakeId: cadets.intakeId, isActive: cadets.isActive })
     .from(cadets)
     .where(eq(cadets.memberId, member.id))
     .limit(1);
 
-  if (!cadet) {
+  if (!cadet || !cadet.isActive) {
     return null;
   }
 
@@ -72,3 +72,4 @@ export async function requireCurrentCadet(): Promise<CurrentCadet> {
 
   return cadet;
 }
+

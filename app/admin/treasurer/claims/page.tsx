@@ -2,9 +2,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { claims, cadets, members } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import {
@@ -53,13 +51,8 @@ export default async function ClaimsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("claims");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "claims")) {
-    notFound();
-  }
-
   const raw = await searchParams;
   const config = buildClaimsTableConfig();
   const state = parseTableSearchParams(raw, config);

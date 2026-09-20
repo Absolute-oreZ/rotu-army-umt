@@ -7,9 +7,7 @@ import {
   members,
   cadets,
 } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import {
@@ -89,13 +87,8 @@ export default async function PaymentsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("payments");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "payments")) {
-    notFound();
-  }
-
   const raw = await searchParams;
 
   const rawCollectionId = takeString(raw.collectionId);

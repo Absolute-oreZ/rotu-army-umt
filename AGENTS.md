@@ -41,7 +41,7 @@ npm run build
 npm run lint
 npm run db:generate   # generate Drizzle migrations
 npm run db:migrate    # apply migrations
-npm run db:seed       # seed database
+npm run db:seed       # seed database; requires ALLOW_SEED=1 in the shell, refuses production and non-local NEXT_PUBLIC_SITE_URL, truncates every table
 npm run db:studio     # open Drizzle Studio
 ```
 
@@ -58,19 +58,38 @@ npm run build
 
 ## Environment And Supabase
 
-The project already has a Supabase project configured through `.env`.
+The project already has a Supabase project configured through env files.
 
-**Security warning:** `.env` is currently committed to git despite `.gitignore` containing `.env*`. This contains live Supabase credentials and Resend API key. Do not expose these values in logs, error messages, or responses. Recommend moving to `.env.local` and adding a `.env.example` template.
+`.env*` is git-ignored except `.env.example`. Never commit real credentials. `.env.example` is the source of truth for variable names; run `npx tsx scripts/check-env.ts [--production]` after changing env. Do not print secrets in logs or responses.
 
-Expected environment values include:
+Canonical environment variables:
 
-- Supabase URL
-- Supabase publishable key
-- Supabase secret/service key
-- Supabase storage root path
-- Resend API key, when email sending is implemented
+- `DATABASE_URL`
+- `SUPABASE_SECRET_KEY`
+- `SUPABASE_PRIVATE_STORAGE_ROOT_PATH` (private storage bucket)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH` (public storage bucket)
+- `NEXT_PUBLIC_SITE_URL`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `CRON_SECRET`
+- `NEWSLETTER_UNSUBSCRIBE_SECRET`
+- The 14 `NEXT_PUBLIC_SPORTS_*` thresholds (see `.env.example`)
+- `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`
+- `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`
 
-Do not print secrets in logs or responses.
+`NEXT_PUBLIC_*` variables are inlined at build time; always read them as literal `process.env.NEXT_PUBLIC_X`.
+
+### Storage
+
+- Two buckets: `NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH` (public) and `SUPABASE_PRIVATE_STORAGE_ROOT_PATH` (private).
+- Routing is by first path segment via `resolveVisibility()` in `lib/storage/visibility.ts`; every prefix not in `PUBLIC_STORAGE_PREFIXES` is private (fail-closed).
+- Public prefixes: `events`, `hero-images`, `images`, `intakes`, `placeholder`, `religious-activities`, `webapp`.
+- Never call `storageUrl()` for private prefixes; use `signedStorageUrl()` on the server.
+- Use `saveImage` / `saveDocument` / `saveUpload` from `lib/supabase/storage.ts` for new uploads (content-sniffed validation, unique keys, no overwrite).
+- Delete old objects only after the database write commits (`deleteFromStorage` / `deleteManyFromStorage`).
+- `npx tsx scripts/migrate-private-objects.ts [--apply] [--delete-source]` migrates objects from the public bucket to the private bucket, keeping the same key.
 
 ### Authentication
 
@@ -115,14 +134,22 @@ Officer and Instructor bypass intake restrictions entirely and can access and ma
 - Treasury accounts, collections, payments (Treasurer module)
 - Health metric records, UKA/APFA assessment records (Sports module)
 - Attend records, accommodations (Welfare module — accommodations are gender-scoped for intake-scoped admins)
-- Results, timetables (Academic module — future)
+- Results, timetables (Academic module)
 
 **Non-intake-scoped data:**
 - Newsletter, stories, portfolio, `webapp_contents` (Multimedia)
+- Intakes (the Intakes module is global for all roles that can access it; it is never intake-scoped)
 
 Helper functions in `lib/admin/rbac.ts`:
 - `isIntakeScopedRole(role)` — checks if a role is intake-scoped
 - `getIntakeScope(admin)` — returns `null` (no restriction) or the `intakeId` to filter by
+
+**Invariant:** an intake-scoped admin always has a non-null `intakeId`; other roles always have `null`. Enforced by `resolveAdminAccess()`; `getIntakeScope()` throws if violated. The scope value is normalised on invite, role change and cadet intake transfer.
+
+Additional rules:
+- The Secretary can invite any role, including Officer and Instructor (intentional operational design).
+- Inactive cadets are blocked from the cadet portal and from every admin role. Admin access checks the admin's cadet record when one exists.
+- Every admin page must call `requireAdminModule(module)`; layout gates are UX only.
 
 #### Cadet Authentication
 
@@ -145,7 +172,7 @@ Trust-based payment recording system:
 - **Payments Ledger** (`/admin/treasurer/payments`): Treasurers view all payments across collections, filter by collection, see summary stats, and track unpaid cadets.
 - **Lifecycle cleanup**: When a Treasurer's role is changed to non-Treasurer, their `treasury_accounts` are deleted. Collections with `onDelete: "set null"` on `paymentAccountId` survive but lose the account link. Payment records are never deleted through cascade.
 - Schema: `treasury_accounts`, `collections`, `collection_payments` tables with `bank` and `collection_purpose` enums.
-- Storage: QR codes at `treasury/{intakeId}/accounts/{accountId}/qr.{ext}`, receipts at `payments/{collectionId}/{memberId}/receipt.{ext}`.
+- Storage: QR codes at `treasury/{intakeId}/accounts/{accountId}/qr.{ext}`, receipts at `payments/{collectionId}/{memberId}/receipt.{ext}`. Both prefixes are private; objects live in the private bucket and are read through signed URLs.
 
 ---
 
@@ -394,7 +421,7 @@ Each admin user has exactly one role.
 - Default: Rank Holders.
 - Access:
   - Rank Holders (cadet admin users only)
-  - Intakes
+  - Intakes (global)
   - Cadets
   - Admin invitations/user management (cadets only)
 
@@ -426,15 +453,15 @@ Each admin user has exactly one role.
   - Metrics (cadet health metric records: age, height, weight, BMI per assessment record)
   - UKA (UKA assessment record management; label format `UKA-[session]-[year]`)
   - APFA (APFA assessment record management; label format `APFA-[session]-[year]`)
-  - Assessments (per-cadet UKA/APFA result entry with pass/fail evaluation; passing thresholds configurable via env with hardcoded defaults)
+  - Assessments (per-cadet UKA/APFA result entry with pass/fail evaluation; passing thresholds configurable via `NEXT_PUBLIC_SPORTS_*` env with hardcoded defaults)
 
 ### Welfare
 
 - Default: Attend.
 - Access:
-  - Attend (cadet absence records: Attend B / Attend C; source options from env `WELFARE_ATTEND_SOURCES`)
+  - Attend (cadet absence records: Attend B / Attend C; source options from env `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`)
   - Accommodations (cadet accommodation records; gender-scoped for intake-scoped admins)
-  - Religious Activities (activities records with autogenerated type-date titles, env-based types from `WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`, photo gallery; not intake-scoped)
+  - Religious Activities (activities records with autogenerated type-date titles, env-based types from `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`, photo gallery; not intake-scoped)
 
 ### Academic
 

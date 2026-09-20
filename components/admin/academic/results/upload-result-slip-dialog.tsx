@@ -16,8 +16,6 @@ import { FileUpIcon, Loader2Icon } from "lucide-react";
 type UploadResultSlipDialogProps = {
   row: {
     resultId: number;
-    sessionId: number;
-    cadetId: number;
     name: string;
     hasSlip: boolean;
   } | null;
@@ -69,8 +67,6 @@ export function UploadResultSlipDialog({
     setError(null);
     const formData = new FormData();
     formData.set("resultId", String(row.resultId));
-    formData.set("sessionId", String(row.sessionId));
-    formData.set("cadetId", String(row.cadetId));
     formData.set("file", file);
 
     startTransition(async () => {

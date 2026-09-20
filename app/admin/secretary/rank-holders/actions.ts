@@ -13,7 +13,7 @@ import {
   treasuryAccounts,
 } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule, isFullAccessAdminRole, isAdminRole, type AdminRole } from "@/lib/admin/roles";
+import { canAccessAdminModule, isFullAccessAdminRole, isAdminRole, isIntakeScopedRole, type AdminRole } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendAdminInvitationEmail, sendAdminRoleChangeEmail, sendAdminRemovalEmail } from "@/lib/admin/email";
 
@@ -54,13 +54,17 @@ export async function addAdminUser(formData: FormData) {
   }
 
   const [cadet] = await db
-    .select({ intakeId: cadets.intakeId })
+    .select({ intakeId: cadets.intakeId, isActive: cadets.isActive })
     .from(cadets)
     .where(eq(cadets.memberId, memberId))
     .limit(1);
 
   if (!cadet) {
     return { error: "Only cadets can be invited as admin users." };
+  }
+
+  if (!cadet.isActive) {
+    return { error: "Inactive cadets cannot be invited as admin users." };
   }
 
   if (intakeScope !== null && cadet.intakeId !== intakeScope) {
@@ -102,7 +106,7 @@ export async function addAdminUser(formData: FormData) {
       memberId: member.id,
       email,
       role,
-      intakeId: cadet.intakeId,
+      intakeId: isIntakeScopedRole(role) ? cadet.intakeId : null,
       invitedByAuthUserId: admin.authUserId,
     });
   } catch {
@@ -163,9 +167,11 @@ export async function changeAdminRole(formData: FormData) {
       role: adminUsers.role,
       email: adminUsers.email,
       memberName: members.name,
+      cadetIntakeId: cadets.intakeId,
     })
     .from(adminUsers)
     .innerJoin(members, eq(adminUsers.memberId, members.id))
+    .leftJoin(cadets, eq(cadets.memberId, adminUsers.memberId))
     .where(eq(adminUsers.id, adminUserId))
     .limit(1);
 
@@ -181,11 +187,17 @@ export async function changeAdminRole(formData: FormData) {
     return { error: "The selected role is the same as the current role." };
   }
 
+  const nextIntakeId = isIntakeScopedRole(newRole) ? target.cadetIntakeId : null;
+
+  if (isIntakeScopedRole(newRole) && nextIntakeId === null) {
+    return { error: "This admin has no cadet record, so an intake cannot be assigned for that role." };
+  }
+
   try {
     await db.transaction(async (tx) => {
       await tx
         .update(adminUsers)
-        .set({ role: newRole })
+        .set({ role: newRole, intakeId: nextIntakeId })
         .where(eq(adminUsers.id, adminUserId));
 
       if (target.role === "TREASURER" && newRole !== "TREASURER") {

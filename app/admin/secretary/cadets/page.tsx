@@ -2,7 +2,7 @@ import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { CADET_RANKS, cadets, intakes, members, platoons } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -77,7 +77,7 @@ export default async function CadetsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("cadets");
   const intakeScope = getIntakeScope(admin);
   const raw = await searchParams;
 

@@ -70,7 +70,7 @@ export function ResultsPageClient({
       });
 
       startTransition(async () => {
-        const res = await getResultSlipSignedUrlAction(row.resultSlipPath ?? "");
+        const res = await getResultSlipSignedUrlAction(row.resultId);
         if (!res.success || !res.data) {
           setError(res.success ? "Could not generate download URL." : res.error);
           setPdfTarget(null);
@@ -139,8 +139,6 @@ export function ResultsPageClient({
         <UploadResultSlipDialog
           row={{
             resultId: uploadTarget.resultId,
-            sessionId: sessionId ?? 0,
-            cadetId: uploadTarget.cadetId,
             name: uploadTarget.name,
             hasSlip: uploadTarget.resultSlipPath !== null,
           }}

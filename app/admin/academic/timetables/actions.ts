@@ -6,13 +6,12 @@ import { db } from "@/db";
 import {
   academicTimetables,
   academicYears,
-  cadets,
   sessions,
 } from "@/db/schema";
-import { requireCurrentAdmin } from "@/lib/admin/rbac";
+import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { deleteFromStorage, signedStorageUrl, uploadToStorage } from "@/lib/supabase/storage";
+import { deleteFromStorage, saveDocument, signedStorageUrl } from "@/lib/supabase/storage";
 import { parseSlotKey, isLunchBreakSlot } from "@/lib/academic/helpers";
 import { takeFile, takeNumber } from "@/lib/admin/form-helpers";
 
@@ -20,10 +19,51 @@ export type ActionResult<T = undefined> =
   | { success: true; data?: T }
   | { success: false; error: string };
 
+async function loadAuthorizedTimetable(
+  intakeScope: number | null,
+  timetableId: number,
+): Promise<
+  | {
+      ok: true;
+      row: {
+        id: number;
+        sessionId: number;
+        timetablePdfPath: string | null;
+        intakeId: number;
+      };
+    }
+  | { ok: false; error: string }
+> {
+  if (!Number.isInteger(timetableId) || timetableId <= 0) {
+    return { ok: false, error: "Invalid timetable." };
+  }
+
+  const [row] = await db
+    .select({
+      id: academicTimetables.id,
+      sessionId: academicTimetables.sessionId,
+      timetablePdfPath: academicTimetables.timetablePdfPath,
+      intakeId: academicYears.intakeId,
+    })
+    .from(academicTimetables)
+    .innerJoin(sessions, eq(sessions.id, academicTimetables.sessionId))
+    .innerJoin(academicYears, eq(academicYears.id, sessions.academicYearId))
+    .where(eq(academicTimetables.id, timetableId))
+    .limit(1);
+
+  if (!row) {
+    return { ok: false, error: "Timetable record not found." };
+  }
+
+  if (intakeScope !== null && row.intakeId !== intakeScope) {
+    return { ok: false, error: "Access denied to other intake." };
+  }
+
+  return { ok: true, row };
+}
+
 export async function updateTimetableSlotsAction(input: {
   timetableId: number;
-  sessionId: number;
-  cadetId: number;
   occupiedSlots: string[];
 }): Promise<ActionResult<{ occupiedSlots: string[] }>> {
   try {
@@ -54,15 +94,9 @@ export async function updateTimetableSlotsAction(input: {
 
     slots.sort();
 
-    if (admin.intakeId) {
-      const [cadet] = await db
-        .select({ id: cadets.id, intakeId: cadets.intakeId })
-        .from(cadets)
-        .where(eq(cadets.id, input.cadetId));
-
-      if (!cadet || cadet.intakeId !== admin.intakeId) {
-        return { success: false, error: "Cadet not in your intake scope." };
-      }
+    const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), input.timetableId);
+    if (!loaded.ok) {
+      return { success: false, error: loaded.error };
     }
 
     await db
@@ -71,7 +105,7 @@ export async function updateTimetableSlotsAction(input: {
         occupiedSlots: slots,
         updatedAt: new Date(),
       })
-      .where(eq(academicTimetables.id, input.timetableId));
+      .where(eq(academicTimetables.id, loaded.row.id));
 
     revalidatePath("/admin/academic/timetables");
     return { success: true, data: { occupiedSlots: slots } };
@@ -87,6 +121,8 @@ export async function updateTimetableSlotsAction(input: {
 export async function uploadTimetablePdfAction(
   formData: FormData
 ): Promise<ActionResult<{ path: string }>> {
+  let uploadedPath: string | null = null;
+
   try {
     const admin = await requireCurrentAdmin();
     if (!canAccessAdminModule(admin.role, "timetables")) {
@@ -94,11 +130,9 @@ export async function uploadTimetablePdfAction(
     }
 
     const timetableId = takeNumber(formData.get("timetableId"));
-    const sessionId = takeNumber(formData.get("sessionId"));
-    const cadetId = takeNumber(formData.get("cadetId"));
     const file = takeFile(formData.get("file"));
 
-    if (!timetableId || !sessionId || !cadetId || !file) {
+    if (timetableId === null || !file) {
       return { success: false, error: "Missing required upload parameters." };
     }
 
@@ -107,42 +141,46 @@ export async function uploadTimetablePdfAction(
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: "PDF file size must not exceed 5MB." };
+      return { success: false, error: "PDF must be under 5 MB." };
     }
 
-    const [sessionRow] = await db
-      .select({ intakeId: academicYears.intakeId })
-      .from(sessions)
-      .innerJoin(academicYears, eq(academicYears.id, sessions.academicYearId))
-      .where(eq(sessions.id, sessionId));
-
-    if (!sessionRow) {
-      return { success: false, error: "Academic session not found." };
+    const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), timetableId);
+    if (!loaded.ok) {
+      return { success: false, error: loaded.error };
     }
 
-    if (admin.intakeId && admin.intakeId !== sessionRow.intakeId) {
-      return { success: false, error: "Access denied to other intake." };
-    }
+    const saveResult = await saveDocument({
+      supabase: createSupabaseAdminClient(),
+      file,
+      prefix: `academic/timetables/${loaded.row.intakeId}/${loaded.row.sessionId}`,
+      stem: `timetable-${loaded.row.id}`,
+    });
 
-    const storagePath = `academic/timetables/${sessionRow.intakeId}/${sessionId}/${cadetId}.pdf`;
-    const supabase = createSupabaseAdminClient();
-
-    const uploaded = await uploadToStorage(supabase, file, storagePath, "application/pdf");
-    if (!uploaded) {
-      return { success: false, error: "Failed to upload PDF to storage." };
+    if (!saveResult.ok) {
+      return { success: false, error: saveResult.error };
     }
+    uploadedPath = saveResult.path;
+
+    const oldPath = loaded.row.timetablePdfPath;
 
     await db
       .update(academicTimetables)
       .set({
-        timetablePdfPath: storagePath,
+        timetablePdfPath: saveResult.path,
         updatedAt: new Date(),
       })
-      .where(eq(academicTimetables.id, timetableId));
+      .where(eq(academicTimetables.id, loaded.row.id));
+
+    if (oldPath) {
+      await deleteFromStorage(createSupabaseAdminClient(), oldPath);
+    }
 
     revalidatePath("/admin/academic/timetables");
-    return { success: true, data: { path: storagePath } };
+    return { success: true, data: { path: saveResult.path } };
   } catch (err) {
+    if (uploadedPath) {
+      await deleteFromStorage(createSupabaseAdminClient(), uploadedPath);
+    }
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to upload timetable PDF.",
@@ -157,29 +195,16 @@ export async function deleteTimetablePdfAction(timetableId: number): Promise<Act
       return { success: false, error: "Access denied." };
     }
 
-    const [row] = await db
-      .select({
-        id: academicTimetables.id,
-        timetablePdfPath: academicTimetables.timetablePdfPath,
-        intakeId: academicYears.intakeId,
-      })
-      .from(academicTimetables)
-      .innerJoin(sessions, eq(sessions.id, academicTimetables.sessionId))
-      .innerJoin(academicYears, eq(academicYears.id, sessions.academicYearId))
-      .where(eq(academicTimetables.id, timetableId));
-
-    if (!row) {
-      return { success: false, error: "Timetable record not found." };
+    const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), timetableId);
+    if (!loaded.ok) {
+      return { success: false, error: loaded.error };
     }
 
-    if (admin.intakeId && admin.intakeId !== row.intakeId) {
-      return { success: false, error: "Access denied." };
+    if (!loaded.row.timetablePdfPath) {
+      return { success: false, error: "No timetable PDF uploaded." };
     }
 
-    if (row.timetablePdfPath) {
-      const supabase = createSupabaseAdminClient();
-      await deleteFromStorage(supabase, row.timetablePdfPath);
-    }
+    const oldPath = loaded.row.timetablePdfPath;
 
     await db
       .update(academicTimetables)
@@ -187,7 +212,9 @@ export async function deleteTimetablePdfAction(timetableId: number): Promise<Act
         timetablePdfPath: null,
         updatedAt: new Date(),
       })
-      .where(eq(academicTimetables.id, timetableId));
+      .where(eq(academicTimetables.id, loaded.row.id));
+
+    await deleteFromStorage(createSupabaseAdminClient(), oldPath);
 
     revalidatePath("/admin/academic/timetables");
     return { success: true };
@@ -200,12 +227,25 @@ export async function deleteTimetablePdfAction(timetableId: number): Promise<Act
 }
 
 export async function getTimetablePdfSignedUrlAction(
-  timetablePdfPath: string
+  timetableId: number
 ): Promise<ActionResult<{ signedUrl: string }>> {
   try {
-    await requireCurrentAdmin();
+    const admin = await requireCurrentAdmin();
+    if (!canAccessAdminModule(admin.role, "timetables")) {
+      return { success: false, error: "Access denied." };
+    }
+
+    const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), timetableId);
+    if (!loaded.ok) {
+      return { success: false, error: loaded.error };
+    }
+
+    if (!loaded.row.timetablePdfPath) {
+      return { success: false, error: "No timetable PDF uploaded." };
+    }
+
     const supabase = createSupabaseAdminClient();
-    const signedUrl = await signedStorageUrl(supabase, timetablePdfPath, 3600);
+    const signedUrl = await signedStorageUrl(supabase, loaded.row.timetablePdfPath, 3600);
     if (!signedUrl) {
       return { success: false, error: "Could not generate download URL." };
     }

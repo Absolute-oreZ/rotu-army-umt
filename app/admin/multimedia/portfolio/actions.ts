@@ -15,8 +15,8 @@ import {
 } from "@/db/schema";
 import { and, asc, eq, exists, gt, ilike, inArray, or, sql } from "drizzle-orm";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage } from "@/lib/supabase/storage";
-import { getFileExtension, getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { deleteFromStorage, saveImage } from "@/lib/supabase/storage";
+import { DEFAULT_HERO_IMAGE_PATH } from "@/lib/data";
 import { locales } from "@/lib/i18n/config";
 import {
   buildFAQTableConfig,
@@ -35,6 +35,13 @@ import {
   type FilterCondition,
   type RawSearchParams,
 } from "@/lib/admin/table-search-params";
+
+const SHARED_IMAGE_PATHS = new Set<string>([DEFAULT_HERO_IMAGE_PATH]);
+
+function canDeleteImage(path: string) {
+  if (path.startsWith("placeholder/")) return false;
+  return !SHARED_IMAGE_PATHS.has(path);
+}
 
 /**
  * Fetch the singleton webapp content record.
@@ -230,29 +237,41 @@ export async function updateWebappContent(formData: FormData) {
   setIfPresent("tikTokUrl", formData.get("tiktokUrl"));
   setIfPresent("xUrl", formData.get("xUrl"));
 
+  const [content] = await db
+    .select({ heroImagePath: webappContents.heroImagePath })
+    .from(webappContents)
+    .where(eq(webappContents.singletonKey, true))
+    .limit(1);
+
   // Handle hero image file upload
   const heroImageFile = formData.get("heroImageFile") as File | null;
   let heroImagePath: string | null = null;
+  const supabase = createSupabaseAdminClient();
 
   if (heroImageFile && heroImageFile.size > 0) {
-    if (heroImageFile.size > 5 * 1024 * 1024) {
-      return { success: false as const, error: "Hero image must be under 5 MB." };
-    }
-    if (!getAllowedImageExtension(heroImageFile)) {
-      return { success: false as const, error: "Hero image must be a JPG, PNG, or WebP image." };
+    const saved = await saveImage({
+      supabase,
+      file: heroImageFile,
+      prefix: "webapp/hero",
+      stem: "hero",
+    });
+
+    if (!saved.ok) {
+      return { success: false as const, error: saved.error };
     }
 
-    const ext = getFileExtension(heroImageFile);
-    const path = `webapp/hero.${ext}`;
-    const supabase = createSupabaseAdminClient();
-    const uploadedPath = await uploadToStorage(supabase, heroImageFile, path);
-    if (uploadedPath) {
-      heroImagePath = uploadedPath;
-    }
+    heroImagePath = saved.path;
   }
 
   // Handle hero image removal
   const removeHeroImage = formData.get("removeHeroImage") === "true";
+
+  const obsoleteHeroPath =
+    heroImagePath !== null
+      ? content?.heroImagePath ?? null
+      : removeHeroImage
+        ? content?.heroImagePath ?? null
+        : null;
 
   try {
     const finalUpdates: Record<string, string | null | undefined> = { ...updates, updatedByAdminUserId: admin.id };
@@ -267,11 +286,18 @@ export async function updateWebappContent(formData: FormData) {
       .set(finalUpdates)
       .where(eq(webappContents.singletonKey, true));
 
+    if (obsoleteHeroPath && canDeleteImage(obsoleteHeroPath)) {
+      await deleteFromStorage(supabase, obsoleteHeroPath);
+    }
+
     revalidatePath("/admin/multimedia/portfolio");
     revalidatePath("/");
     return { success: true as const };
   } catch (err) {
     console.error("updateWebappContent failed", err);
+    if (heroImagePath) {
+      await deleteFromStorage(supabase, heroImagePath);
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     return { success: false as const, error: message };
   }
@@ -467,22 +493,21 @@ export async function createSeeMoreLink(formData: FormData) {
   // Handle image upload
   const imageFile = formData.get("imageFile") as File | null;
   let imagePath: string | null = null;
+  const supabase = createSupabaseAdminClient();
 
   if (imageFile && imageFile.size > 0) {
-    if (imageFile.size > 5 * 1024 * 1024) {
-      return { success: false as const, error: "Image must be under 5 MB." };
-    }
-    if (!getAllowedImageExtension(imageFile)) {
-      return { success: false as const, error: "Image must be a JPG, PNG, or WebP image." };
+    const saved = await saveImage({
+      supabase,
+      file: imageFile,
+      prefix: "webapp/see-more",
+      stem: "see-more",
+    });
+
+    if (!saved.ok) {
+      return { success: false as const, error: saved.error };
     }
 
-    const ext = getFileExtension(imageFile);
-    const path = `webapp/see-more/${Date.now()}.${ext}`;
-    const supabase = createSupabaseAdminClient();
-    const uploadedPath = await uploadToStorage(supabase, imageFile, path);
-    if (uploadedPath) {
-      imagePath = uploadedPath;
-    }
+    imagePath = saved.path;
   }
 
   try {
@@ -499,6 +524,9 @@ export async function createSeeMoreLink(formData: FormData) {
     return { success: true as const };
   } catch (err) {
     console.error("createSeeMoreLink failed", err);
+    if (imagePath) {
+      await deleteFromStorage(supabase, imagePath);
+    }
     return { success: false as const, error: "Failed to create See More link." };
   }
 }
@@ -523,30 +551,42 @@ export async function updateSeeMoreLink(formData: FormData) {
     return { success: false as const, error: "Title and link are required." };
   }
 
+  const [existing] = await db
+    .select({ id: seeMoreLinks.id, imagePath: seeMoreLinks.imagePath })
+    .from(seeMoreLinks)
+    .where(eq(seeMoreLinks.id, linkId))
+    .limit(1);
+
+  if (!existing) {
+    return { success: false as const, error: "See More link not found." };
+  }
+
   // Handle image upload
   const imageFile = formData.get("imageFile") as File | null;
-  let imagePath: string | null | undefined = undefined;
+  let newImagePath: string | null | undefined = undefined;
+  let obsoleteImagePath: string | null = null;
+  const supabase = createSupabaseAdminClient();
 
   if (imageFile && imageFile.size > 0) {
-    if (imageFile.size > 5 * 1024 * 1024) {
-      return { success: false as const, error: "Image must be under 5 MB." };
-    }
-    if (!getAllowedImageExtension(imageFile)) {
-      return { success: false as const, error: "Image must be a JPG, PNG, or WebP image." };
+    const saved = await saveImage({
+      supabase,
+      file: imageFile,
+      prefix: "webapp/see-more",
+      stem: "see-more",
+    });
+
+    if (!saved.ok) {
+      return { success: false as const, error: saved.error };
     }
 
-    const ext = getFileExtension(imageFile);
-    const path = `webapp/see-more/${Date.now()}.${ext}`;
-    const supabase = createSupabaseAdminClient();
-    const uploadedPath = await uploadToStorage(supabase, imageFile, path);
-    if (uploadedPath) {
-      imagePath = uploadedPath;
-    }
+    newImagePath = saved.path;
+    if (existing.imagePath) obsoleteImagePath = existing.imagePath;
   }
 
   const removeImage = formData.get("removeImage") === "true";
   if (removeImage) {
-    imagePath = null;
+    newImagePath = null;
+    if (existing.imagePath) obsoleteImagePath = existing.imagePath;
   }
 
   try {
@@ -555,16 +595,23 @@ export async function updateSeeMoreLink(formData: FormData) {
       link,
       status: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
     };
-    if (imagePath !== undefined) {
-      updates.imagePath = imagePath;
+    if (newImagePath !== undefined) {
+      updates.imagePath = newImagePath;
     }
 
     await db.update(seeMoreLinks).set(updates).where(eq(seeMoreLinks.id, linkId));
+
+    if (obsoleteImagePath && canDeleteImage(obsoleteImagePath)) {
+      await deleteFromStorage(supabase, obsoleteImagePath);
+    }
 
     revalidatePath("/admin/multimedia/portfolio");
     return { success: true as const };
   } catch (err) {
     console.error("updateSeeMoreLink failed", err);
+    if (newImagePath) {
+      await deleteFromStorage(supabase, newImagePath);
+    }
     return { success: false as const, error: "Failed to update See More link." };
   }
 }
@@ -576,13 +623,25 @@ export async function deleteSeeMoreLink(linkId: number) {
     return { success: false as const, error: "You do not have permission to manage portfolio." };
   }
 
+  let imagePath: string | null = null;
+
   try {
     await db.transaction(async (tx) => {
-      const [link] = await tx.select({ sortOrder: seeMoreLinks.sortOrder }).from(seeMoreLinks).where(eq(seeMoreLinks.id, linkId)).limit(1);
+      const [link] = await tx
+        .select({ sortOrder: seeMoreLinks.sortOrder, imagePath: seeMoreLinks.imagePath })
+        .from(seeMoreLinks)
+        .where(eq(seeMoreLinks.id, linkId))
+        .limit(1);
       if (!link) return;
+      imagePath = link.imagePath;
       await tx.delete(seeMoreLinks).where(eq(seeMoreLinks.id, linkId));
       await tx.update(seeMoreLinks).set({ sortOrder: sql`${seeMoreLinks.sortOrder} - 1` }).where(gt(seeMoreLinks.sortOrder, link.sortOrder));
     });
+
+    if (imagePath && canDeleteImage(imagePath)) {
+      await deleteFromStorage(createSupabaseAdminClient(), imagePath);
+    }
+
     revalidatePath("/admin/multimedia/portfolio");
     return { success: true as const };
   } catch (err) {

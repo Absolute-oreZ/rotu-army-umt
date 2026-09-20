@@ -1,6 +1,5 @@
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
 import { db } from "@/db";
 import {
   academicResults,
@@ -8,8 +7,8 @@ import {
   intakes,
   members,
 } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule, isFullAccessAdminRole } from "@/lib/admin/roles";
+import {  getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
+import { isFullAccessAdminRole } from "@/lib/admin/roles";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -39,12 +38,8 @@ export default async function ResultsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("results");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "results")) {
-    notFound();
-  }
 
   const raw = await searchParams;
   const requestedSessionId = takePositiveInt(raw.sessionId);
@@ -148,4 +143,3 @@ export default async function ResultsPage({
     />
   );
 }
-

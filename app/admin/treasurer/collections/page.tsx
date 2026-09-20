@@ -9,9 +9,7 @@ import {
   adminUsers,
   members,
 } from "@/db/schema";
-import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
-import { notFound } from "next/navigation";
+import { getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildNumberFilterClause,
@@ -81,13 +79,8 @@ export default async function CollectionsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("collections");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "collections")) {
-    notFound();
-  }
-
   const raw = await searchParams;
 
   const intakeRows = await db

@@ -96,7 +96,6 @@ export function ResultsTableRow({
     startTransition(async () => {
       const res = await updateResultScoresAction({
         resultId: row.resultId,
-        cadetId: row.cadetId,
         gpa,
         cgpa,
       });

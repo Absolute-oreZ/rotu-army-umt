@@ -6,14 +6,8 @@ import { db } from "@/db";
 import { collections, collectionPayments } from "@/db/schema";
 import { requireCurrentCadet } from "@/lib/auth/cadet";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage } from "@/lib/supabase/storage";
-import {
-  getAllowedImageExtension,
-  sanitizeMoney,
-  takeString,
-} from "@/lib/admin/form-helpers";
-
-const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
+import { deleteFromStorage, saveUpload } from "@/lib/supabase/storage";
+import { sanitizeMoney, takeString } from "@/lib/admin/form-helpers";
 
 export async function recordPayment(formData: FormData) {
   const cadet = await requireCurrentCadet();
@@ -79,21 +73,22 @@ export async function recordPayment(formData: FormData) {
   }
 
   let receiptPath: string | null = null;
+  const supabase = createSupabaseAdminClient();
 
   if (receiptFile) {
-    if (receiptFile.size > MAX_RECEIPT_SIZE) {
-      return { error: "Receipt file must be under 5 MB." };
+    const saved = await saveUpload({
+      supabase,
+      file: receiptFile,
+      prefix: `payments/${collectionId}/${cadet.memberId}`,
+      stem: "receipt",
+      kinds: ["image", "pdf"],
+    });
+
+    if (!saved.ok) {
+      return { error: saved.error };
     }
-    const ext = getAllowedImageExtension(receiptFile);
-    if (!ext) {
-      return { error: "Receipt must be a JPG, PNG, or WebP image." };
-    }
-    const path = `payments/${collectionId}/${cadet.memberId}/receipt.${ext}`;
-    const supabase = createSupabaseAdminClient();
-    receiptPath = await uploadToStorage(supabase, receiptFile, path);
-    if (receiptPath === null) {
-      return { error: "Failed to upload receipt." };
-    }
+
+    receiptPath = saved.path;
   }
 
   try {
@@ -104,6 +99,9 @@ export async function recordPayment(formData: FormData) {
       receiptPath,
     });
   } catch (err) {
+    if (receiptPath) {
+      await deleteFromStorage(supabase, receiptPath);
+    }
     if (isUniqueViolation(err)) {
       return { error: "You have already recorded a payment for this collection." };
     }

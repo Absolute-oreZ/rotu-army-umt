@@ -21,6 +21,9 @@ const errorMessages: Record<string, string> = {
   "missing-origin": "The login request could not determine this site URL.",
   "oauth-start-failed": "Google login could not be started.",
   "not-authorized": "This Google account is not registered as an admin. Contact the Secretary to request access.",
+  "not-a-cadet": "This account is no longer linked to a cadet record, so the pending invitation was rejected. Contact the Secretary.",
+  "inactive-cadet": "Your cadet record is inactive, so admin access is disabled. Contact the Secretary.",
+  "missing-intake": "Your admin account has no intake assigned. Contact an Officer or Instructor.",
 };
 
 export default async function AdminLoginPage({

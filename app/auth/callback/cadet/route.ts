@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   }
 
   const [cadet] = await db
-    .select({ id: cadets.id })
+    .select({ id: cadets.id, isActive: cadets.isActive })
     .from(cadets)
     .where(eq(cadets.memberId, member.id))
     .limit(1);
@@ -74,5 +74,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (!cadet.isActive) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(
+      new URL("/cadet/login?error=inactive-cadet", requestUrl.origin),
+    );
+  }
+
   return NextResponse.redirect(new URL(next, requestUrl.origin));
 }
+

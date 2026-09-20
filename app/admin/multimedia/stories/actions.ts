@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   events,
@@ -14,13 +14,11 @@ import {
 import { requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { uploadToStorage, deleteFromStorage } from "@/lib/supabase/storage";
-import { extractStoragePath } from "@/lib/supabase/storage-public";
+import { deleteManyFromStorage, saveImage, uploadToStorage } from "@/lib/supabase/storage";
 import {
   takeString,
   takeNumber,
   takeFile,
-  getFileExtension,
   getAllowedImageExtension,
 } from "@/lib/admin/form-helpers";
 import { locales } from "@/lib/i18n/config";
@@ -155,6 +153,11 @@ export async function createStory(formData: FormData) {
     if (!isAllowedVideoFile(videoFile)) return { error: "Video must be an MP4, MOV, WebM, or AVI file." };
   }
 
+  const supabase = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
+
+  let eventId: number | null = null;
+
   try {
     const [event] = await db
       .insert(events)
@@ -177,7 +180,8 @@ export async function createStory(formData: FormData) {
       return { error: "Failed to create story." };
     }
 
-    // Insert translations
+    eventId = event.id;
+
     const translationValues = locales.map((locale) => ({
       eventId: event.id,
       locale,
@@ -186,48 +190,65 @@ export async function createStory(formData: FormData) {
     }));
     await db.insert(eventTranslations).values(translationValues);
 
-    // Insert tag associations
     if (tagIds.length > 0) {
       const tagValues = tagIds.map((tagId) => ({ eventId: event.id, tagId }));
       await db.insert(eventsToTags).values(tagValues);
     }
 
-    // Upload cover photo if provided
     if (coverPhotoFile) {
-      const ext = getFileExtension(coverPhotoFile);
-      const path = `events/${event.id}/cover.${ext}`;
-      const supabase = createSupabaseAdminClient();
-      const coverPhotoPath = await uploadToStorage(supabase, coverPhotoFile, path);
-      if (coverPhotoPath) {
-        await db
-          .update(events)
-          .set({ coverPhotoPath, coverPhotoWidth, coverPhotoHeight })
-          .where(eq(events.id, event.id));
+      const saved = await saveImage({
+        supabase,
+        file: coverPhotoFile,
+        prefix: `events/${event.id}/cover`,
+        stem: "cover",
+      });
+
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        await db.delete(events).where(eq(events.id, event.id));
+        return { error: saved.error };
       }
+
+      uploadedPaths.push(saved.path);
+
+      await db
+        .update(events)
+        .set({ coverPhotoPath: saved.path, coverPhotoWidth, coverPhotoHeight })
+        .where(eq(events.id, event.id));
     }
 
     if (videoFile) {
       const ext = videoFile.name.split(".").pop()?.toLowerCase() ?? "mp4";
       const path = `events/${event.id}/video.${ext}`;
-      const supabase = createSupabaseAdminClient();
       const uploadedVideoPath = await uploadToStorage(supabase, videoFile, path, videoFile.type);
       if (!uploadedVideoPath) throw new Error("Video upload failed.");
+      uploadedPaths.push(uploadedVideoPath);
       await db.update(events).set({ videoPath: uploadedVideoPath }).where(eq(events.id, event.id));
     }
 
-    if (displayPhotoFiles.length > 0) {
-      const supabase = createSupabaseAdminClient();
-      for (const [index, file] of displayPhotoFiles.entries()) {
-        const ext = getFileExtension(file);
-        const path = `events/${event.id}/gallery/${Date.now()}_${index}.${ext}`;
-        const photoPath = await uploadToStorage(supabase, file, path);
-        if (photoPath) {
-          await db.insert(eventDisplayPhotos).values({ eventId: event.id, photoPath });
-        }
+    for (const [index, file] of displayPhotoFiles.entries()) {
+      const saved = await saveImage({
+        supabase,
+        file,
+        prefix: `events/${event.id}/gallery`,
+        stem: `photo-${index + 1}`,
+      });
+
+      if (!saved.ok) {
+        await deleteManyFromStorage(supabase, uploadedPaths);
+        await db.delete(events).where(eq(events.id, event.id));
+        return { error: saved.error };
       }
+
+      uploadedPaths.push(saved.path);
+      await db.insert(eventDisplayPhotos).values({ eventId: event.id, photoPath: saved.path });
     }
   } catch (err) {
     console.error("createStory failed", err);
+    await deleteManyFromStorage(supabase, uploadedPaths);
+    if (eventId !== null) {
+      await db.delete(events).where(eq(events.id, eventId));
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("unique") || message.includes("duplicate")) {
       return { error: "A story with this slug already exists." };
@@ -347,7 +368,11 @@ export async function updateStory(storyId: number, formData: FormData) {
   }
 
   const [existing] = await db
-    .select({ id: events.id })
+    .select({
+      id: events.id,
+      coverPhotoPath: events.coverPhotoPath,
+      videoPath: events.videoPath,
+    })
     .from(events)
     .where(eq(events.id, storyId))
     .limit(1);
@@ -420,9 +445,80 @@ export async function updateStory(storyId: number, formData: FormData) {
     if (!isAllowedVideoFile(videoFile)) return { error: "Video must be an MP4, MOV, WebM, or AVI file." };
   }
 
+  const supabase = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
+  const obsoletePaths: string[] = [];
+
+  let newCoverPhotoPath: string | null = null;
+  if (coverPhoto) {
+    const saved = await saveImage({
+      supabase,
+      file: coverPhoto,
+      prefix: `events/${storyId}/cover`,
+      stem: "cover",
+    });
+
+    if (!saved.ok) {
+      return { error: saved.error };
+    }
+
+    uploadedPaths.push(saved.path);
+    newCoverPhotoPath = saved.path;
+    if (existing.coverPhotoPath) obsoletePaths.push(existing.coverPhotoPath);
+  } else if (removeCover && existing.coverPhotoPath) {
+    obsoletePaths.push(existing.coverPhotoPath);
+  }
+
+  let newVideoPath: string | null = null;
+  if (videoFile) {
+    const ext = videoFile.name.split(".").pop()?.toLowerCase() ?? "mp4";
+    const path = `events/${storyId}/video.${ext}`;
+    newVideoPath = await uploadToStorage(supabase, videoFile, path, videoFile.type);
+
+    if (!newVideoPath) {
+      await deleteManyFromStorage(supabase, uploadedPaths);
+      return { error: "Video upload failed." };
+    }
+
+    if (existing.videoPath && existing.videoPath !== newVideoPath) {
+      obsoletePaths.push(existing.videoPath);
+    }
+  } else if (removeVideo && existing.videoPath) {
+    obsoletePaths.push(existing.videoPath);
+  }
+
+  const newGalleryPaths: string[] = [];
+  for (const [index, file] of newDisplayPhotoFiles.entries()) {
+    const saved = await saveImage({
+      supabase,
+      file,
+      prefix: `events/${storyId}/gallery`,
+      stem: `photo-${index + 1}`,
+    });
+
+    if (!saved.ok) {
+      await deleteManyFromStorage(supabase, [...uploadedPaths, ...newGalleryPaths]);
+      return { error: saved.error };
+    }
+
+    newGalleryPaths.push(saved.path);
+  }
+
+  const displayPhotosToRemove =
+    removeDisplayPhotoIds.length > 0
+      ? await db
+          .select({ id: eventDisplayPhotos.id, photoPath: eventDisplayPhotos.photoPath })
+          .from(eventDisplayPhotos)
+          .where(
+            and(
+              eq(eventDisplayPhotos.eventId, storyId),
+              inArray(eventDisplayPhotos.id, removeDisplayPhotoIds),
+            ),
+          )
+      : [];
+
   try {
     await db.transaction(async (tx) => {
-      // Update event
       await tx
         .update(events)
         .set({
@@ -433,8 +529,12 @@ export async function updateStory(storyId: number, formData: FormData) {
           location,
           participantCount,
           status: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-          ...(removeCover ? { coverPhotoPath: null, coverPhotoWidth: null, coverPhotoHeight: null } : {}),
-          ...(removeVideo ? { videoPath: null } : {}),
+          ...(newCoverPhotoPath
+            ? { coverPhotoPath: newCoverPhotoPath, coverPhotoWidth, coverPhotoHeight }
+            : removeCover
+              ? { coverPhotoPath: null, coverPhotoWidth: null, coverPhotoHeight: null }
+              : {}),
+          ...(newVideoPath ? { videoPath: newVideoPath } : removeVideo ? { videoPath: null } : {}),
         })
         .where(eq(events.id, storyId));
 
@@ -465,66 +565,19 @@ export async function updateStory(storyId: number, formData: FormData) {
         await tx.insert(eventsToTags).values(tagValues);
       }
 
-      if (removeDisplayPhotoIds.length > 0) {
-        const rowsToDelete = await tx
-          .select({ id: eventDisplayPhotos.id, photoPath: eventDisplayPhotos.photoPath })
-          .from(eventDisplayPhotos)
-          .where(eq(eventDisplayPhotos.eventId, storyId));
-
-        const idsToDelete = new Set(removeDisplayPhotoIds);
-        for (const row of rowsToDelete) {
-          if (idsToDelete.has(row.id)) {
-            const storagePath = extractStoragePath(row.photoPath);
-            if (storagePath) {
-              const supabase = createSupabaseAdminClient();
-              await deleteFromStorage(supabase, storagePath);
-            }
-          }
-        }
-
-        await tx.delete(eventDisplayPhotos).where(eq(eventDisplayPhotos.eventId, storyId));
-        const remaining = rowsToDelete.filter((row) => !idsToDelete.has(row.id));
-        if (remaining.length > 0) {
-          await tx.insert(eventDisplayPhotos).values(remaining.map((row) => ({ eventId: storyId, photoPath: row.photoPath })));
-        }
+      if (displayPhotosToRemove.length > 0) {
+        await tx
+          .delete(eventDisplayPhotos)
+          .where(inArray(eventDisplayPhotos.id, displayPhotosToRemove.map((row) => row.id)));
       }
 
-      // Upload new cover photo if provided
-      if (coverPhoto) {
-        const ext = getFileExtension(coverPhoto);
-        const path = `events/${storyId}/cover.${ext}`;
-        const supabase = createSupabaseAdminClient();
-        const coverPhotoPath = await uploadToStorage(supabase, coverPhoto, path);
-        if (coverPhotoPath) {
-          await tx.update(events).set({ coverPhotoPath, coverPhotoWidth, coverPhotoHeight }).where(eq(events.id, storyId));
-        }
-      }
-
-      if (videoFile) {
-        const ext = videoFile.name.split(".").pop()?.toLowerCase() ?? "mp4";
-        const path = `events/${storyId}/video.${ext}`;
-        const supabase = createSupabaseAdminClient();
-        const uploadedVideoPath = await uploadToStorage(supabase, videoFile, path, videoFile.type);
-        if (!uploadedVideoPath) throw new Error("Video upload failed.");
-        await tx.update(events).set({ videoPath: uploadedVideoPath }).where(eq(events.id, storyId));
-      }
-
-      if (newDisplayPhotoFiles.length > 0) {
-        const supabase = createSupabaseAdminClient();
-        const rows = await tx.select({ id: eventDisplayPhotos.id }).from(eventDisplayPhotos).where(eq(eventDisplayPhotos.eventId, storyId));
-        const startIndex = rows.length;
-        for (const [index, file] of newDisplayPhotoFiles.entries()) {
-          const ext = getFileExtension(file);
-          const path = `events/${storyId}/gallery/${Date.now()}_${startIndex + index}.${ext}`;
-          const photoPath = await uploadToStorage(supabase, file, path);
-          if (photoPath) {
-            await tx.insert(eventDisplayPhotos).values({ eventId: storyId, photoPath });
-          }
-        }
+      for (const photoPath of newGalleryPaths) {
+        await tx.insert(eventDisplayPhotos).values({ eventId: storyId, photoPath });
       }
     });
   } catch (err) {
     console.error("updateStory failed", err);
+    await deleteManyFromStorage(supabase, [...uploadedPaths, ...newGalleryPaths]);
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("unique") || message.includes("duplicate")) {
       return { error: "A story with this slug already exists." };
@@ -534,6 +587,11 @@ export async function updateStory(storyId: number, formData: FormData) {
     }
     return { error: "Failed to update story. Please try again." };
   }
+
+  await deleteManyFromStorage(supabase, [
+    ...obsoletePaths,
+    ...displayPhotosToRemove.map((row) => row.photoPath),
+  ]);
 
   revalidatePath("/admin/multimedia/stories");
   return { success: true };
@@ -633,7 +691,7 @@ export async function deleteStory(storyId: number) {
   }
 
   const [existing] = await db
-    .select({ id: events.id, coverPhotoPath: events.coverPhotoPath })
+    .select({ id: events.id, coverPhotoPath: events.coverPhotoPath, videoPath: events.videoPath })
     .from(events)
     .where(eq(events.id, storyId))
     .limit(1);
@@ -642,12 +700,23 @@ export async function deleteStory(storyId: number) {
     return { error: "Story not found." };
   }
 
+  const displayPhotos = await db
+    .select({ photoPath: eventDisplayPhotos.photoPath })
+    .from(eventDisplayPhotos)
+    .where(eq(eventDisplayPhotos.eventId, storyId));
+
   try {
     await db.delete(events).where(eq(events.id, storyId));
   } catch (err) {
     console.error("deleteStory failed", err);
     return { error: "Failed to delete story." };
   }
+
+  await deleteManyFromStorage(createSupabaseAdminClient(), [
+    existing.coverPhotoPath,
+    existing.videoPath,
+    ...displayPhotos.map((row) => row.photoPath),
+  ]);
 
   revalidatePath("/admin/multimedia/stories");
   return { success: true };

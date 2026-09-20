@@ -1,10 +1,8 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { accommodations, cadets, intakes, members } from "@/db/schema";
-import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
-import { canAccessAdminModule } from "@/lib/admin/roles";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import {
   buildEnumFilterClause,
   buildSortOrderBy,
@@ -55,13 +53,8 @@ export default async function AccommodationsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const admin = await requireCurrentAdmin();
+  const admin = await requireAdminModule("accommodations");
   const intakeScope = getIntakeScope(admin);
-
-  if (!canAccessAdminModule(admin.role, "accommodations")) {
-    notFound();
-  }
-
   const raw = await searchParams;
 
   const intakeRows = await db

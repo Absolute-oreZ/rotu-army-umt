@@ -22,16 +22,12 @@ type DragAnchor = {
 
 type TimetableInlineEditorProps = {
   timetableId: number;
-  sessionId: number;
-  cadetId: number;
   occupiedSlots: string[];
   onExit: () => void;
 };
 
 export function TimetableInlineEditor({
   timetableId,
-  sessionId,
-  cadetId,
   occupiedSlots,
   onExit,
 }: TimetableInlineEditorProps) {
@@ -116,8 +112,6 @@ export function TimetableInlineEditor({
     startTransition(async () => {
       const res = await updateTimetableSlotsAction({
         timetableId,
-        sessionId,
-        cadetId,
         occupiedSlots: Array.from(slots).sort(),
       });
 

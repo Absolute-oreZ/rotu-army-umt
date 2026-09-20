@@ -56,7 +56,8 @@ Core platform choices:
 ### 3.4 External Services
 - Supabase:
   - Browser/server/admin clients in `lib/supabase/*`.
-  - Auth callback route at `app/auth/callback/route.ts`.
+  - Auth callback routes at `app/auth/callback/route.ts` (admin) and `app/auth/callback/cadet/route.ts` (cadet).
+  - Storage uses two buckets: public (`NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH`) and private (`SUPABASE_PRIVATE_STORAGE_ROOT_PATH`). Bucket routing is by first path segment via `resolveVisibility()`; every prefix not in `PUBLIC_STORAGE_PREFIXES` is private (fail-closed).
 - PostgreSQL:
   - Accessed through `postgres` driver + Drizzle.
 
@@ -194,7 +195,7 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `useIsMobile()` — subscribes to `matchMedia("(max-width: 767px)")`, matching the admin sidebar breakpoint; use for responsive behavior decisions such as inline vs dialog table editing.
 
 **`lib/assessment/standards.ts`** — UKA/APFA passing standards (reads env at call time; no `server-only` guard so the seed script can import it):
-- `getAssessmentStandards(recordType, gender)` — per-item thresholds read from env (e.g. `UKA_RUN_MALE`, `APFA_SWIMMING_FEMALE`) with hardcoded fallbacks; returns `{ key, label, unit, direction, threshold }` (run thresholds converted to seconds; direction `max` = ≤ passes, `min` = ≥ passes).
+- `getAssessmentStandards(recordType, gender)` — per-item thresholds read from env (e.g. `NEXT_PUBLIC_SPORTS_UKA_RUN_MALE`, `NEXT_PUBLIC_SPORTS_APFA_SWIMMING_FEMALE`) with hardcoded fallbacks; returns `{ key, label, unit, direction, threshold }` (run thresholds converted to seconds; direction `max` = ≤ passes, `min` = ≥ passes).
 - `evaluatePass(value, standard)` — threshold comparison for server-side pass/fail evaluation.
 
 **`lib/admin/use-table-edit-guard.ts`** — Client hook wrapping table-state updates:
@@ -202,18 +203,21 @@ Helper functions are organized by domain. **Always check here before writing inl
 
 **`lib/admin/rbac.ts`** — Auth + authorization:
 - `CurrentAdmin` type — the shape returned by `getCurrentAdmin` / `requireCurrentAdmin`; includes `gender` (used for accommodations gender scoping).
+- `AdminAccess` — discriminated result of `resolveAdminAccess` / `getCurrentAdminAccess`: `ok`, `not-admin`, `inactive-cadet` or `missing-intake`.
+- `resolveAdminAccess(authUserId)` — single identity loader joining `adminUsers`, `members` and `cadets`; blocks admins whose cadet record is inactive, denies intake-scoped roles without an intake, and normalises `intakeId` to `null` for non-scoped roles.
+- `getCurrentAdminAccess()` — resolves access for the current Supabase session.
 - `getCurrentAdmin()` — non-throwing; returns `CurrentAdmin | null`.
-- `requireCurrentAdmin()` — returns `CurrentAdmin` or redirects to `/admin/login`.
+- `requireCurrentAdmin()` — returns `CurrentAdmin` or redirects to `/admin/login?error=inactive-cadet|missing-intake`.
 - `requireAdminModule(module)` — enforces module-level access; calls `notFound()` if denied.
 - `requireRoleGroup(group)` — enforces role-group-level access (used by layout shells).
 - `redirectAdminRoot()` — redirects to the current admin's default route.
-- `getIntakeScope(admin)` — returns `null` (unrestricted) or the `intakeId` filter for intake-scoped roles.
+- `getIntakeScope(admin)` — returns `null` (unrestricted) or the `intakeId` filter for intake-scoped roles; throws if the invariant (scoped admin without intake) is violated.
 
 **`lib/welfare/attend-sources.ts`** — Server-only Attend source options:
-- `getAttendSources()` — reads `WELFARE_ATTEND_SOURCES` (comma-separated) with fallback `RSAK, PKU, HOSPITAL, OTHER`.
+- `getAttendSources()` — reads `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES` (comma-separated) with fallback `RSAK, PKU, HOSPITAL, OTHER`.
 
 **`lib/welfare/religious-activity-types.ts`** — Server-only Religious Activities type options:
-- `getReligiousActivityTypes()` — reads `WELFARE_REGLIGIOUS_ACTIVITIES_TYPES` (comma-separated, uppercased) with fallback `YASIN, TAHLIL`.
+- `getReligiousActivityTypes()` — reads `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES` (comma-separated, uppercased) with fallback `YASIN, TAHLIL`.
 
 **`lib/academic/helpers.ts`** — Academic module helpers (framework-agnostic, importable by client components):
 - `calculateCadetCurrentYear(intakeStartYear, asOf?)` — cadet's current academic year with the October 1 academic-year boundary.
@@ -264,14 +268,40 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `isValidPersonalEmail(email)` — personal email validation (rejects `@ocean.umt.edu.my`).
 - `isValidEduEmail(email)` — validates `@ocean.umt.edu.my` domain.
 
+**`lib/env/schema.ts`** — Env validation schema (no `server-only`, importable by scripts):
+- `collectEnvIssues(env, { production })` — validates required/production keys, URL shapes, bucket-name divergence, secret lengths and uniqueness, `NEXT_PUBLIC_SPORTS_*` thresholds (positive numbers) and `NEXT_PUBLIC_WELFARE_*` lists (at least one value).
+- `REQUIRED_ENV_KEYS`, `PRODUCTION_REQUIRED_ENV_KEYS`, `THRESHOLD_ENV_KEYS`, `LIST_ENV_KEYS`.
+- Validated by `scripts/check-env.ts` (`npm run env:check`; add `--production` for production rules).
+
+**`lib/env/public.ts`** — Public env (client-safe):
+- `getPublicEnv()` — throws when `NEXT_PUBLIC_SUPABASE_*` keys are missing.
+- `getSiteUrl()` — trimmed `NEXT_PUBLIC_SITE_URL` without trailing slashes; throws in production when missing; falls back to `http://localhost:3000` only in development.
+
+**`lib/env/server.ts`** — Server-only env:
+- `getServerEnv()` — returns `databaseUrl`, `supabaseSecretKey`, `supabasePrivateStorageRootPath` plus public env; throws when any server key is missing (`directUrl` removed).
+
+**`lib/storage/visibility.ts`** — Client-safe, pure storage routing:
+- `StorageVisibility`, `PUBLIC_STORAGE_PREFIXES` (`events`, `hero-images`, `images`, `intakes`, `placeholder`, `religious-activities`, `webapp`).
+- `assertSafeStoragePath(path)` — rejects empty/oversized/absolute/backslash/traversal paths.
+- `resolveVisibility(path)` — public when the first segment is in `PUBLIC_STORAGE_PREFIXES`, private otherwise (fail-closed).
+
+**`lib/storage/files.ts`** — Client-safe, pure upload validation:
+- `detectFileKind(bytes)` — sniffs magic bytes (JPEG, PNG, WebP, PDF); returns kind, extension and content type derived from content, never from the client.
+- `describeAllowedKinds(kinds)`, `formatMegabytes(bytes)` — user-facing error strings.
+- `MAX_IMAGE_BYTES`, `MAX_DOCUMENT_BYTES`, `MAX_BYTES_BY_KIND`.
+
 **`lib/supabase/storage-public.ts`** — Client-safe public storage URL helpers:
-- `storageUrl(path)` — builds a public Supabase Storage URL from a relative path.
+- `storageUrl(path)` —  always rejects private paths.
+- `uploadToStorage()` —  only retained for the explicitly deferred newsletter attachments and story video.
 - `extractStoragePath(publicUrl)` — reverse-engineers a storage path from a public URL.
 
 **`lib/supabase/storage.ts`** — Server-only Supabase Storage helpers:
-- `signedStorageUrl(supabase, path, expiresIn)` — signs a private object for temporary access; logs and returns `null` when signing fails (e.g., object missing).
-- `uploadToStorage(supabase, file, path, contentType)` — uploads a `File` to a given path; returns the path or `null`.
-- `deleteFromStorage(supabase, path)` — deletes an object; logs deletion failures.
+- `bucketFor(visibility)` — maps `public`/`private` to the configured bucket names.
+- `signedStorageUrl(supabase, path, expiresIn)` — signs an object in the bucket chosen by the path's visibility; logs and returns `null` when signing fails (e.g., object missing). `DEFAULT_SIGNED_URL_TTL_SECONDS` = 60.
+- `uploadToStorage(supabase, file, path, contentType)` — legacy routed upload (visibility chosen by path; unvalidated content — call sites migrate to `saveImage`/`saveDocument`/`saveUpload` in later phases).
+- `deleteFromStorage(supabase, path)` / `deleteManyFromStorage(supabase, paths)` — deletes objects, grouped by bucket; logs failures.
+- `saveUpload({ supabase, file, prefix, stem, kinds, maxBytes })` — validates size and content signature, derives extension/content type from detected content, generates a unique `{prefix}/{stem}-{uuid}.{ext}` key, uploads with `upsert: false`; returns `{ ok, path, contentType, size }` or `{ ok: false, error }`.
+- `saveImage(input)` / `saveDocument(input)` — `saveUpload` restricted to images / PDFs.
 
 **`lib/slugify.ts`** — URL-slug generator.
 
@@ -353,6 +383,7 @@ Routes are organized by role group (e.g., `/admin/secretary/*`, `/admin/treasure
 - Callback exchanges auth code for session (`app/auth/callback/route.ts`).
 - Session is read server-side via Supabase SSR client.
 - Invitation acceptance: on first Google login, the callback checks for a pending `adminInvitations` row matching the user's email. If found, it atomically (within a transaction) creates the `adminUsers` record, marks the invitation as accepted, and inserts an `ACCEPTED` audit log entry. Uninvited users are redirected to login with a `not-authorized` error.
+- The callback resolves admin access first: existing admins whose cadet record is inactive or who are intake-scoped without an intake are signed out and redirected with `?error=inactive-cadet|missing-intake`. Invitation acceptance is refused for inactive cadets, and `intakeId` is normalised at acceptance (scoped roles get the invitation's or cadet's intake; other roles get `null`).
 
 ### 6.2 Authorization (RBAC)
 - `admin_users` table links Supabase auth user to exactly one app role.
@@ -367,13 +398,15 @@ Certain roles are intake-scoped, meaning they can only read and write data belon
 - **Intake-scoped roles:** `SECRETARY`, `TREASURER`, `SPORTS`, `WELFARE`, `ACADEMIC`
 - **Unrestricted roles:** `OFFICER`, `INSTRUCTOR`, `MULTIMEDIA`
 
-The `admin_users` table has a nullable `intake_id` column. Officer/Instructor have `null`; intake-scoped roles have their specific intake ID (set from the cadet's intake at invitation acceptance).
+The `admin_users` table has a nullable `intake_id` column. Officer/Instructor have `null`; intake-scoped roles have their specific intake ID. The value is normalised on invite (`isIntakeScopedRole(role) ? cadet.intakeId : null`), on role change (same normalisation, using the admin's cadet record), and when a cadet is transferred to another intake (scoped admin rows and pending scoped invitations are synced inside the `updateCadet` transaction).
 
-The `admin_invitations` table also has a nullable `intake_id` column, which is set when the invitation is created and propagated to `admin_users` during the auth callback.
+The `admin_invitations` table also has a nullable `intake_id` column, which is set when the invitation is created and normalised again during the auth callback.
+
+`resolveAdminAccess()` enforces the invariant fail-closed: a scoped role with `intake_id = null` is denied (`missing-intake`), and non-scoped roles are always presented with `intakeId = null` even if a stale value exists. The Intakes module is global and never intake-scoped.
 
 Helper functions:
 - `isIntakeScopedRole(role)` in `lib/admin/roles.ts` — checks if a role is intake-scoped
-- `getIntakeScope(admin)` in `lib/admin/rbac.ts` — returns `null` (no restriction) or the `intakeId` to filter by
+- `getIntakeScope(admin)` in `lib/admin/rbac.ts` — returns `null` (no restriction) or the `intakeId` to filter by; throws if a scoped admin has no intake
 
 All queries and mutations in intake-scoped modules apply the intake filter:
 - **Reads:** Filter queries by `intakeId` when scoped
@@ -384,7 +417,7 @@ Cadets authenticate separately from admins using the same Supabase project:
 
 - Login page at `/cadet/login` with Google OAuth (`app/cadet/login/actions.ts`).
 - OAuth callback at `app/auth/callback/cadet/route.ts` — verifies `@ocean.umt.edu.my` email domain, looks up member by `eduEmail`, checks role is `CADET`, verifies cadet record exists.
-- Auth helper at `lib/auth/cadet.ts` provides `getCurrentCadet()` and `requireCurrentCadet()`.
+- Auth helper at `lib/auth/cadet.ts` provides `getCurrentCadet()` and `requireCurrentCadet()`. Both deny access when the cadet record is inactive.
 - `CurrentCadet` type includes `authUserId`, `email`, `memberId`, `name`, and `intakeId` (from `cadets` table).
 - Auth is enforced per-page (not in the cadet layout) to avoid redirect loops with `/cadet/login`.
 
@@ -402,7 +435,7 @@ Key design decisions:
 - `collection_payments.collectionId` uses `onDelete: "cascade"` — payment records follow collection deletion.
 - `treasury_accounts.treasurerId` uses `onDelete: "cascade"` — accounts are deleted when the admin user is dropped.
 - Role change cleanup: when a Treasurer's role is changed to non-Treasurer, their `treasury_accounts` are deleted in the same transaction.
-- Storage paths: QR codes at `treasury/{intakeId}/accounts/{accountId}/qr.{ext}`, receipts at `payments/{collectionId}/{memberId}/receipt.{ext}`.
+- Storage paths: QR codes at `treasury/{intakeId}/accounts/{accountId}/qr.{ext}`, receipts at `payments/{collectionId}/{memberId}/receipt.{ext}`. Both prefixes are private; objects live in the private bucket and are read through signed URLs.
 - Read model at `lib/cadet/collections.ts` fetches published collections with treasury account details, intake-scoped to the cadet's intake.
 
 ## 7. Data Model Architecture
@@ -432,9 +465,9 @@ Primary schema domains in `db/schema.ts`:
   - Claims are created via dialog from the claims list page (`/cadet/claims`), not a separate form page.
   - Enum: `claim_status` (PENDING, FULFILLED, REJECTED).
 - Welfare:
-  - `attend_records` (cadet absence records: date, Attend B / Attend C, source from env `WELFARE_ATTEND_SOURCES` with defaults).
+  - `attend_records` (cadet absence records: date, Attend B / Attend C, source from env `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES` with defaults).
   - `accommodations` (one per cadet: HOSTEL / RENTAL type + address; auto-created on cadet creation; rows are gender-scoped for intake-scoped welfare admins).
-  - `religious_activities` (Welfare module, not intake-scoped: type from env `WELFARE_REGLIGIOUS_ACTIVITIES_TYPES` with defaults YASIN/TAHLIL, record date, autogenerated title `{TYPE}-{YYYY-MM-DD}` with a unique index and friendly duplicate error, remarks, location, nullable meeting link).
+  - `religious_activities` (Welfare module, not intake-scoped: type from env `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES` with defaults YASIN/TAHLIL, record date, autogenerated title `{TYPE}-{YYYY-MM-DD}` with a unique index and friendly duplicate error, remarks, location, nullable meeting link).
   - `religious_activity_photos` (display photos per activity, cascade-deleted with the activity; storage path `religious-activities/{activityId}/photos/{n}.{ext}`; photos upload only at creation and are view-only afterwards via a carousel dialog).
 - Sports health metrics:
   - `health_records` (assessment sessions: intake, record date set to the creation day; one record per intake per day, enforced by a unique index with a friendly duplicate error in the create action).
@@ -442,7 +475,7 @@ Primary schema domains in `db/schema.ts`:
 - Sports assessments (UKA/APFA):
   - `uka_records` / `apfa_records` (intake-scoped assessment sessions; `session` auto-numbered per intake per year, unique per intake+session+year; label `{type}-{session}-{year}`, e.g. `UKA-1-2026`).
   - `uka_record_assessments` / `apfa_record_assessments` (per-cadet item values + stored pass flags + nullable overall `assessment_result`; unique per record+cadet; rows created only when a cadet's first item is saved).
-  - Passing thresholds come from env (`UKA_*` / `APFA_*`, run in minutes converted to seconds) with hardcoded defaults; per-item pass flags and overall results are frozen at write time (editing a value re-evaluates with current thresholds).
+  - Passing thresholds come from env (`NEXT_PUBLIC_SPORTS_UKA_*` / `NEXT_PUBLIC_SPORTS_APFA_*`, run in minutes converted to seconds) with hardcoded defaults; per-item pass flags and overall results are frozen at write time (editing a value re-evaluates with current thresholds).
 - Stories and metadata:
   - `events`, `event_translations`, `event_tags`, `event_tag_translations`, `events_to_tags`, `event_display_photos`.
 - Homepage-managed content:
@@ -506,10 +539,12 @@ This supports early public page delivery while admin-managed content modules are
   - `npm run build`
   - `npm run db:generate`
   - `npm run db:migrate`
-  - `npm run db:seed`
+  - `npm run db:seed` (requires `ALLOW_SEED=1` in the shell; refuses production and non-local `NEXT_PUBLIC_SITE_URL`; truncates every table)
+  - `npm run env:check` (`scripts/check-env.ts`; add `--production` for production rules)
+  - `npm run storage:migrate-private` (`scripts/migrate-private-objects.ts`; add `--apply` to copy, `--delete-source` after production verification)
 - Environment separation:
-  - Public env validation in `lib/env/public.ts`.
-  - Server env validation in `lib/env/server.ts`.
+  - Env rules live in `lib/env/schema.ts`; `scripts/check-env.ts` validates them (`npm run env:check`; add `--production` for production rules).
+  - `lib/env/public.ts` exposes `getPublicEnv()` and `getSiteUrl()`; `lib/env/server.ts` exposes `getServerEnv()` (requires `SUPABASE_PRIVATE_STORAGE_ROOT_PATH`).
 - Remote images currently allow Supabase storage host via `next.config.ts`.
 - Database connection pool: `postgres` driver with `max: 20` connections (supports concurrent queries via `Promise.all` in admin pages). Uses Supabase transaction-mode pooler. Lower to `max: 5` if deploying to serverless (Vercel/Lambda).
 - Server Actions body size limit: configured to `5mb` in `next.config.ts` for document uploads.
@@ -527,7 +562,7 @@ Based on `TASKS.md` and codebase review:
 - Admin route structure: module-scoped routes under role groups (e.g., `/admin/secretary/rank-holders`), per-group RBAC layouts with 403 Access Denied for unauthorized access.
 - Secretary rank-holders: cadet admin user management with role changes, drop, audit logging, and cadet-only filtering.
 - Secretary cadets page: cadet management with rank-based sorting, active/inactive toggle, and filtering.
-- Intake-scoped RBAC: Secretary, Treasurer, Welfare, and Academic roles restricted to their intake's data for reads and writes. Officer, Instructor, Multimedia, and Sports remain unrestricted.
+- Intake-scoped RBAC: Secretary, Treasurer, Sports, Welfare, and Academic roles restricted to their intake's data for reads and writes. Officer, Instructor, and Multimedia remain unrestricted.
 - Treasurer payment system: treasury accounts, collections (DRAFT ↔ PUBLISHED/ARCHIVED lifecycle), cadet self-service payment page, and payments ledger with filtering and unpaid tracking.
 - Cadet authentication: separate Google OAuth flow at `/cadet/login` with `@ocean.umt.edu.my` domain verification and member/cadet record lookup.
 - Cadet portal shell: mobile-first responsive sidebar layout (`CadetShell`) with collections and claims navigation, breadcrumbs, user menu, theme switcher, and sign-out.
@@ -570,6 +605,7 @@ Secretary, Treasurer, Multimedia, Sports, Welfare, and Academic admin modules ma
 ### 14.1 Authorization and ownership
 
 - Every admin route is protected by its module layout and server-side RBAC.
+- Every admin page calls `requireAdminModule(module)`; layout gates are UX only.
 - Every Server Action authenticates with `requireCurrentAdmin()` and checks `canAccessAdminModule()`.
 - Intake-scoped modules enforce intake ownership in both reads and writes.
 - Client-side hiding is UX only and never replaces server authorization.
