@@ -6,18 +6,25 @@ import { adminUsers, adminInvitations, adminRoleAuditLogs, cadets, members } fro
 import { resolveAdminAccess } from "@/lib/admin/rbac";
 import { isIntakeScopedRole } from "@/lib/admin/roles";
 
-function getSafeNextPath(value: string | null) {
-  if (!value?.startsWith("/") || value.startsWith("//")) {
+function isSafeNextPath(value: string | null, origin: string): string {
+  if (!value) return "/admin";
+
+  try {
+    const parsed = new URL(value, origin);
+    // Only allow same-origin redirects
+    if (parsed.origin !== origin) return "/admin";
+    // Only allow paths (no javascript:, data:, etc.)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "/admin";
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
     return "/admin";
   }
-
-  return value;
 }
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const next = getSafeNextPath(requestUrl.searchParams.get("next"));
+  const next = isSafeNextPath(requestUrl.searchParams.get("next"), requestUrl.origin);
 
   if (!code) {
     return NextResponse.redirect(

@@ -4,18 +4,23 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { db } from "@/db";
 import { cadets, members } from "@/db/schema";
 
-function getSafeNextPath(value: string | null) {
-  if (!value?.startsWith("/") || value.startsWith("//")) {
+function isSafeNextPath(value: string | null, origin: string): string {
+  if (!value) return "/cadet";
+
+  try {
+    const parsed = new URL(value, origin);
+    if (parsed.origin !== origin) return "/cadet";
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "/cadet";
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
     return "/cadet";
   }
-
-  return value;
 }
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const next = getSafeNextPath(requestUrl.searchParams.get("next"));
+  const next = isSafeNextPath(requestUrl.searchParams.get("next"), requestUrl.origin);
 
   if (!code) {
     return NextResponse.redirect(
