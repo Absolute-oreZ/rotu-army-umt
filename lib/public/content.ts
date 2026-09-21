@@ -35,7 +35,7 @@ import {
   DEFAULT_X_URL,
   DEFAULT_FAQ_ENTRIES,
   DEFAULT_SEE_MORE_LINKS
-} from "@/lib/data";
+} from "@/lib/constants";
 
 export type HomePageContent = {
   faqs: Array<{
@@ -169,10 +169,10 @@ export type ContactPageContent = {
 };
 
 const FALLBACK_STATS = {
-  cadetCount: 120,
-  intakeCount: 12,
-  instructorCount: 18,
-  officerCount: 24,
+  cadetCount: 0,
+  intakeCount: 0,
+  instructorCount: 0,
+  officerCount: 0,
 } as const;
 
 const FALLBACK_SEE_ALSO_LINKS: HomePageContent["seeAlsoLinks"] = DEFAULT_SEE_MORE_LINKS.map(

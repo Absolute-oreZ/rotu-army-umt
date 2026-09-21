@@ -10,6 +10,7 @@ interface NewsletterStatusPageProps {
   statusDescription: string;
   statusTitle: string;
   title: string;
+  showForm?: boolean;
 }
 
 export function NewsletterStatusPage({
@@ -21,6 +22,7 @@ export function NewsletterStatusPage({
   statusDescription,
   statusTitle,
   title,
+  showForm = false,
 }: NewsletterStatusPageProps) {
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
@@ -57,12 +59,23 @@ export function NewsletterStatusPage({
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href={actionHref}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-[0.24em] text-background transition-colors hover:bg-foreground/90"
-                >
-                  {actionLabel}
-                </Link>
+                {showForm ? (
+                  <form action={actionHref} method="POST">
+                    <button
+                      type="submit"
+                      className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-[0.24em] text-background transition-colors hover:bg-foreground/90"
+                    >
+                      {actionLabel}
+                    </button>
+                  </form>
+                ) : (
+                  <Link
+                    href={actionHref}
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-[0.24em] text-background transition-colors hover:bg-foreground/90"
+                  >
+                    {actionLabel}
+                  </Link>
+                )}
               </div>
             </div>
           </div>

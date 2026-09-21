@@ -11,11 +11,12 @@ interface TestimonialsProps {
   title: string;
   intro: string;
   testimonials: PublicTestimonial[];
+  dictionary: { previous: string; next: string; goToTestimonial: string };
 }
 
 const AUTOPLAY_MS = 5000;
 
-export function Testimonials({ title, intro, testimonials }: TestimonialsProps) {
+export function Testimonials({ title, intro, testimonials, dictionary }: TestimonialsProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -29,6 +30,9 @@ export function Testimonials({ title, intro, testimonials }: TestimonialsProps) 
     return () => window.clearInterval(timer);
   }, [isPaused, testimonials.length]);
 
+  const handlePause = () => setIsPaused(true);
+  const handleResume = () => setIsPaused(false);
+
   if (testimonials.length === 0) return null;
 
   const next = () => setActiveIndex((prev) => (prev + 1) % testimonials.length);
@@ -38,10 +42,10 @@ export function Testimonials({ title, intro, testimonials }: TestimonialsProps) 
   return (
     <section
       className="relative overflow-hidden border-t border-border bg-background px-4 py-16 sm:px-6 lg:px-8"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocusCapture={() => setIsPaused(true)}
-      onBlurCapture={() => setIsPaused(false)}
+      onMouseEnter={handlePause}
+      onMouseLeave={handleResume}
+      onFocusCapture={handlePause}
+      onBlurCapture={handleResume}
       aria-label={title}
     >
       <div className="pointer-events-none absolute -left-20 top-16 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
@@ -102,7 +106,7 @@ export function Testimonials({ title, intro, testimonials }: TestimonialsProps) 
                 type="button"
                 onClick={prev}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border/80 bg-card text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-muted"
-                aria-label="Previous testimonial"
+                aria-label={dictionary.previous}
               >
                 <ChevronLeft className="size-4" aria-hidden="true" />
               </button>
@@ -110,7 +114,7 @@ export function Testimonials({ title, intro, testimonials }: TestimonialsProps) 
                 type="button"
                 onClick={next}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border/80 bg-card text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-muted"
-                aria-label="Next testimonial"
+                aria-label={dictionary.next}
               >
                 <ChevronRight className="size-4" aria-hidden="true" />
               </button>
@@ -125,7 +129,7 @@ export function Testimonials({ title, intro, testimonials }: TestimonialsProps) 
                   className={`rounded-full transition-all ${
                     idx === activeIndex ? "h-2.5 w-8 bg-primary" : "h-2.5 w-2.5 bg-border"
                   }`}
-                  aria-label={`Go to testimonial ${idx + 1}`}
+                  aria-label={dictionary.goToTestimonial.replace("{number}", String(idx + 1)).replace("{author}", testimonial.authorName)}
                   aria-current={idx === activeIndex}
                 />
               ))}

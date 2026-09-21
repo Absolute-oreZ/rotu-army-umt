@@ -13,16 +13,20 @@ export type Dictionary = {
     contact: string;
   };
   common: {
-    language: string;
-    theme: string;
-    light: string;
-    dark: string;
-    menu: string;
-    closeMenu: string;
-    switchToLight: string;
-    switchToDark: string;
-    primaryNavigation: string;
-  };
+      language: string;
+      theme: string;
+      light: string;
+      dark: string;
+      menu: string;
+      closeMenu: string;
+      switchToLight: string;
+      switchToDark: string;
+      primaryNavigation: string;
+      previous: string;
+      next: string;
+      viewStory: string;
+      goToTestimonial: string;
+    },
   home: {
     title: string;
     intro: string;

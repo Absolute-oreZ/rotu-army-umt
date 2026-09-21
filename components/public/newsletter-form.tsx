@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { subscribeToNewsletter } from "@/app/actions/newsletter";
 import { type Locale } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { Mail, ChevronDown } from "lucide-react";
+import Script from "next/script";
+import { getTurnstileSiteKey } from "@/lib/turnstile-client";
 
 interface NewsletterFormProps {
   locale: Locale;
@@ -37,9 +39,36 @@ export function NewsletterForm({
   const [selectedLocale, setSelectedLocale] = useState(locale);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [turnstileReady, setTurnstileReady] = useState(false);
 
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+  const turnstileWidgetRef = useRef<string | null>(null);
+
+  const turnstileSiteKey = getTurnstileSiteKey();
+
+  const renderTurnstile = useCallback(() => {
+    if (
+      !turnstileSiteKey ||
+      turnstileWidgetRef.current ||
+      typeof window === "undefined" ||
+      !window.turnstile ||
+      !turnstileContainerRef.current
+    ) {
+      return;
+    }
+
+    const widgetId = window.turnstile.render(turnstileContainerRef.current, {
+      sitekey: turnstileSiteKey,
+      callback: () => setTurnstileReady(true),
+      "error-callback": () => setTurnstileReady(false),
+      "expired-callback": () => setTurnstileReady(false),
+      theme: "auto",
+    });
+
+    turnstileWidgetRef.current = widgetId ?? "rendered";
+  }, [turnstileSiteKey]);
 
   const options = [
     { value: "en", label: localeOptions.en },
@@ -61,14 +90,51 @@ export function NewsletterForm({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!turnstileSiteKey || typeof window === "undefined") return;
+
+    if (window.turnstile) {
+      renderTurnstile();
+      return;
+    }
+
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      if (window.turnstile) {
+        renderTurnstile();
+        window.clearInterval(timer);
+        return;
+      }
+      if (attempts >= 20) {
+        window.clearInterval(timer);
+      }
+    }, 100);
+
+    return () => window.clearInterval(timer);
+  }, [turnstileSiteKey, renderTurnstile]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
+
+    const turnstileToken = turnstileSiteKey ? window.turnstile?.getResponse() ?? null : null;
+
+    if (turnstileSiteKey && !turnstileToken) {
+      setMessage({
+        type: "error",
+        text: turnstileReady
+          ? "Security check failed. Please try again."
+          : "Security check not ready. Please wait a moment and try again.",
+      });
+      return;
+    }
 
     startTransition(async () => {
       const formData = new FormData();
       formData.append("email", email);
       formData.append("locale", selectedLocale);
+      if (turnstileToken) formData.append("cf-turnstile-response", turnstileToken);
 
       const result = await subscribeToNewsletter(formData);
 
@@ -78,11 +144,23 @@ export function NewsletterForm({
       } else {
         setMessage({ type: "error", text: result.error || errorMessage });
       }
+
+      if (turnstileSiteKey && typeof window !== "undefined" && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetRef.current ?? undefined);
+        setTurnstileReady(false);
+      }
     });
   };
 
   return (
     <div className="shrink-0 rounded-2xl border border-border bg-muted/20">
+      {turnstileSiteKey ? (
+        <Script
+          strategy="afterInteractive"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          onReady={renderTurnstile}
+        />
+      ) : null}
       <div className="flex items-start gap-4 px-5 pb-4 pt-5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground">
           <Mail className="h-4 w-4" />
@@ -155,6 +233,8 @@ export function NewsletterForm({
               <label className="text-[10px] font-semibold uppercase tracking-widest text-transparent select-none">
                 .
               </label>
+
+              {turnstileSiteKey ? <div ref={turnstileContainerRef} /> : null}
 
               <button
                 type="submit"

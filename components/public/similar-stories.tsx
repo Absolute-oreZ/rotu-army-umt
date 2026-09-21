@@ -8,9 +8,10 @@ interface SimilarStoriesProps {
   locale: string;
   stories: PublicStoryProgram[];
   title: string;
+  dictionary: { viewStory: string };
 }
 
-export function SimilarStories({ locale, stories, title }: SimilarStoriesProps) {
+export function SimilarStories({ locale, stories, title, dictionary }: SimilarStoriesProps) {
   if (stories.length === 0) return null;
 
   return (
@@ -41,8 +42,8 @@ export function SimilarStories({ locale, stories, title }: SimilarStoriesProps) 
                   {story.title}
                 </h3>
                 <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span>View Operation</span>
-                  <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                  <span>{dictionary.viewStory}</span>
+                  <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </div>
             </Link>
