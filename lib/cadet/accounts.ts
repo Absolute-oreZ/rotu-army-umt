@@ -15,8 +15,8 @@ export async function getCadetAccountByMemberId(
       id: cadetAccounts.id,
       memberId: cadetAccounts.memberId,
       bankName: cadetAccounts.bankName,
-      accountNumber: cadetAccounts.accountNumber,
-      duitNowId: cadetAccounts.duitNowId,
+      accountNumberText: cadetAccounts.accountNumberText,
+      duitNowIdText: cadetAccounts.duitNowIdText,
       qrCodePath: cadetAccounts.qrCodePath,
       createdAt: cadetAccounts.createdAt,
       updatedAt: cadetAccounts.updatedAt,
@@ -28,10 +28,15 @@ export async function getCadetAccountByMemberId(
   if (!row) return null;
 
   const supabase = createSupabaseAdminClient();
+  const qrCodeUrl = await signedStorageUrl(supabase, row.qrCodePath);
 
   return {
-    ...row,
-    qrCodePath: await signedStorageUrl(supabase, row.qrCodePath),
+    id: row.id,
+    memberId: row.memberId,
+    bankName: row.bankName,
+    accountNumberText: row.accountNumberText,
+    duitNowIdText: row.duitNowIdText,
+    qrCodePath: qrCodeUrl,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

@@ -1,10 +1,7 @@
-"use client";
-
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { AlertCircleIcon, Loader2Icon } from "lucide-react";
 import { bankEnum } from "@/db/schema";
 import { createClaim } from "@/app/cadet/claims/actions";
-import type { CadetAccountRecord } from "@/lib/cadet/account-types";
 import { currencyOnly, digitsOnly } from "@/lib/admin/form-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +17,7 @@ import { SingleFileField } from "@/components/ui/single-file-field";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Field } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
+import type { CadetAccountRecord } from "@/lib/cadet/account-types";
 
 type ClaimDialogProps = {
   trigger: ReactNode;
@@ -40,10 +38,10 @@ export function ClaimForm({ trigger, account }: ClaimDialogProps) {
   const [description, setDescription] = useState("");
   const [bankName, setBankName] = useState(account?.bankName ?? "");
   const [accountNumber, setAccountNumber] = useState(
-    account ? String(account.accountNumber) : "",
+    account ? account.accountNumberText : "",
   );
   const [duitNowId, setDuitNowId] = useState(
-    account?.duitNowId != null ? String(account.duitNowId) : "",
+    account?.duitNowIdText ?? "",
   );
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
@@ -68,8 +66,8 @@ export function ClaimForm({ trigger, account }: ClaimDialogProps) {
     setAmount("");
     setDescription("");
     setBankName(account?.bankName ?? "");
-    setAccountNumber(account ? String(account.accountNumber) : "");
-    setDuitNowId(account?.duitNowId != null ? String(account.duitNowId) : "");
+    setAccountNumber(account?.accountNumberText ?? "");
+    setDuitNowId(account?.duitNowIdText ?? "");
     setReceiptFile(null);
     setQrCodeFile(null);
     setSaveAccount(!account);

@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { cadetAccounts, claims } from "@/db/schema";
 import { requireCurrentCadet } from "@/lib/auth/cadet";
 import { ClaimsList } from "@/components/cadet/claims-list";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { batchSignedStorageUrls } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export default async function CadetClaimsPage() {
@@ -26,8 +26,8 @@ export default async function CadetClaimsPage() {
         id: cadetAccounts.id,
         memberId: cadetAccounts.memberId,
         bankName: cadetAccounts.bankName,
-        accountNumber: cadetAccounts.accountNumber,
-        duitNowId: cadetAccounts.duitNowId,
+        accountNumberText: cadetAccounts.accountNumberText,
+        duitNowIdText: cadetAccounts.duitNowIdText,
         qrCodePath: cadetAccounts.qrCodePath,
         createdAt: cadetAccounts.createdAt,
         updatedAt: cadetAccounts.updatedAt,
@@ -39,10 +39,20 @@ export default async function CadetClaimsPage() {
 
   const supabase = createSupabaseAdminClient();
   const accountRow = account[0] ?? null;
+  
+  // Batch sign QR code URL
+  const qrCodeUrl = accountRow?.qrCodePath
+    ? (await batchSignedStorageUrls(supabase, [accountRow.qrCodePath]))[0]
+    : null;
+
   const accountRecord = accountRow
     ? {
-        ...accountRow,
-        qrCodePath: await signedStorageUrl(supabase, accountRow.qrCodePath),
+        id: accountRow.id,
+        memberId: accountRow.memberId,
+        bankName: accountRow.bankName,
+        accountNumberText: accountRow.accountNumberText,
+        duitNowIdText: accountRow.duitNowIdText,
+        qrCodePath: qrCodeUrl,
         createdAt: accountRow.createdAt.toISOString(),
         updatedAt: accountRow.updatedAt.toISOString(),
       }

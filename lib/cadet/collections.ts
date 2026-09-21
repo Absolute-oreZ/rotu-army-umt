@@ -2,7 +2,7 @@ import "server-only";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { collections, treasuryAccounts } from "@/db/schema";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { batchSignedStorageUrls } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function getPublishedCollectionBySlug(
@@ -38,8 +38,11 @@ export async function getPublishedCollectionBySlug(
 
   if (!row) return null;
 
+  const supabase = createSupabaseAdminClient();
+  const [qrCodeUrl] = await batchSignedStorageUrls(supabase, [row.qrCodePath]);
+
   return {
     ...row,
-    qrCodePath: await signedStorageUrl(createSupabaseAdminClient(), row.qrCodePath),
+    qrCodePath: qrCodeUrl,
   };
 }

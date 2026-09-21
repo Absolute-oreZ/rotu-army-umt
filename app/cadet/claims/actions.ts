@@ -35,17 +35,9 @@ export async function createClaim(formData: FormData) {
   if (!rawAccountNumber || !/^\d+$/.test(rawAccountNumber)) {
     return { error: "Account number is required." };
   }
-  const accountNumber = Number(rawAccountNumber);
-  if (!Number.isInteger(accountNumber) || accountNumber <= 0) {
-    return { error: "Enter a valid account number." };
-  }
 
   const rawDuitNowId = takeString(formData.get("duitNowId"));
-  const duitNowId =
-    rawDuitNowId === null
-      ? null
-      : Number(rawDuitNowId);
-  if (rawDuitNowId !== null && (!Number.isInteger(duitNowId!) || duitNowId! <= 0)) {
+  if (rawDuitNowId !== null && rawDuitNowId !== "" && (!/^\d+$/.test(rawDuitNowId) || rawDuitNowId.length > 15)) {
     return { error: "Enter a valid DuitNow ID." };
   }
 
@@ -110,38 +102,37 @@ export async function createClaim(formData: FormData) {
   }
 
   try {
-    await db.insert(claims).values({
-      memberId: cadet.memberId,
-      intakeId: cadet.intakeId,
-      title,
-      amount,
-      receiptPath: savedReceipt.path,
-      qrCodePath,
-      description,
-    });
-
-    if (saveAccount || !existingAccount) {
-      const accountValues = {
+    await db.transaction(async (tx) => {
+      await tx.insert(claims).values({
         memberId: cadet.memberId,
-        bankName: bankName as (typeof bankEnum.enumValues)[number],
-        accountNumber,
-        duitNowId,
+        intakeId: cadet.intakeId,
+        title,
+        amount,
+        receiptPath: savedReceipt.path,
         qrCodePath,
-        updatedAt: new Date(),
-      };
+        description,
+      });
 
-      if (existingAccount) {
-        await db
-          .update(cadetAccounts)
-          .set(accountValues)
-          .where(eq(cadetAccounts.memberId, cadet.memberId));
-      } else {
-        await db.insert(cadetAccounts).values({
-          ...accountValues,
+      if (saveAccount || !existingAccount) {
+        const accountValues = {
+          memberId: cadet.memberId,
+          bankName: bankName as (typeof bankEnum.enumValues)[number],
+          accountNumberText: rawAccountNumber,
+          duitNowIdText: rawDuitNowId,
           qrCodePath,
-        });
+          updatedAt: new Date(),
+        };
+
+        if (existingAccount) {
+          await tx
+            .update(cadetAccounts)
+            .set(accountValues)
+            .where(eq(cadetAccounts.memberId, cadet.memberId));
+        } else {
+          await tx.insert(cadetAccounts).values(accountValues);
+        }
       }
-    }
+    });
   } catch (err) {
     console.error("createClaim failed", err);
     await deleteManyFromStorage(supabase, uploadedPaths);
