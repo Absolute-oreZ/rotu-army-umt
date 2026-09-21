@@ -18,6 +18,15 @@ import {
 
 export const DEFAULT_SIGNED_URL_TTL_SECONDS = 60;
 
+export const SIGNED_URL_TTL_BY_PURPOSE = {
+  // Short TTL for sensitive operations
+  verification: 60,
+  // Medium TTL for document viewing (1 hour)
+  document: 3600,
+  // Long TTL for QR codes and images in lists (1 day)
+  image: 86400,
+} as const;
+
 export function bucketFor(visibility: StorageVisibility): string {
   return visibility === "private"
     ? getServerEnv().supabasePrivateStorageRootPath
@@ -38,13 +47,18 @@ export async function signedStorageUrl(
   supabase: SupabaseClient,
   path: string | null,
   expiresIn = DEFAULT_SIGNED_URL_TTL_SECONDS,
+  purpose?: keyof typeof SIGNED_URL_TTL_BY_PURPOSE,
 ): Promise<string | null> {
   if (!path) return null;
+  
+  // Use purpose-based TTL if provided
+  const ttl = purpose ? SIGNED_URL_TTL_BY_PURPOSE[purpose] : expiresIn;
+  
   try {
     const { data, error } = await supabase
       .storage
       .from(bucketForPath(path))
-      .createSignedUrl(path, expiresIn);
+      .createSignedUrl(path, ttl);
     if (error || !data?.signedUrl) {
       const message = error?.message ?? "Empty signed URL";
       console.error(`Storage signing failed for "${path}": ${message}`);
@@ -53,28 +67,6 @@ export async function signedStorageUrl(
     return data.signedUrl;
   } catch (error) {
     console.error(`Storage signing failed for "${path}": ${error instanceof Error ? error.message : "Unknown error"}`);
-    return null;
-  }
-}
-
-export async function uploadToStorage(
-  supabase: SupabaseClient,
-  file: File,
-  path: string,
-  contentType?: string,
-): Promise<string | null> {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const { error } = await supabase.storage
-      .from(bucketForPath(path))
-      .upload(path, buffer, {
-        contentType: contentType || file.type || "application/octet-stream",
-        upsert: true,
-      });
-    if (error) return null;
-    return path;
-  } catch {
     return null;
   }
 }
@@ -114,6 +106,58 @@ export async function deleteManyFromStorage(
       console.error("Storage deletion failed", { bucket, count: bucketPaths.length, message: error instanceof Error ? error.message : "Unknown error" });
     }
   }
+}
+
+/**
+ * Batch signed URLs for multiple paths. Uses Supabase's createSignedUrls for efficiency.
+ * All paths must be in the same bucket (same visibility).
+ */
+export async function batchSignedStorageUrls(
+  supabase: SupabaseClient,
+  paths: (string | null | undefined)[],
+  expiresIn = DEFAULT_SIGNED_URL_TTL_SECONDS,
+): Promise<(string | null)[]> {
+  const validPaths = paths.filter((p): p is string => !!p);
+  if (validPaths.length === 0) return paths.map(() => null);
+
+  // Group paths by bucket (visibility)
+  const pathsByBucket = new Map<string, string[]>();
+  for (const path of validPaths) {
+    try {
+      const bucket = bucketForPath(path);
+      if (!pathsByBucket.has(bucket)) pathsByBucket.set(bucket, []);
+      pathsByBucket.get(bucket)!.push(path);
+    } catch {
+      // Invalid path - will return null for this entry
+    }
+  }
+
+  const resultMap = new Map<string, string | null>();
+
+  for (const [bucket, bucketPaths] of pathsByBucket) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrls(bucketPaths, expiresIn);
+
+      if (error || !data) {
+        console.error(`Batch signing failed for bucket ${bucket}:`, error?.message);
+        for (const path of bucketPaths) resultMap.set(path, null);
+      } else {
+              for (const item of data) {
+                if (item.path) {
+                  resultMap.set(item.path, item.signedUrl ?? null);
+                }
+              }
+            }
+    } catch (error) {
+      console.error(`Batch signing failed for bucket ${bucket}:`, error instanceof Error ? error.message : "Unknown error");
+      for (const path of bucketPaths) resultMap.set(path, null);
+    }
+  }
+
+  // Return results in original order
+  return paths.map((path) => (path ? resultMap.get(path) ?? null : null));
 }
 
 export type SaveUploadInput = {

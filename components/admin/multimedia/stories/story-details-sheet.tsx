@@ -29,8 +29,11 @@ import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
 import {
   getStoryDetails,
   updateStory,
+  requestStoryVideoUpload,
+  finalizeStoryVideo,
   type StoryDetails,
 } from "@/app/admin/multimedia/stories/actions";
+import { MAX_VIDEO_BYTES, formatMegabytes } from "@/lib/storage/files";
 import { locales } from "@/lib/i18n/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StoryTagSelector } from "@/components/admin/multimedia/stories/story-tag-selector";
@@ -403,17 +406,45 @@ function EditMode({
       }
     }
     if (removeVideo) fd.set("removeVideo", "true");
-    if (videoFile) fd.set("video", videoFile);
     displayFiles.forEach((photo) => fd.append("displayPhotos", photo));
     removeDisplayPhotoIds.forEach((id) => fd.append("removeDisplayPhoto", String(id)));
 
     startTransition(async () => {
       const result = await updateStory(details.id, fd);
-      if (result.success) {
-        onClose();
-      } else {
+      if (!result.success) {
         setError(result.error ?? "Failed to update story.");
+        return;
       }
+
+      if (videoFile) {
+        setError("Uploading video...");
+        try {
+          const ticket = await requestStoryVideoUpload(details.id, videoFile.name);
+          if (!ticket.success) {
+            throw new Error(ticket.error);
+          }
+          const response = await fetch(ticket.data.signedUrl, {
+            method: "PUT",
+            body: videoFile,
+            headers: {
+              "Content-Type": videoFile.type || "video/mp4",
+            },
+          });
+          if (!response.ok) {
+            throw new Error(`Video upload failed (${response.status}).`);
+          }
+          const finalized = await finalizeStoryVideo(details.id, ticket.data.path);
+          if (!finalized.success) {
+            throw new Error(finalized.error);
+          }
+        } catch (err) {
+          console.error("Video upload failed:", err);
+          setError("Story saved, but the video upload failed. Please try again.");
+          return;
+        }
+      }
+
+      onClose();
     });
   }
 
@@ -456,8 +487,8 @@ function EditMode({
         setError("Video must be an MP4, MOV, WebM, or AVI file.");
         return;
       }
-      if (file.size > 100 * 1024 * 1024) {
-        setError("Video must be under 100 MB.");
+      if (file.size > MAX_VIDEO_BYTES) {
+        setError(`Video must be under ${formatMegabytes(MAX_VIDEO_BYTES)}.`);
         setVideoFile(null);
         setVideoPreview(null);
         return;

@@ -14,7 +14,13 @@ import {
 import { requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { deleteManyFromStorage, saveImage, uploadToStorage } from "@/lib/supabase/storage";
+import { deleteManyFromStorage, saveImage } from "@/lib/supabase/storage";
+import { type UploadTicket, createUploadTicket, deleteUpload, verifyUpload } from "@/lib/storage/uploads";
+import {
+  MAX_VIDEO_BYTES,
+  isAllowedExtension,
+  type UploadKind,
+} from "@/lib/storage/files";
 import {
   takeString,
   takeNumber,
@@ -79,13 +85,11 @@ function validateStoryDates(startDate: string, endDate: string) {
   return null;
 }
 
-function isAllowedVideoFile(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  return ["mp4", "mov", "webm", "avi"].includes(extension ?? "") && file.type.startsWith("video/");
-}
+const VIDEO_KINDS = ["video"] as const satisfies readonly UploadKind[];
 
-// Helper query functions were previously defined but are no longer used after refactoring.
-// They have been removed to eliminate unused code warnings.
+function isAllowedVideoFilename(filename: string) {
+  return isAllowedExtension(filename.split(".").pop() ?? "", VIDEO_KINDS);
+}
 
 export async function createStory(formData: FormData) {
   const admin = await requireCurrentAdmin();
@@ -100,7 +104,6 @@ export async function createStory(formData: FormData) {
   const endDate = takeString(formData.get("endDate"));
   const location = takeString(formData.get("location"));
   const participantCount = takeNumber(formData.get("participantCount"));
-  const videoFile = takeFile(formData.get("video"));
   const status = takeString(formData.get("status")) ?? "DRAFT";
   const translationsJson = takeString(formData.get("translations"));
   const tagIdsJson = takeString(formData.get("tagIds"));
@@ -148,15 +151,10 @@ export async function createStory(formData: FormData) {
     }
   }
 
-  if (videoFile) {
-    if (videoFile.size > 100 * 1024 * 1024) return { error: "Video must be under 100 MB." };
-    if (!isAllowedVideoFile(videoFile)) return { error: "Video must be an MP4, MOV, WebM, or AVI file." };
-  }
-
   const supabase = createSupabaseAdminClient();
   const uploadedPaths: string[] = [];
 
-  let eventId: number | null = null;
+  let createdEventId: number | null = null;
 
   try {
     const [event] = await db
@@ -180,7 +178,7 @@ export async function createStory(formData: FormData) {
       return { error: "Failed to create story." };
     }
 
-    eventId = event.id;
+    createdEventId = event.id;
 
     const translationValues = locales.map((locale) => ({
       eventId: event.id,
@@ -217,15 +215,6 @@ export async function createStory(formData: FormData) {
         .where(eq(events.id, event.id));
     }
 
-    if (videoFile) {
-      const ext = videoFile.name.split(".").pop()?.toLowerCase() ?? "mp4";
-      const path = `events/${event.id}/video.${ext}`;
-      const uploadedVideoPath = await uploadToStorage(supabase, videoFile, path, videoFile.type);
-      if (!uploadedVideoPath) throw new Error("Video upload failed.");
-      uploadedPaths.push(uploadedVideoPath);
-      await db.update(events).set({ videoPath: uploadedVideoPath }).where(eq(events.id, event.id));
-    }
-
     for (const [index, file] of displayPhotoFiles.entries()) {
       const saved = await saveImage({
         supabase,
@@ -246,8 +235,8 @@ export async function createStory(formData: FormData) {
   } catch (err) {
     console.error("createStory failed", err);
     await deleteManyFromStorage(supabase, uploadedPaths);
-    if (eventId !== null) {
-      await db.delete(events).where(eq(events.id, eventId));
+    if (createdEventId !== null) {
+      await db.delete(events).where(eq(events.id, createdEventId));
     }
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("unique") || message.includes("duplicate")) {
@@ -259,8 +248,189 @@ export async function createStory(formData: FormData) {
     return { error: "Failed to create story. Please try again." };
   }
 
+  if (createdEventId === null) {
+    return { error: "Failed to create story. Please try again." };
+  }
+
   revalidatePath("/admin/multimedia/stories");
-  return { success: true };
+  return { success: true, data: { id: createdEventId } };
+}
+
+export async function setStoryStatus(storyId: number, status: "DRAFT" | "PUBLISHED" | "ARCHIVED"): Promise<{ success: true } | { success: false; error: string }> {
+  const admin = await requireCurrentAdmin();
+
+  if (!canAccessAdminModule(admin.role, "stories")) {
+    return { success: false, error: "You do not have permission to manage stories." };
+  }
+
+  if (!Number.isInteger(storyId) || storyId <= 0) {
+    return { success: false, error: "Invalid story." };
+  }
+
+  if (!["DRAFT", "PUBLISHED", "ARCHIVED"].includes(status)) {
+    return { success: false, error: "Invalid status." };
+  }
+
+  const [existing] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(eq(events.id, storyId))
+    .limit(1);
+
+  if (!existing) {
+    return { success: false, error: "Story not found." };
+  }
+
+  try {
+    await db
+      .update(events)
+      .set({ status })
+      .where(eq(events.id, storyId));
+
+    revalidatePath("/admin/multimedia/stories");
+    return { success: true };
+  } catch (err) {
+    console.error("setStoryStatus failed", err);
+    return { success: false, error: "Failed to update story status." };
+  }
+}
+
+export async function requestStoryVideoUpload(
+  storyId: number,
+  filename: string,
+): Promise<{ success: true; data: UploadTicket } | { success: false; error: string }> {
+  const admin = await requireCurrentAdmin();
+
+  if (!canAccessAdminModule(admin.role, "stories")) {
+    return { success: false, error: "You do not have permission to manage stories." };
+  }
+
+  if (!Number.isInteger(storyId) || storyId <= 0) {
+    return { success: false, error: "Invalid story." };
+  }
+
+  if (!isAllowedVideoFilename(filename)) {
+    return { success: false, error: "Video must be an MP4, MOV, WebM, or AVI file." };
+  }
+
+  const [existing] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(eq(events.id, storyId))
+    .limit(1);
+
+  if (!existing) {
+    return { success: false, error: "Story not found." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  try {
+    const ticket = await createUploadTicket({
+      supabase,
+      prefix: `events/${storyId}/video`,
+      filename,
+      kinds: VIDEO_KINDS,
+      maxBytes: MAX_VIDEO_BYTES,
+    });
+
+    return { success: true, data: ticket };
+  } catch (err) {
+    console.error("requestStoryVideoUpload failed", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: message };
+  }
+}
+
+export async function finalizeStoryVideo(
+  storyId: number,
+  path: string,
+): Promise<{ success: true; data: { videoPath: string } } | { success: false; error: string }> {
+  const admin = await requireCurrentAdmin();
+
+  if (!canAccessAdminModule(admin.role, "stories")) {
+    return { success: false, error: "You do not have permission to manage stories." };
+  }
+
+  if (!Number.isInteger(storyId) || storyId <= 0) {
+    return { success: false, error: "Invalid story." };
+  }
+
+  if (!path.startsWith(`events/${storyId}/video/`)) {
+    return { success: false, error: "Invalid storage path." };
+  }
+
+  const [existing] = await db
+    .select({ id: events.id, videoPath: events.videoPath })
+    .from(events)
+    .where(eq(events.id, storyId))
+    .limit(1);
+
+  if (!existing) {
+    return { success: false, error: "Story not found." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  try {
+    const verified = await verifyUpload(supabase, { path, kinds: VIDEO_KINDS, maxBytes: MAX_VIDEO_BYTES });
+
+    if (!verified.success) {
+      await deleteUpload(supabase, path);
+      return { success: false, error: verified.error };
+    }
+
+    await db.update(events).set({ videoPath: path }).where(eq(events.id, storyId));
+
+    if (existing.videoPath && existing.videoPath !== path) {
+      await deleteUpload(supabase, existing.videoPath);
+    }
+
+    revalidatePath("/admin/multimedia/stories");
+    return { success: true, data: { videoPath: path } };
+  } catch (err) {
+    console.error("finalizeStoryVideo failed", err);
+    return { success: false, error: "Failed to attach video. Please retry the upload." };
+  }
+}
+
+export async function removeStoryVideo(
+  storyId: number,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const admin = await requireCurrentAdmin();
+
+  if (!canAccessAdminModule(admin.role, "stories")) {
+    return { success: false, error: "You do not have permission to manage stories." };
+  }
+
+  if (!Number.isInteger(storyId) || storyId <= 0) {
+    return { success: false, error: "Invalid story." };
+  }
+
+  const [existing] = await db
+    .select({ id: events.id, videoPath: events.videoPath })
+    .from(events)
+    .where(eq(events.id, storyId))
+    .limit(1);
+
+  if (!existing) {
+    return { success: false, error: "Story not found." };
+  }
+
+  try {
+    await db.update(events).set({ videoPath: null }).where(eq(events.id, storyId));
+
+    if (existing.videoPath) {
+      const supabase = createSupabaseAdminClient();
+      await deleteUpload(supabase, existing.videoPath);
+    }
+
+    revalidatePath("/admin/multimedia/stories");
+    return { success: true };
+  } catch (err) {
+    console.error("removeStoryVideo failed", err);
+    return { success: false, error: "Failed to remove video." };
+  }
 }
 
 export async function getStoryDetails(storyId: number): Promise<{ data: StoryDetails | null; error: string | null }> {
@@ -299,7 +469,6 @@ export async function getStoryDetails(storyId: number): Promise<{ data: StoryDet
     return { data: null, error: "Story not found." };
   }
 
-  // Fetch translations
   const translationRows = await db
     .select({
       locale: eventTranslations.locale,
@@ -387,7 +556,6 @@ export async function updateStory(storyId: number, formData: FormData) {
   const endDate = takeString(formData.get("endDate"));
   const location = takeString(formData.get("location"));
   const participantCount = takeNumber(formData.get("participantCount"));
-  const videoFile = takeFile(formData.get("video"));
   const status = takeString(formData.get("status")) ?? "DRAFT";
   const translationsJson = takeString(formData.get("translations"));
   const tagIdsJson = takeString(formData.get("tagIds"));
@@ -440,11 +608,6 @@ export async function updateStory(storyId: number, formData: FormData) {
     }
   }
 
-  if (videoFile) {
-    if (videoFile.size > 100 * 1024 * 1024) return { error: "Video must be under 100 MB." };
-    if (!isAllowedVideoFile(videoFile)) return { error: "Video must be an MP4, MOV, WebM, or AVI file." };
-  }
-
   const supabase = createSupabaseAdminClient();
   const uploadedPaths: string[] = [];
   const obsoletePaths: string[] = [];
@@ -467,24 +630,6 @@ export async function updateStory(storyId: number, formData: FormData) {
     if (existing.coverPhotoPath) obsoletePaths.push(existing.coverPhotoPath);
   } else if (removeCover && existing.coverPhotoPath) {
     obsoletePaths.push(existing.coverPhotoPath);
-  }
-
-  let newVideoPath: string | null = null;
-  if (videoFile) {
-    const ext = videoFile.name.split(".").pop()?.toLowerCase() ?? "mp4";
-    const path = `events/${storyId}/video.${ext}`;
-    newVideoPath = await uploadToStorage(supabase, videoFile, path, videoFile.type);
-
-    if (!newVideoPath) {
-      await deleteManyFromStorage(supabase, uploadedPaths);
-      return { error: "Video upload failed." };
-    }
-
-    if (existing.videoPath && existing.videoPath !== newVideoPath) {
-      obsoletePaths.push(existing.videoPath);
-    }
-  } else if (removeVideo && existing.videoPath) {
-    obsoletePaths.push(existing.videoPath);
   }
 
   const newGalleryPaths: string[] = [];
@@ -534,11 +679,10 @@ export async function updateStory(storyId: number, formData: FormData) {
             : removeCover
               ? { coverPhotoPath: null, coverPhotoWidth: null, coverPhotoHeight: null }
               : {}),
-          ...(newVideoPath ? { videoPath: newVideoPath } : removeVideo ? { videoPath: null } : {}),
+          ...(removeVideo ? { videoPath: null } : {}),
         })
         .where(eq(events.id, storyId));
 
-      // Update translations
       for (const locale of locales) {
         const t = translations[locale];
         await tx
@@ -558,7 +702,6 @@ export async function updateStory(storyId: number, formData: FormData) {
           });
       }
 
-      // Update tags
       await tx.delete(eventsToTags).where(eq(eventsToTags.eventId, storyId));
       if (tagIds.length > 0) {
         const tagValues = tagIds.map((tagId) => ({ eventId: storyId, tagId }));
@@ -616,60 +759,34 @@ export async function getAvailableStoryTags(): Promise<{
   return { data: rows, error: null };
 }
 
-export async function setStoryStatus(
-  storyId: number,
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED",
-) {
-  const admin = await requireCurrentAdmin();
-  if (!canAccessAdminModule(admin.role, "stories")) {
-    return { error: "You do not have permission to manage stories." };
-  }
-  if (!Number.isInteger(storyId) || storyId <= 0) return { error: "Invalid story." };
-
-  const [existing] = await db
-    .select({ id: events.id })
-    .from(events)
-    .where(eq(events.id, storyId))
-    .limit(1);
-  if (!existing) return { error: "Story not found." };
-
-  try {
-    await db.update(events).set({ status, updatedAt: new Date() }).where(eq(events.id, storyId));
-  } catch (err) {
-    console.error("setStoryStatus failed", err);
-    return { error: "Failed to update story status." };
-  }
-
-  revalidatePath("/admin/multimedia/stories");
-  return { success: true };
-}
-
-export async function createStoryTag(nameValue: string): Promise<{
+export async function createStoryTag(name: string): Promise<{
   data: AvailableStoryTag | null;
   error: string | null;
 }> {
   const admin = await requireCurrentAdmin();
+
   if (!canAccessAdminModule(admin.role, "stories")) {
     return { data: null, error: "You do not have permission to create tags." };
   }
 
-  const name = nameValue.trim();
   const slug = slugify(name);
-  if (!name) return { data: null, error: "Tag name is required." };
   if (!slug) return { data: null, error: "Enter a valid tag name." };
-  if (name.length > 100) return { data: null, error: "Tag name must be 100 characters or fewer." };
 
   try {
-    const result = await db.transaction(async (tx) => {
-      const [tag] = await tx.insert(eventTags).values({ slug }).returning({ id: eventTags.id, slug: eventTags.slug });
-      if (!tag) return null;
-      await tx.insert(eventTagTranslations).values(locales.map((locale) => ({ tagId: tag.id, locale, name })));
-      return { ...tag, name };
+    const [tag] = await db
+      .insert(eventTags)
+      .values({ slug })
+      .returning({ id: eventTags.id, slug: eventTags.slug });
+
+    if (!tag) return { data: null, error: "Failed to create tag." };
+
+    await db.insert(eventTagTranslations).values({
+      tagId: tag.id,
+      locale: "en",
+      name,
     });
 
-    if (!result) return { data: null, error: "Failed to create tag." };
-    revalidatePath("/admin/multimedia/stories");
-    return { data: result, error: null };
+    return { data: { id: tag.id, slug: tag.slug, name }, error: null };
   } catch (err) {
     const message = err instanceof Error ? err.message.toLowerCase() : "";
     if (message.includes("unique") || message.includes("duplicate")) {
@@ -683,7 +800,7 @@ export async function deleteStory(storyId: number) {
   const admin = await requireCurrentAdmin();
 
   if (!canAccessAdminModule(admin.role, "stories")) {
-    return { error: "You do not have permission to manage stories." };
+    return { error: "You do not have permission to delete stories." };
   }
 
   if (!Number.isInteger(storyId) || storyId <= 0) {
@@ -691,7 +808,11 @@ export async function deleteStory(storyId: number) {
   }
 
   const [existing] = await db
-    .select({ id: events.id, coverPhotoPath: events.coverPhotoPath, videoPath: events.videoPath })
+    .select({
+      id: events.id,
+      coverPhotoPath: events.coverPhotoPath,
+      videoPath: events.videoPath,
+    })
     .from(events)
     .where(eq(events.id, storyId))
     .limit(1);
@@ -700,24 +821,29 @@ export async function deleteStory(storyId: number) {
     return { error: "Story not found." };
   }
 
-  const displayPhotos = await db
-    .select({ photoPath: eventDisplayPhotos.photoPath })
-    .from(eventDisplayPhotos)
-    .where(eq(eventDisplayPhotos.eventId, storyId));
-
   try {
+    const displayPhotos = await db
+      .select({ photoPath: eventDisplayPhotos.photoPath })
+      .from(eventDisplayPhotos)
+      .where(eq(eventDisplayPhotos.eventId, storyId));
+
     await db.delete(events).where(eq(events.id, storyId));
+
+    const allPaths = [
+      ...(existing.coverPhotoPath ? [existing.coverPhotoPath] : []),
+      ...(existing.videoPath ? [existing.videoPath] : []),
+      ...displayPhotos.map((p) => p.photoPath),
+    ];
+
+    if (allPaths.length > 0) {
+      const supabase = createSupabaseAdminClient();
+      await deleteManyFromStorage(supabase, allPaths);
+    }
+
+    revalidatePath("/admin/multimedia/stories");
+    return { success: true };
   } catch (err) {
     console.error("deleteStory failed", err);
     return { error: "Failed to delete story." };
   }
-
-  await deleteManyFromStorage(createSupabaseAdminClient(), [
-    existing.coverPhotoPath,
-    existing.videoPath,
-    ...displayPhotos.map((row) => row.photoPath),
-  ]);
-
-  revalidatePath("/admin/multimedia/stories");
-  return { success: true };
 }

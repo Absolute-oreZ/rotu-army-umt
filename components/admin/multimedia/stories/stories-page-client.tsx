@@ -34,7 +34,7 @@ export function StoriesPageClient({
   function handleStatusChange(story: StoryRow, status: "DRAFT" | "PUBLISHED" | "ARCHIVED") {
     startTransition(async () => {
       const result = await setStoryStatus(story.id, status);
-      if (result.error) setError(result.error);
+      if (!result.success) setError(result.error);
     });
   }
 

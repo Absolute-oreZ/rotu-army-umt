@@ -21,7 +21,12 @@ import {
 } from "@/components/ui/select";
 import { SingleFileField } from "@/components/ui/single-file-field";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
-import { createStory } from "@/app/admin/multimedia/stories/actions";
+import {
+  createStory,
+  requestStoryVideoUpload,
+  finalizeStoryVideo,
+} from "@/app/admin/multimedia/stories/actions";
+import { MAX_VIDEO_BYTES, formatMegabytes } from "@/lib/storage/files";
 import { slugify } from "@/lib/slugify";
 import { digitsOnly, getAllowedImageExtension } from "@/lib/admin/form-helpers";
 import { Field } from "@/components/ui/field";
@@ -60,6 +65,7 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
   // Video thumbnail state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
+  const [createdStoryId, setCreatedStoryId] = useState<number | null>(null);
 
   // Cover photo state
   const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
@@ -122,8 +128,8 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
         setError("Video must be an MP4, MOV, WebM, or AVI file.");
         return;
       }
-      if (file.size > 100 * 1024 * 1024) {
-        setError("Video must be under 100 MB.");
+      if (file.size > MAX_VIDEO_BYTES) {
+        setError(`Video must be under ${formatMegabytes(MAX_VIDEO_BYTES)}.`);
         return;
       }
     }
@@ -209,6 +215,7 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
     });
     setVideoFile(null);
     setVideoThumbnail(null);
+    setCreatedStoryId(null);
     setCoverPhoto(null);
     setCoverPhotoWidth(null);
     setCoverPhotoHeight(null);
@@ -295,19 +302,58 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
       fd.set("coverPhotoWidth", String(coverPhotoWidth));
       fd.set("coverPhotoHeight", String(coverPhotoHeight));
     }
-    if (videoFile) fd.set("video", videoFile);
     displayPhotos.forEach((photo) => fd.append("displayPhotos", photo));
     fd.set("translations", JSON.stringify(formData.translations));
     fd.set("tagIds", JSON.stringify(formData.tagIds));
 
     startTransition(async () => {
-      const result = await createStory(fd);
-      if (result.success) {
-        resetForm();
-        setUncontrolledOpen(false);
-      } else {
-        setError(result.error ?? "Failed to save story.");
+      const isRetry = createdStoryId !== null;
+      let storyId = createdStoryId;
+
+      if (storyId === null) {
+        const result = await createStory(fd);
+        if (!result.success) {
+          setError(result.error ?? "Failed to save story.");
+          return;
+        }
+        storyId = result.data.id;
+        setCreatedStoryId(storyId);
       }
+
+      if (videoFile) {
+        setError("Uploading video...");
+        try {
+          const ticket = await requestStoryVideoUpload(storyId, videoFile.name);
+          if (!ticket.success) {
+            throw new Error(ticket.error);
+          }
+          const response = await fetch(ticket.data.signedUrl, {
+            method: "PUT",
+            body: videoFile,
+            headers: {
+              "Content-Type": videoFile.type || "video/mp4",
+            },
+          });
+          if (!response.ok) {
+            throw new Error(`Video upload failed (${response.status}).`);
+          }
+          const finalized = await finalizeStoryVideo(storyId, ticket.data.path);
+          if (!finalized.success) {
+            throw new Error(finalized.error);
+          }
+        } catch (err) {
+          console.error("Video upload failed:", err);
+          setError(
+            isRetry
+              ? "Video upload failed. Please try again."
+              : "Story saved, but the video upload failed. Submit again to retry the video upload only."
+          );
+          return;
+        }
+      }
+
+      resetForm();
+      setUncontrolledOpen(false);
     });
   }
 
