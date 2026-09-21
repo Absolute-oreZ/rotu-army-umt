@@ -7,10 +7,11 @@ import {
   intakes,
   members,
 } from "@/db/schema";
-import {  getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
+import { requireAdminModule, getIntakeScope } from "@/lib/admin/rbac";
 import { isFullAccessAdminRole } from "@/lib/admin/roles";
 import {
   buildEnumFilterClause,
+  buildNumberFilterClause,
   buildSortOrderBy,
   parseTableSearchParams,
   takePositiveInt,
@@ -23,7 +24,6 @@ import {
 import { ResultsPageClient } from "@/components/admin/academic/results/results-page-client";
 import type { ResultRow } from "@/components/admin/academic/results/results-table";
 import type { AcademicSessionOption } from "@/lib/academic/helpers";
-import { ensureCadetSessionRecords } from "@/lib/academic/sync";
 import {
   buildAcademicSessionOptions,
 } from "@/lib/academic/helpers";
@@ -65,8 +65,6 @@ export default async function ResultsPage({
   let totalCount = 0;
 
   if (selectedSession) {
-    await ensureCadetSessionRecords(selectedSession.id);
-
     const clauses: SQL[] = [
       eq(cadets.isActive, true),
       eq(academicResults.sessionId, selectedSession.id),
@@ -85,6 +83,8 @@ export default async function ResultsPage({
 
     clauses.push(...buildEnumFilterClause(state.filters.rank, members.rank));
     clauses.push(...buildEnumFilterClause(state.filters.intakeNo, intakes.intakeNo));
+    clauses.push(...buildNumberFilterClause(state.filters.gpa, academicResults.gpa));
+    clauses.push(...buildNumberFilterClause(state.filters.cgpa, academicResults.cgpa));
 
     if (intakeScope !== null) {
       clauses.push(eq(cadets.intakeId, intakeScope));
@@ -96,6 +96,7 @@ export default async function ResultsPage({
     if (orderBy.length === 0) {
       orderBy.push(asc(members.name));
     }
+    orderBy.push(asc(academicResults.id));
 
     const [countRow, resultRows] = await Promise.all([
       db

@@ -4,7 +4,6 @@ import { takePositiveInt } from "@/lib/admin/table-search-params";
 import { TimetablesPageClient } from "@/components/admin/academic/timetables/timetables-page-client";
 import type { CadetSummary } from "@/components/admin/academic/timetables/timetables-page-client";
 import type { AcademicSessionOption } from "@/lib/academic/helpers";
-import { ensureCadetSessionRecords } from "@/lib/academic/sync";
 import {
   calculateCadetCurrentYear,
   buildAcademicSessionOptions,
@@ -51,9 +50,7 @@ export default async function TimetablesPage({
   } | null = null;
 
   if (selectedSession) {
-    await ensureCadetSessionRecords(selectedSession.id);
-
-    const cadetRows = await db
+      const cadetRows = await db
       .select({
         cadetId: cadets.id,
         armyNo: members.armyNo,

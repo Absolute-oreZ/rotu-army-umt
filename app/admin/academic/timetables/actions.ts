@@ -14,10 +14,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { deleteFromStorage, saveDocument, signedStorageUrl } from "@/lib/supabase/storage";
 import { parseSlotKey, isLunchBreakSlot } from "@/lib/academic/helpers";
 import { takeFile, takeNumber } from "@/lib/admin/form-helpers";
-
-export type ActionResult<T = undefined> =
-  | { success: true; data?: T }
-  | { success: false; error: string };
+import { ActionResult, ok, err } from "@/lib/actions/result";
 
 async function loadAuthorizedTimetable(
   intakeScope: number | null,
@@ -69,11 +66,11 @@ export async function updateTimetableSlotsAction(input: {
   try {
     const admin = await requireCurrentAdmin();
     if (!canAccessAdminModule(admin.role, "timetables")) {
-      return { success: false, error: "Access denied." };
+      return err("Access denied.");
     }
 
     if (!Array.isArray(input.occupiedSlots)) {
-      return { success: false, error: "Invalid timetable slots." };
+      return err("Invalid timetable slots.");
     }
 
     const seen = new Set<string>();
@@ -85,7 +82,7 @@ export async function updateTimetableSlotsAction(input: {
         continue;
       }
       if (isLunchBreakSlot(parsed.time)) {
-        return { success: false, error: "The lunch break slot is locked and cannot be occupied." };
+        return err("The lunch break slot is locked and cannot be occupied.");
       }
       if (seen.has(slotKey)) continue;
       seen.add(slotKey);
@@ -96,7 +93,7 @@ export async function updateTimetableSlotsAction(input: {
 
     const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), input.timetableId);
     if (!loaded.ok) {
-      return { success: false, error: loaded.error };
+      return err(loaded.error);
     }
 
     await db
@@ -108,12 +105,9 @@ export async function updateTimetableSlotsAction(input: {
       .where(eq(academicTimetables.id, loaded.row.id));
 
     revalidatePath("/admin/academic/timetables");
-    return { success: true, data: { occupiedSlots: slots } };
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Failed to update timetable slots.",
-    };
+    return ok({ occupiedSlots: slots });
+  } catch (e) {
+    return err(e instanceof Error ? e.message : "Failed to update timetable slots.");
   }
 }
 
@@ -126,27 +120,27 @@ export async function uploadTimetablePdfAction(
   try {
     const admin = await requireCurrentAdmin();
     if (!canAccessAdminModule(admin.role, "timetables")) {
-      return { success: false, error: "Access denied." };
+      return err("Access denied.");
     }
 
     const timetableId = takeNumber(formData.get("timetableId"));
     const file = takeFile(formData.get("file"));
 
     if (timetableId === null || !file) {
-      return { success: false, error: "Missing required upload parameters." };
+      return err("Missing required upload parameters.");
     }
 
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      return { success: false, error: "Only PDF files are accepted." };
+      return err("Only PDF files are accepted.");
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: "PDF must be under 5 MB." };
+      return err("PDF must be under 5 MB.");
     }
 
     const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), timetableId);
     if (!loaded.ok) {
-      return { success: false, error: loaded.error };
+      return err(loaded.error);
     }
 
     const saveResult = await saveDocument({
@@ -157,7 +151,7 @@ export async function uploadTimetablePdfAction(
     });
 
     if (!saveResult.ok) {
-      return { success: false, error: saveResult.error };
+      return err(saveResult.error);
     }
     uploadedPath = saveResult.path;
 
@@ -176,15 +170,12 @@ export async function uploadTimetablePdfAction(
     }
 
     revalidatePath("/admin/academic/timetables");
-    return { success: true, data: { path: saveResult.path } };
-  } catch (err) {
+    return ok({ path: saveResult.path });
+  } catch (e) {
     if (uploadedPath) {
       await deleteFromStorage(createSupabaseAdminClient(), uploadedPath);
     }
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Failed to upload timetable PDF.",
-    };
+    return err(e instanceof Error ? e.message : "Failed to upload timetable PDF.");
   }
 }
 
@@ -192,16 +183,16 @@ export async function deleteTimetablePdfAction(timetableId: number): Promise<Act
   try {
     const admin = await requireCurrentAdmin();
     if (!canAccessAdminModule(admin.role, "timetables")) {
-      return { success: false, error: "Access denied." };
+      return err("Access denied.");
     }
 
     const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), timetableId);
     if (!loaded.ok) {
-      return { success: false, error: loaded.error };
+      return err(loaded.error);
     }
 
     if (!loaded.row.timetablePdfPath) {
-      return { success: false, error: "No timetable PDF uploaded." };
+      return err("No timetable PDF uploaded.");
     }
 
     const oldPath = loaded.row.timetablePdfPath;
@@ -217,12 +208,9 @@ export async function deleteTimetablePdfAction(timetableId: number): Promise<Act
     await deleteFromStorage(createSupabaseAdminClient(), oldPath);
 
     revalidatePath("/admin/academic/timetables");
-    return { success: true };
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Failed to delete timetable PDF.",
-    };
+    return ok();
+  } catch (e) {
+    return err(e instanceof Error ? e.message : "Failed to delete timetable PDF.");
   }
 }
 
@@ -232,28 +220,25 @@ export async function getTimetablePdfSignedUrlAction(
   try {
     const admin = await requireCurrentAdmin();
     if (!canAccessAdminModule(admin.role, "timetables")) {
-      return { success: false, error: "Access denied." };
+      return err("Access denied.");
     }
 
     const loaded = await loadAuthorizedTimetable(getIntakeScope(admin), timetableId);
     if (!loaded.ok) {
-      return { success: false, error: loaded.error };
+      return err(loaded.error);
     }
 
     if (!loaded.row.timetablePdfPath) {
-      return { success: false, error: "No timetable PDF uploaded." };
+      return err("No timetable PDF uploaded.");
     }
 
     const supabase = createSupabaseAdminClient();
-    const signedUrl = await signedStorageUrl(supabase, loaded.row.timetablePdfPath, 3600);
+        const signedUrl = await signedStorageUrl(supabase, loaded.row.timetablePdfPath, undefined, "document");
     if (!signedUrl) {
-      return { success: false, error: "Could not generate download URL." };
+      return err("Could not generate download URL.");
     }
-    return { success: true, data: { signedUrl } };
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Failed to generate URL.",
-    };
+    return ok({ signedUrl });
+  } catch (e) {
+    return err(e instanceof Error ? e.message : "Failed to generate URL.");
   }
 }
