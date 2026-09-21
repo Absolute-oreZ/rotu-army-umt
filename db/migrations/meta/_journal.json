@@ -127,6 +127,34 @@
       "when": 1789891760630,
       "tag": "0017_heavy_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789913716644,
+      "tag": "0018_aspiring_blue_shield",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789915020351,
+      "tag": "0019_petite_logan",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789918110601,
+      "tag": "0020_blue_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789979359452,
+      "tag": "0021_lovely_tony_stark",
+      "breakpoints": true
     }
   ]
 }

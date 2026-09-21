@@ -168,7 +168,7 @@ export const collectionPurposeEnum = pgEnum("collection_purpose", [
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
 };
 
 export const adminUsers = pgTable(
@@ -486,8 +486,10 @@ export const cadetAccounts = pgTable(
       .notNull()
       .references(() => members.id, { onDelete: "cascade" }),
     bankName: bankEnum("bank_name").notNull(),
-    accountNumber: bigint("account_number", { mode: "number" }).notNull(),
+    accountNumber: bigint("account_number", { mode: "number" }),
+    accountNumberText: text("account_number_text").notNull(),
     duitNowId: bigint("duitnow_id", { mode: "number" }),
+    duitNowIdText: text("duitnow_id_text"),
     qrCodePath: text("qr_code_path"),
     ...timestamps,
   },
@@ -609,6 +611,25 @@ export const newsletterSubscribers = pgTable(
   ],
 );
 
+export const rateLimitEntries = pgTable(
+  "rate_limit_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    identifier: varchar("identifier", { length: 255 }).notNull(),
+    action: varchar("action", { length: 100 }).notNull(),
+    count: integer("count").default(1).notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("rate_limit_entries_identifier_action_idx").on(
+      table.identifier,
+      table.action,
+    ),
+    index("rate_limit_entries_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
 export const newsletterCampaignStatusEnum = pgEnum("newsletter_campaign_status", [
   "DRAFT",
   "SENT",
@@ -636,12 +657,16 @@ export const newsletterCampaigns = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }),
     recipientCount: integer("recipient_count").default(0).notNull(),
     sentByAdminUserId: uuid("sent_by_admin_user_id").references(() => adminUsers.id, { onDelete: "set null" }),
+    sendingLeaseId: text("sending_lease_id"),
+    sendingLeaseExpiresAt: timestamp("sending_lease_expires_at", { withTimezone: true }),
+    retryCount: integer("retry_count").default(0).notNull(),
     ...timestamps,
   },
   (table) => [
     index("newsletter_campaigns_status_idx").on(table.status),
     index("newsletter_campaigns_scheduled_at_idx").on(table.scheduledAt),
     index("newsletter_campaigns_sent_by_idx").on(table.sentByAdminUserId),
+    index("newsletter_campaigns_lease_expires_idx").on(table.sendingLeaseExpiresAt),
   ],
 );
 
@@ -689,10 +714,12 @@ export const newsletterCampaignDeliveries = pgTable(
     providerMessageId: text("provider_message_id"),
     errorMessage: text("error_message"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    idempotencyKey: text("idempotency_key").notNull(),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("newsletter_campaign_deliveries_campaign_subscriber_idx").on(table.campaignId, table.subscriberId),
+    uniqueIndex("newsletter_campaign_deliveries_idempotency_key_idx").on(table.idempotencyKey),
     index("newsletter_campaign_deliveries_campaign_status_idx").on(table.campaignId, table.status),
     index("newsletter_campaign_deliveries_subscriber_idx").on(table.subscriberId),
   ],
@@ -957,9 +984,11 @@ export const treasuryAccounts = pgTable(
       .notNull()
       .references(() => adminUsers.id, { onDelete: "cascade" }),
     bankName: bankEnum("bank_name").notNull(),
-    accountNumber: bigint("account_number", { mode: "number" }).notNull(),
+    accountNumber: bigint("account_number", { mode: "number" }),
+    accountNumberText: text("account_number_text").notNull(),
     qrCodePath: text("qr_code_path"),
     duitNowId: bigint("duitnow_id", { mode: "number" }),
+    duitNowIdText: text("duitnow_id_text"),
     ...timestamps,
   },
   (table) => [
