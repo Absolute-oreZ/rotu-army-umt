@@ -9,11 +9,6 @@ import { AttendDetailsSheet } from "./attend-details-sheet";
 import { AddAttendDialog } from "./add-attend-dialog";
 import { DeleteAttendDialog } from "./delete-attend-dialog";
 
-export type CadetOption = {
-  id: number;
-  label: string;
-};
-
 type AttendPageClientProps = {
   searchParams: Record<string, string | string[] | undefined>;
   records: AttendRecordRow[];
@@ -21,7 +16,6 @@ type AttendPageClientProps = {
   isIntakeScoped: boolean;
   sourceFilterOptions: { value: string; label: string }[];
   intakeFilterOptions: IntakeOption[];
-  cadetOptions: CadetOption[];
 };
 
 export function AttendPageClient({
@@ -31,7 +25,6 @@ export function AttendPageClient({
   isIntakeScoped,
   sourceFilterOptions,
   intakeFilterOptions,
-  cadetOptions,
 }: AttendPageClientProps) {
   const [detailsTarget, setDetailsTarget] = useState<{
     record: AttendRecordRow;
@@ -45,7 +38,6 @@ export function AttendPageClient({
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Attend</h1>
         <AddAttendDialog
-          cadetOptions={cadetOptions}
           sourceOptions={sourceFilterOptions}
           trigger={
             <Button size="sm">

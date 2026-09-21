@@ -31,10 +31,11 @@ const STEPS = [
   { label: "Photos" },
 ];
 
-function todayISO() {
+function getMalaysiaDateISO(): string {
   const now = new Date();
-  const offset = now.getTimezoneOffset();
-  return new Date(now.getTime() - offset * 60 * 1000).toISOString().slice(0, 10);
+  // Malaysia is UTC+8
+  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return malaysiaTime.toISOString().slice(0, 10);
 }
 
 type AddActivityDialogProps = {
@@ -49,7 +50,7 @@ export function AddActivityDialog({ trigger, typeOptions }: AddActivityDialogPro
   const [currentStep, setCurrentStep] = useState(0);
 
   const [type, setType] = useState<string>(typeOptions[0]?.value ?? "");
-  const [recordDate, setRecordDate] = useState<string>(todayISO());
+  const [recordDate, setRecordDate] = useState<string>(getMalaysiaDateISO());
   const [remarks, setRemarks] = useState("");
   const [location, setLocation] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
@@ -74,15 +75,15 @@ export function AddActivityDialog({ trigger, typeOptions }: AddActivityDialogPro
   const titlePreview = type && recordDate ? `${type.toUpperCase()}-${recordDate}` : "";
 
   function resetForm() {
-    setType(typeOptions[0]?.value ?? "");
-    setRecordDate(todayISO());
-    setRemarks("");
-    setLocation("");
-    setMeetingLink("");
-    setPhotos([]);
-    setError(null);
-    setCurrentStep(0);
-  }
+      setType(typeOptions[0]?.value ?? "");
+      setRecordDate(getMalaysiaDateISO());
+      setRemarks("");
+      setLocation("");
+      setMeetingLink("");
+      setPhotos([]);
+      setError(null);
+      setCurrentStep(0);
+    }
 
   function validateStep(step: number): string | null {
     if (step === 0) {

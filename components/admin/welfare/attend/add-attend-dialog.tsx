@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircleIcon, Loader2Icon } from "lucide-react";
 import {
@@ -21,38 +21,109 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { createAttendRecord } from "@/app/admin/welfare/attend/actions";
+import { searchCadets } from "@/app/admin/welfare/attend/search-actions";
 
-type CadetOption = {
+function getMalaysiaDateISO(): string {
+  const now = new Date();
+  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return malaysiaTime.toISOString().slice(0, 10);
+}
+
+interface CadetSearchResult {
   id: number;
   label: string;
-};
+  armyNo: number;
+}
+
+type SourceOption = { value: string; label: string };
 
 export function AddAttendDialog({
-  cadetOptions,
   sourceOptions,
   trigger,
 }: {
-  cadetOptions: CadetOption[];
-  sourceOptions: { value: string; label: string }[];
+  sourceOptions: SourceOption[];
   trigger: React.ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [cadetId, setCadetId] = useState("");
-  const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [cadetQuery, setCadetQuery] = useState("");
+  const [cadetResults, setCadetResults] = useState<CadetSearchResult[]>([]);
+  const [recordDate, setRecordDate] = useState(() => getMalaysiaDateISO());
   const [attendType, setAttendType] = useState("");
   const [source, setSource] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<number | null>(null);
+  const searchRequestRef = useRef(0);
 
   const formValid = cadetId !== "" && recordDate !== "" && attendType !== "" && source !== "";
 
   function resetForm() {
+    if (searchTimerRef.current !== null) {
+      window.clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+    searchRequestRef.current += 1;
     setCadetId("");
-    setRecordDate(new Date().toISOString().slice(0, 10));
+    setCadetQuery("");
+    setCadetResults([]);
+    setIsSearching(false);
+    setRecordDate(getMalaysiaDateISO());
     setAttendType("");
     setSource("");
     setError(null);
+  }
+
+  function handleCadetQueryChange(value: string) {
+    setCadetQuery(value);
+    setCadetId("");
+
+    if (searchTimerRef.current !== null) {
+      window.clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+
+    const trimmed = value.trim();
+
+    if (trimmed.length < 2) {
+      searchRequestRef.current += 1;
+      setCadetResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimerRef.current = window.setTimeout(async () => {
+      const requestId = searchRequestRef.current + 1;
+      searchRequestRef.current = requestId;
+
+      try {
+        const result = await searchCadets(trimmed);
+        if (requestId === searchRequestRef.current && result.success) {
+          setCadetResults(result.data);
+        }
+      } catch (err) {
+        console.error("Cadet search failed", err);
+      } finally {
+        if (requestId === searchRequestRef.current) {
+          setIsSearching(false);
+        }
+      }
+    }, 300);
+  }
+
+  function handleCadetSelect(result: CadetSearchResult) {
+    if (searchTimerRef.current !== null) {
+      window.clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+    searchRequestRef.current += 1;
+    setIsSearching(false);
+    setCadetId(String(result.id));
+    setCadetQuery(result.label);
+    setCadetResults([]);
   }
 
   function handleCreate() {
@@ -98,21 +169,32 @@ export function AddAttendDialog({
 
         <div className="flex flex-col gap-4">
           <Field label="Cadet" required>
-            <Select value={cadetId} onValueChange={setCadetId}>
-              <SelectTrigger>
-                {cadetId
-                  ? cadetOptions.find((c) => String(c.id) === cadetId)?.label ?? "Select cadet"
-                  : "Select cadet"}
-              </SelectTrigger>
-              <SelectContent>
-                {cadetOptions.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Input
+                value={cadetQuery}
+                onChange={(e) => handleCadetQueryChange(e.target.value)}
+                placeholder="Search by name, army no, or matric no..."
+                disabled={isPending}
+              />
+              {isSearching && <Loader2Icon className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />}
+              {cadetResults.length > 0 && (
+                <ul className="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
+                  {cadetResults.map((result) => (
+                    <li key={result.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleCadetSelect(result)}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                      >
+                        {result.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </Field>
+
           <Field label="Date" required>
             <Input
               type="date"
@@ -120,6 +202,7 @@ export function AddAttendDialog({
               onChange={(e) => setRecordDate(e.target.value)}
             />
           </Field>
+
           <Field label="Attend Type" required>
             <Select value={attendType} onValueChange={setAttendType}>
               <SelectTrigger>
@@ -131,6 +214,7 @@ export function AddAttendDialog({
               </SelectContent>
             </Select>
           </Field>
+
           <Field label="Source" required>
             <Select value={source} onValueChange={setSource}>
               <SelectTrigger>

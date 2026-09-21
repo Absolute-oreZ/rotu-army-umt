@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { attendRecords, cadets, intakes, members } from "@/db/schema";
@@ -86,19 +86,6 @@ export default async function AttendPage({
     orderBy.push(desc(attendRecords.id));
   }
 
-  const cadetOptions = await db
-    .select({ id: cadets.id, name: members.name, armyNo: members.armyNo })
-    .from(cadets)
-    .innerJoin(members, eq(members.id, cadets.memberId))
-    .where(
-      and(
-        eq(cadets.isActive, true),
-        intakeScope !== null ? eq(cadets.intakeId, intakeScope) : undefined,
-      ),
-    )
-    .orderBy(asc(members.name))
-    .limit(500);
-
   const [countRow, recordRows] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)::int` })
@@ -153,10 +140,6 @@ export default async function AttendPage({
       isIntakeScoped={intakeScope !== null}
       sourceFilterOptions={sourceFilterOptions}
       intakeFilterOptions={intakeScope === null ? intakeFilterOptions : []}
-      cadetOptions={cadetOptions.map((c) => ({
-        id: c.id,
-        label: `${c.name} · #${c.armyNo}`,
-      }))}
     />
   );
 }
