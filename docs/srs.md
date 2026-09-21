@@ -187,7 +187,37 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 14. Collections shall survive treasury account deletion but lose the payment account link (`onDelete: set null`).
 15. Payment records shall never be deleted through cascade.
 
-### 3.14 Cadet Portal and Claims
+### 3.13.1 Finance Identifier Migration (account_number → text)
+1. System shall store finance identifiers (account numbers, DuitNow IDs) as text columns (`account_number_text`, `duitnow_id_text`) alongside existing numeric columns in `cadet_accounts` and `treasury_accounts`.
+2. System shall provide a migration to backfill text columns from numeric columns (preserving leading zeros and non-numeric characters).
+3. Application code shall read and write text columns exclusively after migration verification.
+4. Numeric columns shall be retained temporarily for rollback safety, then dropped after production verification.
+
+### 3.13.2 Direct Upload for Large Files
+1. System shall support direct-to-Supabase uploads for files exceeding Server Action body limits (e.g., story videos >5MB).
+2. Server shall create signed upload tickets with server-derived storage paths; client PUTs directly to Supabase Storage.
+3. Server shall verify uploaded object existence before updating database records.
+4. Failed uploads shall be cleaned up automatically.
+5. Legacy routed upload helper removed; story video uses the ticket-based flow end-to-end, and receipts/attachments validate as `image` or `pdf` content kinds.
+
+### 3.14 Newsletter Reliability
+1. System shall use a SENDING lease mechanism (2-minute TTL, 30-second heartbeat) to prevent concurrent newsletter sends.
+2. Each delivery shall have a stable idempotency key (`campaignId-subscriberId-updatedAt`) with unique index to prevent duplicate sends on retry.
+3. Sent/failed counts shall be cumulative (not overwritten per cron run); `recipientCount` tracks total sent.
+4. Cron worker shall process deliveries in batches of 50 with up to 3 retries per batch.
+5. Resend batch API idempotency keys shall be used for email-level deduplication.
+6. Editing campaigns with status `SENT` or `SENDING` shall be blocked.
+7. Cron shall process scheduled campaigns, recover stuck SENDING campaigns (expired leases), and retry failed deliveries.
+
+### 3.15 Server-Backed Search
+1. System shall replace client-side loading of large dropdowns (500+ cadets/members) with server-side search APIs.
+2. Search shall support filtering by name, army number, and matric number (minimum 2 characters).
+3. Results limited to 20 entries, ordered alphabetically by name.
+4. Search shall respect intake scope for intake-scoped admin roles (Secretary, Treasurer, Sports, Welfare, Academic).
+5. Full-access roles (Officer, Instructor, Multimedia) shall search across all intakes.
+6. Client shall use debounced input with results dropdown; no full list loaded on page load.
+
+### 3.16 Cadet Portal and Claims
 1. System shall provide a mobile-first responsive cadet portal with sidebar navigation and authenticated layout shell.
 2. Cadet portal shall include collections view (card grid of published collections for the cadet's intake) and claims management.
 3. System shall allow cadets to submit reimbursement claims via dialog-based form from the claims list page.
@@ -243,6 +273,9 @@ System data model shall include at minimum:
 3. Sensitive tokens shall be stored as hashes where applicable.
 4. Deployment configuration shall be validated against a documented schema; production shall not fall back to localhost URLs.
 5. Uploaded files shall be validated by content signature, size and type on the server.
+6. System shall enforce rate limiting on public endpoints (e.g., newsletter subscription: 5 requests per IP per 15 minutes) using a DB-backed store with unique (identifier, action) index.
+7. System shall serve security headers including `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN`, and a Content Security Policy (initially in report-only mode) restricting scripts, styles, fonts, images, connections, frames, and forms to approved origins.
+8. System shall prevent open redirects by validating `next`/`redirect` parameters against an allow-list of safe internal paths.
 
 ### 5.2 Performance
 1. Public pages should prefer Server Components and server-side data reads.
@@ -259,9 +292,11 @@ System data model shall include at minimum:
 2. Database schema shall remain source of truth in Drizzle.
 3. New server mutations shall use Server Actions or route handlers.
 
-### 5.5 Reliability
-1. System should provide localized not-found behavior for missing resources.
-2. System should include route-level error boundaries for public surfaces. Public error boundaries are implemented with localized strings for all 4 locales. Admin error boundaries are deferred.
+### 5.6 Consent and Data Display
+1. System shall document the approved basis for public cadet data display before expanding exposure.
+2. Public cadet data display shall require explicit consent for: display names, photos, quotes.
+3. Inactive cadet data shall not be exposed publicly without explicit consent review.
+4. Administrative status changes shall not implicitly re-enable marketing consent (newsletter unsubscribe remains respected).
 
 ## 6. External Interface Requirements
 
@@ -307,7 +342,7 @@ System data model shall include at minimum:
 - Sports assessments: UKA/APFA record lists with auto session numbering and combined per-cadet result entry page (inline editing, env-based thresholds with defaults).
 - Welfare module: Attend (cadet absence records with env-based sources), Accommodations (auto-created on cadet creation, gender-scoped for intake-scoped admins), and Religious Activities (env-based types, autogenerated type-date titles with unique guard, photo upload at creation, view-only photo carousel).
 - Phase 1 hardening: environment schema and validation script, private-bucket storage routing with object migration, fail-closed intake scope with inactive-cadet blocking, and seed script safety guard.
-- Academic modules: Courses (cadet course assignment + course/program management with completion years, supported flags, and enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 30-minute slot editor for Sunday–Thursday 8:00 AM–6:00 PM with locked 1:00–2:00 PM lunch break, drag-range selection, timetable PDFs). Session provisioning via pg_cron function, sessions trigger, seed script, and on-demand sync.
+- Academic modules: Courses (cadet course assignment + course/program management with completion years, supported flags, and enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 60-minute slot editor for Sunday–Thursday 8:00 AM–6:00 PM with locked 1:00–2:00 PM lunch break, drag-range selection, timetable PDFs). Session provisioning via pg_cron function, sessions trigger, seed script, and on-demand sync.
 - Placeholder pages for remaining admin modules across other role groups (Academic placeholders replaced by real modules).
 
 ### 7.2 Pending

@@ -66,15 +66,16 @@ Canonical environment variables:
 
 - `DATABASE_URL`
 - `SUPABASE_SECRET_KEY`
-- `SUPABASE_PRIVATE_STORAGE_ROOT_PATH` (private storage bucket)
+- `NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH` (private storage bucket)
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH` (public storage bucket)
 - `NEXT_PUBLIC_SITE_URL`
 - `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
+- `NEXT_PUBLIC_RESEND_FROM_EMAIL`
 - `CRON_SECRET`
 - `NEWSLETTER_UNSUBSCRIBE_SECRET`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (Cloudflare Turnstile on the newsletter form; optional in development where the form fails open, required in production)
 - The 14 `NEXT_PUBLIC_SPORTS_*` thresholds (see `.env.example`)
 - `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`
 - `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`
@@ -83,7 +84,7 @@ Canonical environment variables:
 
 ### Storage
 
-- Two buckets: `NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH` (public) and `SUPABASE_PRIVATE_STORAGE_ROOT_PATH` (private).
+- Two buckets: `NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH` (public) and `NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH` (private).
 - Routing is by first path segment via `resolveVisibility()` in `lib/storage/visibility.ts`; every prefix not in `PUBLIC_STORAGE_PREFIXES` is private (fail-closed).
 - Public prefixes: `events`, `hero-images`, `images`, `intakes`, `placeholder`, `religious-activities`, `webapp`.
 - Never call `storageUrl()` for private prefixes; use `signedStorageUrl()` on the server.
@@ -563,6 +564,99 @@ Important modeling notes:
   - Active
   - Unsubscribed
 - Confirmation and unsubscribe tokens must be unique and treated as sensitive.
+
+---
+
+## Rate Limiting
+
+- Newsletter subscription endpoint protected by DB-backed rate limiter (`lib/rate-limit.ts`)
+- Default: 5 requests per IP per 15 minutes
+- Uses `rate_limit_entries` table with unique index on (identifier, action)
+- Cleanup function `cleanupRateLimitEntries()` available for cron
+
+---
+
+## Security Headers / CSP
+
+- Security headers configured in `next.config.ts`:
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `X-Frame-Options: SAMEORIGIN`
+  - `Content-Security-Policy-Report-Only` with directives for scripts, styles, fonts, images, connects, frames, forms
+- CSP allows: Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`), Google Maps embeds (`www.google.com`, `maps.google.com`), Supabase APIs
+- Currently in report-only mode; switch to enforcement after monitoring
+
+---
+
+## Direct Upload (Large Files)
+
+- Story videos (>5MB) use direct-to-Supabase upload via signed URLs (`lib/storage/uploads.ts`)
+- Server creates upload ticket with `createUploadTicket()` → client PUTs to signed URL → server verifies with `verifyUpload()`
+- Bypasses Next.js Server Action body limit (5MB)
+- Legacy `uploadToStorage()` has been removed; story video uses the ticket flow end-to-end
+
+---
+
+## Finance Identifier Migration (account_number → text)
+
+- Numeric `account_number` and `duitnow_id` columns supplemented with text columns (`account_number_text`, `duitnow_id_text`) in `cadet_accounts` and `treasury_accounts`
+- Migration 0022 backfills text columns from numeric
+- Application code switched to use text columns exclusively
+- After production verification, numeric columns will be dropped
+
+---
+
+## Newsletter Reliability (C10)
+
+- SENDING lease with 2-minute TTL and 30-second heartbeat (`lib/newsletter-campaigns.ts`)
+- Idempotency keys on `newsletter_campaign_deliveries` (unique index)
+- Cumulative sent/failed counts (not overwritten per cron run)
+- Chunked worker: batches of 50 with retries (max 3)
+- Attachment verification with Resend batch API
+- Edit blocked for SENT and SENDING campaigns
+- Cron processes scheduled + stuck campaigns
+
+---
+
+## Server-Backed Search (P6)
+
+- Cadet/member dropdowns replaced with server-side search API (`app/admin/welfare/attend/search-actions.ts`)
+- Search by name, army number, or matric number (min 2 chars, max 20 results)
+- Respects intake scope for scoped roles (WELFARE, SECRETARY, etc.)
+- Full access for OFFICER, INSTRUCTOR, MULTIMEDIA
+- Debounced client-side search input with results dropdown
+
+---
+
+## Cadet Public Data Consent
+
+**Reference**: `docs/consent/CADET_PUBLIC_DATA_CONSENT.md`
+
+### Key Principles
+- All public cadet data exposure requires explicit consent
+- Inactive cadets (`isActive = false`) are NEVER displayed publicly
+- Administrative status changes do NOT affect public consent
+- Newsletter unsubscribe is permanent unless cadet explicitly re-subscribes
+
+### Currently Exposed Data (with consent)
+- Intake detail pages: cadet `displayName`, `displayPhotoPath`, `quote`
+- Landing page testimonials: `authorName`, `authorRank`, `authorImagePath`, `content`
+- Cadet portal (authenticated): own data only
+
+### Never Exposed Publicly
+- Army number, emails, phone, address, birthdate, IC
+- Academic results, health metrics, attendance, payments
+- Religious activities, accommodations, bank details
+
+### Consent Collection
+- Intake onboarding: explicit checkbox for name/photo/quote display
+- Testimonials: cadet reviews and approves before publishing
+- Newsletter: double opt-in, one-click unsubscribe in every email
+
+### Consent Revocation
+- Cadet requests via contact form/email
+- Admin sets `publicConsent = false` (add field to `cadets` table if needed)
+- Automatic removal from public queries within cache TTL
 
 ---
 

@@ -286,19 +286,17 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `resolveVisibility(path)` — public when the first segment is in `PUBLIC_STORAGE_PREFIXES`, private otherwise (fail-closed).
 
 **`lib/storage/files.ts`** — Client-safe, pure upload validation:
-- `detectFileKind(bytes)` — sniffs magic bytes (JPEG, PNG, WebP, PDF); returns kind, extension and content type derived from content, never from the client.
+- `detectFileKind(bytes)` — sniffs magic bytes; returns kind (`image` | `pdf` | `video`), extension and content type derived from content, never from the client.
 - `describeAllowedKinds(kinds)`, `formatMegabytes(bytes)` — user-facing error strings.
-- `MAX_IMAGE_BYTES`, `MAX_DOCUMENT_BYTES`, `MAX_BYTES_BY_KIND`.
+- `MAX_IMAGE_BYTES`, `MAX_VIDEO_BYTES`, `MAX_BYTES_BY_KIND` (kinds are content types, not signing purposes).
 
-**`lib/supabase/storage-public.ts`** — Client-safe public storage URL helpers:
+### `lib/supabase/storage-public.ts` — Client-safe public storage URL helpers:
 - `storageUrl(path)` —  always rejects private paths.
-- `uploadToStorage()` —  only retained for the explicitly deferred newsletter attachments and story video.
 - `extractStoragePath(publicUrl)` — reverse-engineers a storage path from a public URL.
 
-**`lib/supabase/storage.ts`** — Server-only Supabase Storage helpers:
+### `lib/supabase/storage.ts` — Server-only Supabase Storage helpers:
 - `bucketFor(visibility)` — maps `public`/`private` to the configured bucket names.
 - `signedStorageUrl(supabase, path, expiresIn)` — signs an object in the bucket chosen by the path's visibility; logs and returns `null` when signing fails (e.g., object missing). `DEFAULT_SIGNED_URL_TTL_SECONDS` = 60.
-- `uploadToStorage(supabase, file, path, contentType)` — legacy routed upload (visibility chosen by path; unvalidated content — call sites migrate to `saveImage`/`saveDocument`/`saveUpload` in later phases).
 - `deleteFromStorage(supabase, path)` / `deleteManyFromStorage(supabase, paths)` — deletes objects, grouped by bucket; logs failures.
 - `saveUpload({ supabase, file, prefix, stem, kinds, maxBytes })` — validates size and content signature, derives extension/content type from detected content, generates a unique `{prefix}/{stem}-{uuid}.{ext}` key, uploads with `upsert: false`; returns `{ ok, path, contentType, size }` or `{ ok: false, error }`.
 - `saveImage(input)` / `saveDocument(input)` — `saveUpload` restricted to images / PDFs.
@@ -310,6 +308,28 @@ Helper functions are organized by domain. **Always check here before writing inl
 **`lib/public/content.ts`** — Server-side read models for public pages (published intakes, events, homepage content) with fallback chains.
 
 **`lib/i18n/*`** — Locale configuration, dictionary loader, per-locale dictionaries, and error strings (see §5).
+
+**`lib/rate-limit.ts`** — DB-backed rate limiting:
+- `checkRateLimit(identifier, action, config?)` — returns `{ allowed, remaining, resetAt }`; uses `rate_limit_entries` table with unique index on (identifier, action); default 5 req/IP/15min.
+- `cleanupRateLimitEntries()` — deletes expired entries; intended for periodic cron.
+
+**`lib/newsletter/sanitize-html.ts`** — HTML sanitizer for newsletter content:
+- `sanitizeHtml(html)` — allow-list based sanitization (tags: a, b, strong, i, em, u, p, br, ul, ol, li, h1-h6, blockquote, img; attributes: href, src, alt, style); strips scripts, event handlers, unsafe URLs.
+
+**`lib/storage/uploads.ts`** — Direct upload tickets for large files, story video flow (server-only module, not `"use server"` — expose authorized thin actions per feature instead):
+- `createUploadTicket({ supabase, prefix, filename, kinds, maxBytes, expiresIn })` — validates kinds, derives a `randomUUID` name with an allow-listed extension (client cannot choose arbitrary paths), creates the object with `upsert: false`, returns `{ signedUrl, path, bucket, maxBytes, contentType }`.
+- `verifyUpload(supabase, { bucket, path, kinds, maxBytes })` — confirms via Storage `list()` that the object exists, matches the allowed kinds, and is within `maxBytes`.
+- `deleteUpload(supabase, path)` — cleanup on failed finalize; server-side only after auth/ownership checks.
+
+**`app/admin/welfare/attend/search-actions.ts`** — Server-backed cadet search:
+- `searchCadets(query, limit?)` — searches active cadets by name, armyNo, or matricNo (min 2 chars, max 20 results); intake scope is derived server-side from `requireCurrentAdmin()` + `getIntakeScope()`, never accepted from the client.
+
+**`lib/actions/result.ts`** — Canonical action result type:
+- `ActionResult<T>` — discriminated union `{ success: true; data: T } | { success: false; error: string }` for consistent Server Action responses.
+
+**`lib/admin/cleanup.ts`** — Multi-step upload cleanup/rollback:
+- `withCleanup(fn)` — wraps async fn; tracks uploads; auto-deletes on throw.
+- `saveImageWithCleanup(input)`, `saveDocumentWithCleanup(input)`, `saveUploadWithCleanup(input)` — tracked versions of storage helpers.
 
 **Adding a new helper**: create it in the most specific file that fits its domain, then either (a) run the `update-helpers-doc` skill to refresh this catalog, or (b) manually add a one-line bullet here with signature and purpose.
 
@@ -571,7 +591,7 @@ Based on `TASKS.md` and codebase review:
 - Treasurer lifecycle cleanup: treasury accounts deleted when role changes away from Treasurer.
 - Sports Metrics module: health record sessions with per-cadet metrics (age at record date, height, weight, BMI + classification), intake-scoped, record selector above the table (Officer/Instructor select intake; Sport role scope inferred).
 - Sports assessments: UKA/APFA record lists with auto session numbering (`UKA-1-2026`), combined Assessments entry page with inline per-cadet result editing (desktop) and dialog fallback (mobile), gender-based env thresholds with defaults, and per-item/overall pass evaluation stored at write time.
-- Academic modules: Courses (cadet course assignment tab + course/program management tab with enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 30-minute slot editor with locked lunch break, drag-range selection, timetable PDFs), intake-scoped record selection with `ACADEMIC_MANUAL_PROVISION` provisioning dialog.
+- Academic modules: Courses (cadet course assignment tab + course/program management tab with enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 60-minute slot editor with locked lunch break, drag-range selection, timetable PDFs), intake-scoped record selection with `ACADEMIC_MANUAL_PROVISION` provisioning dialog.
 - Placeholder pages for remaining admin modules across other role groups (Academic placeholders replaced by real modules).
 
 ### Pending
@@ -626,6 +646,10 @@ type ActionResult<T = undefined> =
 - Domain services own domain validation and transactional writes; actions own authentication, form parsing, and cache invalidation.
 - File uploads must validate file type and size before storage, and remove an uploaded file if the database write fails.
 - Delete operations must validate the parent entity and ownership before removing database or storage records.
+- Storage and network I/O never run inside a DB transaction: uploads happen before the transaction, and superseded objects are deleted only after the write commits.
+- Large files (e.g., story videos) bypass the 5 MB Server Action body limit via the ticket flow in `lib/storage/uploads.ts`: create entity → `requestStoryVideoUpload` ticket → client PUT → `finalizeStoryVideo` (verify + set path + delete previous object post-commit). The video itself never travels through a Server Action.
+- Signed (private-bucket) URLs are short-lived and always rendered with `unoptimized` `next/image` or as direct links; PDFs are never passed to `next/image`.
+- Admin identity lookups are request-cached (`cache()` inside `lib/admin/rbac.ts`), so layout + page + action share one auth resolution per request.
 
 ### 14.3 Cache and navigation behavior
 
