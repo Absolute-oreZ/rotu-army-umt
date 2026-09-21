@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { DEFAULT_AGE, PROGRAM_TOTAL_YEARS, SESSION_START_MONTH_DAY, SESSIONS_PER_YEAR } from "./data";
+import { DEFAULT_AGE, PROGRAM_TOTAL_YEARS, SESSION_START_MONTH_DAY, SESSIONS_PER_YEAR } from "./constants";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EDU_DOMAIN = "ocean.umt.edu.my";
@@ -114,6 +114,11 @@ export function isValidEduEmail(email: string): boolean {
   if (!EMAIL_RE.test(v)) return false;
   const domain = v.split("@")[1];
   return domain === EDU_DOMAIN;
+}
+
+export function normalizeEmail(email: string | null | undefined): string {
+  if (!email) return "";
+  return email.trim().toLowerCase();
 }
 
 export function defaultBirthdate(): Date {

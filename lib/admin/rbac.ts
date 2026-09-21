@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/db";
@@ -94,11 +95,14 @@ export async function getCurrentAdminAccess(): Promise<AdminAccess> {
     return { status: "not-admin" };
   }
 
-  return resolveAdminAccess(user.id);
+  return cachedResolveAdminAccess(user.id);
 }
 
+const cachedResolveAdminAccess = cache(resolveAdminAccess);
+const cachedGetCurrentAdminAccess = cache(getCurrentAdminAccess);
+
 export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
-  const access = await getCurrentAdminAccess();
+  const access = await cachedGetCurrentAdminAccess();
 
   return access.status === "ok" ? access.admin : null;
 }
@@ -112,7 +116,7 @@ function adminLoginPath(access: AdminAccess): string {
 }
 
 export async function requireCurrentAdmin() {
-  const access = await getCurrentAdminAccess();
+  const access = await cachedGetCurrentAdminAccess();
 
   if (access.status !== "ok") {
     redirect(adminLoginPath(access));

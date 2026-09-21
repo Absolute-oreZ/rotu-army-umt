@@ -15,6 +15,10 @@ export function takeFile(value: FormDataEntryValue | null): File | null {
   return null;
 }
 
+export function takeFiles(values: FormDataEntryValue[]): File[] {
+  return values.filter((value): value is File => value instanceof File && value.size > 0);
+}
+
 const ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"] as const;
 export type AllowedImageExtension = (typeof ALLOWED_IMAGE_EXTENSIONS)[number];
 
@@ -34,6 +38,16 @@ export function getAllowedImageExtension(file: File): AllowedImageExtension | nu
   const ext = getFileExtension(file);
   return (ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext)
     ? (ext as AllowedImageExtension)
+    : null;
+}
+
+const ALLOWED_RECEIPT_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "pdf"] as const;
+export type AllowedReceiptExtension = (typeof ALLOWED_RECEIPT_EXTENSIONS)[number];
+
+export function getAllowedReceiptExtension(file: File): AllowedReceiptExtension | null {
+  const ext = getFileExtension(file);
+  return (ALLOWED_RECEIPT_EXTENSIONS as readonly string[]).includes(ext)
+    ? (ext as AllowedReceiptExtension)
     : null;
 }
 

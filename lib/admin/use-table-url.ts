@@ -114,7 +114,7 @@ export function useTableURL({
 
       const tableQs = tableStateToQueryString(next, config);
       if (tableQs) {
-        const tableParams = new URLSearchParams(tableQs.slice(1));
+        const tableParams = new URLSearchParams(tableQs);
         for (const [key, value] of tableParams) {
           nextParams.append(key, value);
         }
