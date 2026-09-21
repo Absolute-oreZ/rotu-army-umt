@@ -33,7 +33,7 @@ import {
   RACE_OPTIONS,
   MIN_AGE,
   MAX_AGE,
-} from "@/lib/data";
+} from "@/lib/constants";
 import { SingleFileField } from "@/components/ui/single-file-field";
 import { CADET_RANKS } from "@/db/schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown";
@@ -405,13 +405,13 @@ function EditMode({
                 />
               </Field>
               <Field label="Matric No" required>
-                <Input
-                  value={matricNo}
-                  onChange={(e) => setMatricNo(e.target.value.toUpperCase)}
-                  placeholder="e.g. MAT4500"
-                  className="uppercase"
-                />
-              </Field>
+                              <Input
+                                value={matricNo}
+                                onChange={(e) => setMatricNo(e.target.value.toUpperCase())}
+                                placeholder="e.g. MAT4500"
+                                className="uppercase"
+                              />
+                            </Field>
               <Field label="Rank" required>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

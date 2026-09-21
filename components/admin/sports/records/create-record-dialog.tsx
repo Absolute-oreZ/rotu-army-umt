@@ -48,6 +48,13 @@ type DialogIntakeOption = {
   intakeNo: string;
 };
 
+function getMalaysiaDateISO(): string {
+  const now = new Date();
+  // Malaysia is UTC+8
+  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return malaysiaTime.toISOString().slice(0, 10);
+}
+
 export function CreateRecordDialog({
   recordType,
   intakeOptions,
@@ -66,7 +73,7 @@ export function CreateRecordDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [intakeId, setIntakeId] = useState("");
-  const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [recordDate, setRecordDate] = useState(() => getMalaysiaDateISO());
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -74,10 +81,10 @@ export function CreateRecordDialog({
   const selectedIntakeId = intakeId || (scopedIntakeId === null ? "" : String(scopedIntakeId));
 
   function resetForm() {
-    setIntakeId("");
-    setRecordDate(new Date().toISOString().slice(0, 10));
-    setError(null);
-  }
+      setIntakeId("");
+      setRecordDate(getMalaysiaDateISO());
+      setError(null);
+    }
 
   function handleCreate() {
     if (!formValid) return;

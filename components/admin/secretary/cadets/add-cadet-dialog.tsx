@@ -19,8 +19,8 @@ import {
   RELIGION_OPTIONS,
   RACE_OPTIONS,
   MIN_AGE,
-  MAX_AGE, 
-} from "@/lib/data";
+  MAX_AGE,
+} from "@/lib/constants";
 import { SingleFileField } from "@/components/ui/single-file-field";
 import { CADET_RANKS } from "@/db/schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown";
