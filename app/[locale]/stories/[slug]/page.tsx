@@ -145,10 +145,11 @@ export default async function StoryDetailPage({
         </div>
 
         <SimilarStories
-          locale={locale}
-          stories={similarStories}
-          title={d.similarStoriesLabel}
-        />
+                  locale={locale}
+                  stories={similarStories}
+                  title={d.similarStoriesLabel}
+                  dictionary={dictionary.common}
+                />
       </div>
     </main>
   );

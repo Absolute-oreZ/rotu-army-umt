@@ -163,10 +163,11 @@ export default async function HomePage({
       />
 
       <Testimonials
-        title={dictionary.home.testimonials.title}
-        intro={dictionary.home.testimonials.intro}
-        testimonials={content.testimonials}
-      />
+              title={dictionary.home.testimonials.title}
+              intro={dictionary.home.testimonials.intro}
+              testimonials={content.testimonials}
+              dictionary={dictionary.common}
+            />
 
       <section className="border-t border-border py-14 sm:py-16">
         <div className="px-4 sm:px-6 lg:px-8">

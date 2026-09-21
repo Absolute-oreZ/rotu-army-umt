@@ -37,29 +37,38 @@ export default async function NewsletterUnsubscribePage({
     already_unsubscribed: {
       statusDescription: newsletter.unsubscribePageAlreadyDescription,
       statusTitle: newsletter.unsubscribePageAlreadyTitle,
+      showForm: false,
     },
-    invalid: {
-      statusDescription: newsletter.unsubscribePageInvalidDescription,
-      statusTitle: newsletter.unsubscribePageInvalidTitle,
+    pending_unsubscribe: {
+      statusDescription: "Click the button below to unsubscribe from our newsletter.",
+      statusTitle: "Unsubscribe from newsletter",
+      showForm: true,
     },
     unsubscribed: {
       statusDescription: newsletter.unsubscribePageSuccessDescription,
       statusTitle: newsletter.unsubscribePageSuccessTitle,
+      showForm: false,
+    },
+    invalid: {
+      statusDescription: newsletter.unsubscribePageInvalidDescription,
+      statusTitle: newsletter.unsubscribePageInvalidTitle,
+      showForm: false,
     },
   } as const;
 
-  const content = contentByStatus[result];
+  const content = contentByStatus[result] ?? contentByStatus.invalid;
 
   return (
     <NewsletterStatusPage
-      actionHref={`/${locale}`}
-      actionLabel={newsletter.backToSiteLabel}
+      actionHref={`/${locale}/newsletter/unsubscribe/${token}`}
+      actionLabel={content.showForm ? "Unsubscribe" : newsletter.backToSiteLabel}
       eyebrow={newsletter.unsubscribePageEyebrow}
       imageSrc="/images/unsubscribe-newsletter.png"
       imageAlt="Newsletter unsubscribe"
       statusDescription={content.statusDescription}
       statusTitle={content.statusTitle}
       title={newsletter.unsubscribePageTitle}
+      showForm={content.showForm}
     />
   );
 }

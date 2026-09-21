@@ -37,29 +37,38 @@ export default async function NewsletterConfirmationPage({
     confirmed: {
       statusDescription: newsletter.confirmationPageSuccessDescription,
       statusTitle: newsletter.confirmationPageSuccessTitle,
+      showForm: false,
     },
     already_confirmed: {
       statusDescription: newsletter.confirmationPageAlreadyDescription,
       statusTitle: newsletter.confirmationPageAlreadyTitle,
+      showForm: false,
+    },
+    pending_confirmation: {
+      statusDescription: "Click the button below to confirm your subscription.",
+      statusTitle: "Confirm your subscription",
+      showForm: true,
     },
     invalid: {
       statusDescription: newsletter.confirmationPageInvalidDescription,
       statusTitle: newsletter.confirmationPageInvalidTitle,
+      showForm: false,
     },
   } as const;
 
-  const content = contentByStatus[result];
+  const content = contentByStatus[result] ?? contentByStatus.invalid;
 
   return (
     <NewsletterStatusPage
-      actionHref={`/${locale}`}
-      actionLabel={newsletter.backToSiteLabel}
+      actionHref={`/${locale}/newsletter/confirm/${token}`}
+      actionLabel={content.showForm ? "Confirm subscription" : newsletter.backToSiteLabel}
       eyebrow={newsletter.confirmationPageEyebrow}
       imageSrc="/images/subscribe-newsletter.png"
       imageAlt="Newsletter subscription confirmed"
       statusDescription={content.statusDescription}
       statusTitle={content.statusTitle}
       title={newsletter.confirmationPageTitle}
+      showForm={content.showForm}
     />
   );
 }
