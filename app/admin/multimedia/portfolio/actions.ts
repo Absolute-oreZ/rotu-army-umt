@@ -16,7 +16,7 @@ import {
 import { and, asc, eq, exists, gt, ilike, inArray, or, sql } from "drizzle-orm";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { deleteFromStorage, saveImage } from "@/lib/supabase/storage";
-import { DEFAULT_HERO_IMAGE_PATH } from "@/lib/data";
+import { DEFAULT_HERO_IMAGE_PATH } from "@/lib/constants";
 import { locales } from "@/lib/i18n/config";
 import {
   buildFAQTableConfig,
@@ -35,6 +35,7 @@ import {
   type FilterCondition,
   type RawSearchParams,
 } from "@/lib/admin/table-search-params";
+import { sanitizeUrlForHtml } from "@/lib/url-validation";
 
 const SHARED_IMAGE_PATHS = new Set<string>([DEFAULT_HERO_IMAGE_PATH]);
 
@@ -220,22 +221,22 @@ export async function updateWebappContent(formData: FormData) {
   }
 
   const updates: Record<string, string | null> = {};
-  // Helper to copy a string value if present.
-  const setIfPresent = (key: string, value: FormDataEntryValue | null) => {
-    if (value !== null) {
-      const stringValue = String(value).trim();
-      updates[key] = stringValue || null;
-    }
-  };
+    // Helper to copy a string value if present.
+    const setIfPresent = (key: string, value: FormDataEntryValue | null) => {
+          if (value !== null) {
+            const stringValue = String(value).trim();
+            updates[key] = stringValue || null;
+          }
+        };
 
-  setIfPresent("heroImagePath", formData.get("heroImagePath"));
-  setIfPresent("googleMapLocationUrl", formData.get("googleMapLocationUrl"));
-  setIfPresent("officialEmail", formData.get("officialEmail"));
-  setIfPresent("facebookUrl", formData.get("facebookUrl"));
-  setIfPresent("instagramUrl", formData.get("instagramUrl"));
-  setIfPresent("youtubeUrl", formData.get("youtubeUrl"));
-  setIfPresent("tikTokUrl", formData.get("tiktokUrl"));
-  setIfPresent("xUrl", formData.get("xUrl"));
+        setIfPresent("heroImagePath", formData.get("heroImagePath"));
+        setIfPresent("googleMapLocationUrl", sanitizeUrlForHtml(String(formData.get("googleMapLocationUrl")), { allowedSchemes: ["https:"], allowedHosts: ["www.google.com", "maps.google.com"] }) || null);
+        setIfPresent("officialEmail", formData.get("officialEmail"));
+        setIfPresent("facebookUrl", sanitizeUrlForHtml(String(formData.get("facebookUrl")), { allowedSchemes: ["https:"], allowedHosts: ["www.facebook.com", "facebook.com", "m.facebook.com"] }) || null);
+        setIfPresent("instagramUrl", sanitizeUrlForHtml(String(formData.get("instagramUrl")), { allowedSchemes: ["https:"], allowedHosts: ["www.instagram.com", "instagram.com"] }) || null);
+        setIfPresent("youtubeUrl", sanitizeUrlForHtml(String(formData.get("youtubeUrl")), { allowedSchemes: ["https:"], allowedHosts: ["www.youtube.com", "youtube.com", "youtu.be"] }) || null);
+        setIfPresent("tiktokUrl", sanitizeUrlForHtml(String(formData.get("tiktokUrl")), { allowedSchemes: ["https:"], allowedHosts: ["www.tiktok.com", "tiktok.com", "vt.tiktok.com"] }) || null);
+        setIfPresent("xUrl", sanitizeUrlForHtml(String(formData.get("xUrl")), { allowedSchemes: ["https:"], allowedHosts: ["x.com", "www.x.com", "twitter.com", "www.twitter.com"] }) || null);
 
   const [content] = await db
     .select({ heroImagePath: webappContents.heroImagePath })
