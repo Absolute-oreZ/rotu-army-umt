@@ -14,8 +14,8 @@ import {
 } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule, isFullAccessAdminRole, isAdminRole, isIntakeScopedRole, type AdminRole } from "@/lib/admin/roles";
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendAdminInvitationEmail, sendAdminRoleChangeEmail, sendAdminRemovalEmail } from "@/lib/admin/email";
+import { logDatabaseError, isUniqueViolation, getDatabaseErrorMessage } from "@/lib/db/errors";
 
 export async function addAdminUser(formData: FormData) {
   const admin = await requireCurrentAdmin();
@@ -109,8 +109,12 @@ export async function addAdminUser(formData: FormData) {
       intakeId: isIntakeScopedRole(role) ? cadet.intakeId : null,
       invitedByAuthUserId: admin.authUserId,
     });
-  } catch {
-    return { error: "Failed to create invitation. A conflicting record may already exist." };
+  } catch (error) {
+    logDatabaseError("createAdminInvitation", error);
+    if (isUniqueViolation(error)) {
+      return { error: "This person already has an invitation or admin record." };
+    }
+    return { error: getDatabaseErrorMessage(error) };
   }
 
   await db.insert(adminRoleAuditLogs).values({
@@ -303,12 +307,6 @@ export async function dropAdminUser(formData: FormData) {
       memberName: target.memberName,
       role: target.role,
     });
-  } catch {
-  }
-
-  try {
-    const supabaseAdmin = createSupabaseAdminClient();
-    await supabaseAdmin.auth.admin.deleteUser(target.authUserId);
   } catch {
   }
 

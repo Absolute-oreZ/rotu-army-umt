@@ -19,6 +19,17 @@ const MAX_HEIGHT_CM = 250;
 const MIN_WEIGHT_KG = 20;
 const MAX_WEIGHT_KG = 200;
 
+function getMalaysiaDateISO(): string {
+  const now = new Date();
+  // Malaysia is UTC+8
+  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return malaysiaTime.toISOString().slice(0, 10);
+}
+
+function toDateOnly(value: string): Date {
+  return new Date(`${value}T00:00:00+08:00`);
+}
+
 function parseMetricValue(
   raw: FormDataEntryValue | null,
   min: number,
@@ -33,10 +44,6 @@ function parseMetricValue(
     return { ok: false, error: `${label} must be between ${min} and ${max}.` };
   }
   return { ok: true, value: (Math.round(num * 100) / 100).toFixed(2) };
-}
-
-function toDateOnly(value: string): Date {
-  return new Date(`${value}T00:00:00Z`);
 }
 
 async function loadOwnedRecord(
@@ -88,7 +95,7 @@ export async function createHealthRecord(formData: FormData) {
   const resolved = resolveScopedIntakeId(formData, intakeScope);
   if (!resolved.ok) return { error: resolved.error };
 
-  const recordDate = new Date().toISOString().slice(0, 10);
+  const recordDate = getMalaysiaDateISO();
 
   try {
     const inserted = await db
@@ -238,4 +245,3 @@ export async function deleteHealthRecord(formData: FormData) {
   revalidatePath("/admin/sports/metrics");
   return { success: true as const };
 }
-

@@ -209,9 +209,9 @@ export default async function RankHoldersPage({
             intakeScope !== null ? eq(cadets.intakeId, intakeScope) : undefined,
           ),
         )
-        .orderBy(members.name)
-        .limit(500),
+        .orderBy(members.name),
     ]);
+
     adminTotalCount = adminCountRow[0]?.count ?? 0;
     admins = adminsRows;
     eligibleMembers = eligibleRows;

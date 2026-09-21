@@ -6,15 +6,16 @@ import { db } from "@/db";
 import { accommodations, adminInvitations, adminUsers, cadets, intakes, members, platoons } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule, INTAKE_SCOPED_ROLES } from "@/lib/admin/roles";
-import { calculateAge, isValidPersonalEmail, isValidEduEmail } from "@/lib/utils";
+import { calculateAge, isValidPersonalEmail, isValidEduEmail, normalizeEmail } from "@/lib/utils";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { deleteManyFromStorage, saveImage } from "@/lib/supabase/storage";
 import { takeString, takeNumber, takeFile } from "@/lib/admin/form-helpers";
+import { withCleanup, saveImageWithCleanup } from "@/lib/admin/cleanup";
 import {
   genderEnum,
   memberRankEnum,
   religionEnum,
   raceEnum,
+  CADET_RANKS,
 } from "@/db/schema";
 
 export async function toggleCadetActive(formData: FormData) {
@@ -81,8 +82,8 @@ export async function addCadet(formData: FormData) {
   const name = takeString(formData.get("name"));
   const displayName = takeString(formData.get("displayName"));
   const rawArmyNo = takeNumber(formData.get("armyNo"));
-  const personalEmail = takeString(formData.get("personalEmail"));
-  const eduEmail = takeString(formData.get("eduEmail"));
+  const personalEmail = normalizeEmail(takeString(formData.get("personalEmail")));
+    const eduEmail = normalizeEmail(takeString(formData.get("eduEmail")));
   const gender = takeString(formData.get("gender"));
   const religion = takeString(formData.get("religion"));
   const race = takeString(formData.get("race"));
@@ -122,11 +123,11 @@ export async function addCadet(formData: FormData) {
   const birthdate = new Date(birthdateStr);
   if (isNaN(birthdate.getTime())) return { error: "Invalid birthdate." };
   const age = calculateAge(birthdate);
-  if (age < 18 || age > 24) return { error: "Age must be between 18 and 24." };
+    if (age < 18 || age > 24) return { error: "Age must be between 18 and 24." };
 
-  if (!rank || (rank !== "PK" && rank !== "PKW")) {
-    return { error: "Valid cadet rank is required (PK or PKW)." };
-  }
+    if (!rank || !CADET_RANKS.includes(rank as (typeof CADET_RANKS)[number])) {
+      return { error: "Valid cadet rank is required." };
+    }
   if (!matricNo) return { error: "Matric number is required." };
   if (matricNo.length > 80) return { error: "Matric number is too long." };
   if (rawIntakeId === null || !Number.isInteger(rawIntakeId) || rawIntakeId <= 0) {
@@ -153,128 +154,105 @@ export async function addCadet(formData: FormData) {
 
   const isActive = rawIsActive !== "false";
 
-  const redBgFile = takeFile(formData.get("redBgPhoto"));
-  const blueBgFile = takeFile(formData.get("blueBgPhoto"));
-  const displayFile = takeFile(formData.get("displayPhoto"));
+    const redBgFile = takeFile(formData.get("redBgPhoto"));
+    const blueBgFile = takeFile(formData.get("blueBgPhoto"));
+    const displayFile = takeFile(formData.get("displayPhoto"));
 
-  let redBgPhotoPath: string | null = null;
-  let blueBgPhotoPath: string | null = null;
-  let displayPhotoPath: string | null = null;
+    const storageBase = `intakes/${effectiveIntakeId}/cadets/${rawArmyNo}`;
 
-  const storageBase = `intakes/${effectiveIntakeId}/cadets/${rawArmyNo}`;
-  const supabase = createSupabaseAdminClient();
-  const uploadedPaths: string[] = [];
+    return withCleanup(async (cleanup) => {
+      const supabase = createSupabaseAdminClient();
 
-  try {
-    if (redBgFile) {
-      const saved = await saveImage({ supabase, file: redBgFile, prefix: storageBase, stem: "red-bg" });
-      if (!saved.ok) {
-        await deleteManyFromStorage(supabase, uploadedPaths);
-        return { error: saved.error };
+      let redBgPhotoPath: string | null = null;
+      let blueBgPhotoPath: string | null = null;
+      let displayPhotoPath: string | null = null;
+
+      if (redBgFile) {
+        const saved = await saveImageWithCleanup(cleanup, { supabase, file: redBgFile, prefix: storageBase, stem: "red-bg" });
+        if (!saved.ok) return { error: saved.error };
+        redBgPhotoPath = saved.path;
       }
-      uploadedPaths.push(saved.path);
-      redBgPhotoPath = saved.path;
-    }
-    if (blueBgFile) {
-      const saved = await saveImage({ supabase, file: blueBgFile, prefix: storageBase, stem: "blue-bg" });
-      if (!saved.ok) {
-        await deleteManyFromStorage(supabase, uploadedPaths);
-        return { error: saved.error };
+      if (blueBgFile) {
+        const saved = await saveImageWithCleanup(cleanup, { supabase, file: blueBgFile, prefix: storageBase, stem: "blue-bg" });
+        if (!saved.ok) return { error: saved.error };
+        blueBgPhotoPath = saved.path;
       }
-      uploadedPaths.push(saved.path);
-      blueBgPhotoPath = saved.path;
-    }
-    if (displayFile) {
-      const saved = await saveImage({ supabase, file: displayFile, prefix: storageBase, stem: "display" });
-      if (!saved.ok) {
-        await deleteManyFromStorage(supabase, uploadedPaths);
-        return { error: saved.error };
+      if (displayFile) {
+        const saved = await saveImageWithCleanup(cleanup, { supabase, file: displayFile, prefix: storageBase, stem: "display" });
+        if (!saved.ok) return { error: saved.error };
+        displayPhotoPath = saved.path;
       }
-      uploadedPaths.push(saved.path);
-      displayPhotoPath = saved.path;
-    }
 
-    const [memberId] = await db.transaction(async (tx) => {
-      const [memberRow] = await tx
-        .insert(members)
-        .values({
-          armyNo: rawArmyNo,
-          rank: rank as (typeof memberRankEnum.enumValues)[number],
-          name,
-          personalEmail,
-          eduEmail: eduEmail ?? null,
-          displayName,
-          gender: gender as "MALE" | "FEMALE",
-          role: "CADET",
-          religion: religion as (typeof religionEnum.enumValues)[number],
-          race: race as (typeof raceEnum.enumValues)[number],
-          address,
-          birthdate: birthdateStr,
-          age,
-          kor: "Rejimen Askar Wataniah (RAW)",
-          redBgPhotoPath: null,
-          blueBgPhotoPath: null,
-        })
-        .returning({ id: members.id });
+      const [memberId] = await db.transaction(async (tx) => {
+              const [memberRow] = await tx
+                .insert(members)
+                .values({
+                  armyNo: rawArmyNo,
+                  rank: rank as (typeof memberRankEnum.enumValues)[number],
+                  name,
+                  personalEmail,
+                  eduEmail: eduEmail ?? null,
+                  displayName,
+                  gender: gender as "MALE" | "FEMALE",
+                  role: "CADET" as const,
+                  religion: religion as (typeof religionEnum.enumValues)[number],
+                  race: race as (typeof raceEnum.enumValues)[number],
+                  address,
+                  birthdate: birthdateStr,
+                  age,
+                  kor: "Rejimen Askar Wataniah (RAW)",
+                  redBgPhotoPath: null,
+                  blueBgPhotoPath: null,
+                })
+                .returning({ id: members.id });
 
-      if (!memberRow) throw new Error("Failed to create member.");
+        if (!memberRow) throw new Error("Failed to create member.");
 
-      const [cadetRow] = await tx
-        .insert(cadets)
-        .values({
-          matricNo,
-          isActive,
-          quote: quote ?? null,
-          displayPhotoPath: null,
-          cgpa: null,
-          height: null,
-          weight: null,
-          bmi: null,
-          studyProgramId: null,
-          intakeId: effectiveIntakeId,
-          platoonId: rawPlatoonId,
-          memberId: memberRow.id,
-        })
-        .returning({ id: cadets.id });
+        const [cadetRow] = await tx
+          .insert(cadets)
+          .values({
+            matricNo,
+            isActive,
+            quote: quote ?? null,
+            displayPhotoPath: null,
+            cgpa: null,
+            height: null,
+            weight: null,
+            bmi: null,
+            studyProgramId: null,
+            intakeId: effectiveIntakeId,
+            platoonId: rawPlatoonId,
+            memberId: memberRow.id,
+          })
+          .returning({ id: cadets.id });
 
-      if (!cadetRow) throw new Error("Failed to create cadet.");
+        if (!cadetRow) throw new Error("Failed to create cadet.");
 
-      await tx.insert(accommodations).values({
-        cadetId: cadetRow.id,
-        type: "HOSTEL",
-        address: null,
+        await tx.insert(accommodations).values({
+          cadetId: cadetRow.id,
+          type: "HOSTEL",
+          address: null,
+        });
+
+        return [memberRow.id];
       });
 
-      return [memberRow.id];
-    });
+      const memberUpdates: Record<string, string | null> = {};
+      if (redBgPhotoPath) memberUpdates.redBgPhotoPath = redBgPhotoPath;
+      if (blueBgPhotoPath) memberUpdates.blueBgPhotoPath = blueBgPhotoPath;
+      if (Object.keys(memberUpdates).length > 0) {
+        await db.update(members).set(memberUpdates).where(eq(members.id, memberId));
+      }
+      if (displayPhotoPath) {
+              await db
+                .update(cadets)
+                .set({ displayPhotoPath })
+                .where(eq(cadets.memberId, memberId));
+            }
+          });
 
-    const memberUpdates: Record<string, string | null> = {};
-    if (redBgPhotoPath) memberUpdates.redBgPhotoPath = redBgPhotoPath;
-    if (blueBgPhotoPath) memberUpdates.blueBgPhotoPath = blueBgPhotoPath;
-    if (Object.keys(memberUpdates).length > 0) {
-      await db.update(members).set(memberUpdates).where(eq(members.id, memberId));
-    }
-    if (displayPhotoPath) {
-      await db
-        .update(cadets)
-        .set({ displayPhotoPath })
-        .where(eq(cadets.memberId, memberId));
-    }
-  } catch (err) {
-    await deleteManyFromStorage(supabase, uploadedPaths);
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("unique") || message.includes("duplicate")) {
-      return { error: "A member with this army number or email already exists." };
-    }
-    if (message.toLowerCase().includes("body size limit")) {
-      return { error: "Images are too large. Total size must be under 5 MB." };
-    }
-    console.error("Error adding cadet:", err);
-    return { error: "Failed to add cadet. Please try again." };
-  }
-
-  revalidatePath("/admin/secretary/cadets");
-  return { success: true };
+          revalidatePath("/admin/secretary/cadets");
+          return { success: true };
 }
 
 export type CadetDetails = {
@@ -402,8 +380,8 @@ export async function updateCadet(formData: FormData) {
   const name = takeString(formData.get("name"));
   const displayName = takeString(formData.get("displayName"));
   const rawArmyNo = takeNumber(formData.get("armyNo"));
-  const personalEmail = takeString(formData.get("personalEmail"));
-  const eduEmail = takeString(formData.get("eduEmail"));
+  const personalEmail = normalizeEmail(takeString(formData.get("personalEmail")));
+    const eduEmail = normalizeEmail(takeString(formData.get("eduEmail")));
   const gender = takeString(formData.get("gender"));
   const religion = takeString(formData.get("religion"));
   const race = takeString(formData.get("race"));
@@ -441,11 +419,15 @@ export async function updateCadet(formData: FormData) {
   if (!birthdateStr) return { error: "Birthdate is required." };
 
   const birthdate = new Date(birthdateStr);
-  if (isNaN(birthdate.getTime())) return { error: "Invalid birthdate." };
-  const age = calculateAge(birthdate);
-  if (age < 18 || age > 24) return { error: "Age must be between 18 and 24." };
+    if (isNaN(birthdate.getTime())) return { error: "Invalid birthdate." };
+    const age = calculateAge(birthdate);
+    if (age < 18 || age > 24) return { error: "Age must be between 18 and 24." };
 
-  if (!matricNo) return { error: "Matric number is required." };
+    if (!rank || !CADET_RANKS.includes(rank as (typeof CADET_RANKS)[number])) {
+      return { error: "Valid cadet rank is required." };
+    }
+
+    if (!matricNo) return { error: "Matric number is required." };
   if (matricNo.length > 80) return { error: "Matric number is too long." };
   if (rawIntakeId === null || !Number.isInteger(rawIntakeId) || rawIntakeId <= 0) {
     return { error: "Valid intake is required." };
@@ -470,138 +452,111 @@ export async function updateCadet(formData: FormData) {
   }
 
   const isActive = rawIsActive !== "false";
-  const removeRedBg = formData.get("removeRedBgPhoto") === "true";
-  const removeBlueBg = formData.get("removeBlueBgPhoto") === "true";
-  const removeDisplay = formData.get("removeDisplayPhoto") === "true";
+    const removeRedBg = formData.get("removeRedBgPhoto") === "true";
+    const removeBlueBg = formData.get("removeBlueBgPhoto") === "true";
+    const removeDisplay = formData.get("removeDisplayPhoto") === "true";
 
-  const redBgFile = takeFile(formData.get("redBgPhoto"));
-  const blueBgFile = takeFile(formData.get("blueBgPhoto"));
-  const displayFile = takeFile(formData.get("displayPhoto"));
+    const redBgFile = takeFile(formData.get("redBgPhoto"));
+    const blueBgFile = takeFile(formData.get("blueBgPhoto"));
+    const displayFile = takeFile(formData.get("displayPhoto"));
 
-  const storageBase = `intakes/${effectiveIntakeId}/cadets/${rawArmyNo}`;
-  const supabase = createSupabaseAdminClient();
-  const uploadedPaths: string[] = [];
-  const obsoletePaths: string[] = [];
+    const storageBase = `intakes/${effectiveIntakeId}/cadets/${rawArmyNo}`;
 
-  let redBgPhotoPath: string | null | undefined;
-  let blueBgPhotoPath: string | null | undefined;
-  let displayPhotoPath: string | null | undefined;
+    return withCleanup(async (cleanup) => {
+      const supabase = createSupabaseAdminClient();
 
-  try {
-    if (redBgFile) {
-      const saved = await saveImage({ supabase, file: redBgFile, prefix: storageBase, stem: "red-bg" });
-      if (!saved.ok) {
-        await deleteManyFromStorage(supabase, uploadedPaths);
-        return { error: saved.error };
+      let redBgPhotoPath: string | null | undefined;
+      let blueBgPhotoPath: string | null | undefined;
+      let displayPhotoPath: string | null | undefined;
+
+      if (redBgFile) {
+        const saved = await saveImageWithCleanup(cleanup, { supabase, file: redBgFile, prefix: storageBase, stem: "red-bg" });
+        if (!saved.ok) return { error: saved.error };
+        redBgPhotoPath = saved.path;
+        if (existing.redBgPhotoPath) cleanup.addObsolete(existing.redBgPhotoPath);
+      } else if (removeRedBg && existing.redBgPhotoPath) {
+        redBgPhotoPath = null;
+        cleanup.addObsolete(existing.redBgPhotoPath);
       }
-      uploadedPaths.push(saved.path);
-      redBgPhotoPath = saved.path;
-      if (existing.redBgPhotoPath) obsoletePaths.push(existing.redBgPhotoPath);
-    } else if (removeRedBg && existing.redBgPhotoPath) {
-      redBgPhotoPath = null;
-      obsoletePaths.push(existing.redBgPhotoPath);
-    }
 
-    if (blueBgFile) {
-      const saved = await saveImage({ supabase, file: blueBgFile, prefix: storageBase, stem: "blue-bg" });
-      if (!saved.ok) {
-        await deleteManyFromStorage(supabase, uploadedPaths);
-        return { error: saved.error };
+      if (blueBgFile) {
+        const saved = await saveImageWithCleanup(cleanup, { supabase, file: blueBgFile, prefix: storageBase, stem: "blue-bg" });
+        if (!saved.ok) return { error: saved.error };
+        blueBgPhotoPath = saved.path;
+        if (existing.blueBgPhotoPath) cleanup.addObsolete(existing.blueBgPhotoPath);
+      } else if (removeBlueBg && existing.blueBgPhotoPath) {
+        blueBgPhotoPath = null;
+        cleanup.addObsolete(existing.blueBgPhotoPath);
       }
-      uploadedPaths.push(saved.path);
-      blueBgPhotoPath = saved.path;
-      if (existing.blueBgPhotoPath) obsoletePaths.push(existing.blueBgPhotoPath);
-    } else if (removeBlueBg && existing.blueBgPhotoPath) {
-      blueBgPhotoPath = null;
-      obsoletePaths.push(existing.blueBgPhotoPath);
-    }
 
-    if (displayFile) {
-      const saved = await saveImage({ supabase, file: displayFile, prefix: storageBase, stem: "display" });
-      if (!saved.ok) {
-        await deleteManyFromStorage(supabase, uploadedPaths);
-        return { error: saved.error };
+      if (displayFile) {
+        const saved = await saveImageWithCleanup(cleanup, { supabase, file: displayFile, prefix: storageBase, stem: "display" });
+        if (!saved.ok) return { error: saved.error };
+        displayPhotoPath = saved.path;
+        if (existing.displayPhotoPath) cleanup.addObsolete(existing.displayPhotoPath);
+      } else if (removeDisplay && existing.displayPhotoPath) {
+        displayPhotoPath = null;
+        cleanup.addObsolete(existing.displayPhotoPath);
       }
-      uploadedPaths.push(saved.path);
-      displayPhotoPath = saved.path;
-      if (existing.displayPhotoPath) obsoletePaths.push(existing.displayPhotoPath);
-    } else if (removeDisplay && existing.displayPhotoPath) {
-      displayPhotoPath = null;
-      obsoletePaths.push(existing.displayPhotoPath);
-    }
 
-    await db.transaction(async (tx) => {
-      const memberUpdates: Record<string, unknown> = {
-        name,
-        displayName,
-        armyNo: rawArmyNo,
-        personalEmail,
-        eduEmail: eduEmail ?? null,
-        gender: gender as "MALE" | "FEMALE",
-        religion: religion as (typeof religionEnum.enumValues)[number],
-        race: race as (typeof raceEnum.enumValues)[number],
-        address,
-        birthdate: birthdateStr,
-        age,
-        rank: rank as (typeof memberRankEnum.enumValues)[number],
-      };
+      await db.transaction(async (tx) => {
+        const memberUpdates: Record<string, unknown> = {
+          name,
+          displayName,
+          armyNo: rawArmyNo,
+          personalEmail,
+          eduEmail: eduEmail ?? null,
+          gender: gender as "MALE" | "FEMALE",
+          religion: religion as (typeof religionEnum.enumValues)[number],
+          race: race as (typeof raceEnum.enumValues)[number],
+          address,
+          birthdate: birthdateStr,
+          age,
+          rank: rank as (typeof memberRankEnum.enumValues)[number],
+        };
 
-      if (redBgPhotoPath !== undefined) memberUpdates.redBgPhotoPath = redBgPhotoPath;
-      if (blueBgPhotoPath !== undefined) memberUpdates.blueBgPhotoPath = blueBgPhotoPath;
+        if (redBgPhotoPath !== undefined) memberUpdates.redBgPhotoPath = redBgPhotoPath;
+        if (blueBgPhotoPath !== undefined) memberUpdates.blueBgPhotoPath = blueBgPhotoPath;
 
-      await tx.update(members).set(memberUpdates).where(eq(members.id, rawMemberId));
+        await tx.update(members).set(memberUpdates).where(eq(members.id, rawMemberId));
 
-      const cadetUpdates: Record<string, unknown> = {
-        matricNo,
-        isActive,
-        quote: quote ?? null,
-        intakeId: effectiveIntakeId,
-        platoonId: rawPlatoonId,
-      };
+        const cadetUpdates: Record<string, unknown> = {
+          matricNo,
+          isActive,
+          quote: quote ?? null,
+          intakeId: effectiveIntakeId,
+          platoonId: rawPlatoonId,
+        };
 
-      if (displayPhotoPath !== undefined) cadetUpdates.displayPhotoPath = displayPhotoPath;
+        if (displayPhotoPath !== undefined) cadetUpdates.displayPhotoPath = displayPhotoPath;
 
-      await tx.update(cadets).set(cadetUpdates).where(eq(cadets.id, rawCadetInfoId));
+        await tx.update(cadets).set(cadetUpdates).where(eq(cadets.id, rawCadetInfoId));
 
-      if (existing.intakeId !== effectiveIntakeId) {
-        await tx
-          .update(adminUsers)
-          .set({ intakeId: effectiveIntakeId })
-          .where(
-            and(
-              eq(adminUsers.memberId, rawMemberId),
-              inArray(adminUsers.role, [...INTAKE_SCOPED_ROLES]),
-            ),
-          );
+        if (existing.intakeId !== effectiveIntakeId) {
+          await tx
+            .update(adminUsers)
+            .set({ intakeId: effectiveIntakeId })
+            .where(
+              and(
+                eq(adminUsers.memberId, rawMemberId),
+                inArray(adminUsers.role, [...INTAKE_SCOPED_ROLES]),
+              ),
+            );
+        }
 
         await tx
-          .update(adminInvitations)
-          .set({ intakeId: effectiveIntakeId })
-          .where(
-            and(
-              eq(adminInvitations.memberId, rawMemberId),
-              isNull(adminInvitations.acceptedAt),
-              inArray(adminInvitations.role, [...INTAKE_SCOPED_ROLES]),
-            ),
-          );
-      }
-    });
+                  .update(adminInvitations)
+                  .set({ intakeId: effectiveIntakeId })
+                  .where(
+                    and(
+                      eq(adminInvitations.memberId, rawMemberId),
+                      isNull(adminInvitations.acceptedAt),
+                      inArray(adminInvitations.role, [...INTAKE_SCOPED_ROLES]),
+                    ),
+                  );
+              });
+            });
 
-  } catch (err) {
-    await deleteManyFromStorage(supabase, uploadedPaths);
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("unique") || message.includes("duplicate")) {
-      return { error: "A member with this army number or email already exists." };
-    }
-    if (message.toLowerCase().includes("body size limit")) {
-      return { error: "Images are too large. Total size must be under 5 MB." };
-    }
-    console.error("Error updating cadet:", err);
-    return { error: "Failed to update cadet. Please try again." };
-  }
-
-  await deleteManyFromStorage(supabase, obsoletePaths);
-
-  revalidatePath("/admin/secretary/cadets");
-  return { success: true };
+            revalidatePath("/admin/secretary/cadets");
+            return { success: true };
 }

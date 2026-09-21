@@ -31,6 +31,13 @@ const RECORD_MODULE: Record<AssessmentRecordType, AdminModule> = {
   APFA: "apfa",
 };
 
+function getMalaysiaDateISO(): string {
+  const now = new Date();
+  // Malaysia is UTC+8
+  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return malaysiaTime.toISOString().slice(0, 10);
+}
+
 type ParsedItemResult =
   | { ok: true; value: number | null }
   | { ok: false; error: string };
@@ -48,7 +55,7 @@ function parseRecordId(formData: FormData): number | null {
 
 function isValidRecordDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T00:00:00Z`);
+  const date = new Date(`${value}T00:00:00+08:00`); // Malaysia timezone (UTC+8)
   return !Number.isNaN(date.getTime())
     && date.toISOString().slice(0, 10) === value;
 }
@@ -198,7 +205,7 @@ export async function createAssessmentRecord(formData: FormData) {
   if (!resolved.ok) return { error: resolved.error };
 
   const submittedDate = takeString(formData.get("recordDate"));
-  const recordDate = submittedDate || new Date().toISOString().slice(0, 10);
+  const recordDate = submittedDate || getMalaysiaDateISO();
   if (!isValidRecordDate(recordDate)) {
     return { error: "Record date is invalid." };
   }
@@ -270,6 +277,51 @@ export async function deleteAssessmentRecord(formData: FormData) {
   } catch (err) {
     console.error("deleteAssessmentRecord failed", err);
     return { error: "Failed to delete record." };
+  }
+}
+
+export async function updateAssessmentRecord(formData: FormData) {
+  const admin = await requireCurrentAdmin();
+  const intakeScope = getIntakeScope(admin);
+
+  const recordType = parseRecordType(takeString(formData.get("recordType")));
+  if (!recordType) return { error: "Invalid record type." };
+
+  if (!canAccessAdminModule(admin.role, RECORD_MODULE[recordType])) {
+    return { error: `You do not have permission to manage ${recordType} records.` };
+  }
+
+  const recordId = parseRecordId(formData);
+  if (recordId === null) return { error: "Invalid record." };
+
+  const submittedDate = takeString(formData.get("recordDate"));
+  if (!submittedDate || !isValidRecordDate(submittedDate)) {
+    return { error: "Valid record date is required." };
+  }
+
+  const year = Number(submittedDate.slice(0, 4));
+
+  try {
+    const previousSessionDate = await getPreviousSessionDate(recordType, intakeScope!, year);
+    if (previousSessionDate && submittedDate <= previousSessionDate) {
+      return { error: `Record date must be after the previous session (${previousSessionDate}).` };
+    }
+
+    const nextSessionDate = await getPreviousSessionDate(recordType, intakeScope!, year);
+    if (nextSessionDate && submittedDate > nextSessionDate) {
+      return { error: `Record date cannot be after the next session (${nextSessionDate}).` };
+    }
+
+    await db
+      .update(recordType === "UKA" ? ukaRecords : apfaRecords)
+      .set({ recordDate: submittedDate })
+      .where(eq(recordType === "UKA" ? ukaRecords.id : apfaRecords.id, recordId));
+
+    revalidateSportsPaths();
+    return { success: true as const };
+  } catch (err) {
+    console.error("updateAssessmentRecord failed", err);
+    return { error: "Failed to update record." };
   }
 }
 
@@ -534,45 +586,4 @@ export async function saveApfaAssessment(formData: FormData) {
 
   revalidateSportsPaths();
   return { success: true as const };
-}
-
-export async function updateAssessmentRecord(formData: FormData) {
-  const admin = await requireCurrentAdmin();
-  const intakeScope = getIntakeScope(admin);
-  const recordType = parseRecordType(takeString(formData.get("recordType")));
-  if (!recordType) return { error: "Invalid record type." };
-  if (!canAccessAdminModule(admin.role, RECORD_MODULE[recordType])) {
-    return { error: `You do not have permission to manage ${recordType} records.` };
-  }
-
-  const recordId = parseRecordId(formData);
-  const recordDate = takeString(formData.get("recordDate"));
-  if (recordId === null || !recordDate) return { error: "Record and date are required." };
-    if (!isValidRecordDate(recordDate)) {
-    return { error: "Record date is invalid." };
-  }
-  try {
-    const existing = recordType === "UKA"
-      ? (await db.select({ intakeId: ukaRecords.intakeId, year: ukaRecords.year, session: ukaRecords.session }).from(ukaRecords).where(eq(ukaRecords.id, recordId)).limit(1))[0]
-      : (await db.select({ intakeId: apfaRecords.intakeId, year: apfaRecords.year, session: apfaRecords.session }).from(apfaRecords).where(eq(apfaRecords.id, recordId)).limit(1))[0];
-    if (!existing) return { error: "Record not found." };
-    const ownershipError = assertIntakeOwnership(existing.intakeId, intakeScope);
-    if (ownershipError) return { error: ownershipError };
-    const year = Number(recordDate.slice(0, 4));
-    if (year !== existing.year) return { error: `Record date must remain within ${existing.year}.` };
-    const previousSessionDate = await getPreviousSessionDate(recordType, existing.intakeId, existing.year, existing.session);
-    if (previousSessionDate && recordDate <= previousSessionDate) {
-      return { error: `Record date must be after the previous session (${previousSessionDate}).` };
-    }
-
-    const updated = recordType === "UKA"
-      ? await db.update(ukaRecords).set({ recordDate }).where(eq(ukaRecords.id, recordId)).returning({ id: ukaRecords.id })
-      : await db.update(apfaRecords).set({ recordDate }).where(eq(apfaRecords.id, recordId)).returning({ id: apfaRecords.id });
-    if (!updated[0]) return { error: "Record not found." };
-    revalidateSportsPaths();
-    return { success: true as const };
-  } catch (err) {
-    console.error("updateAssessmentRecord failed", err);
-    return { error: "Failed to update record." };
-  }
 }
