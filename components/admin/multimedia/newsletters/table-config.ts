@@ -69,16 +69,16 @@ export function buildSubscribersTableConfig(): TableConfig {
   };
 
   const localeOptions: FilterColumn = {
-    key: "locale",
-    label: "Locale",
-    type: "enum",
-    options: [
-      { value: "en", label: "English" },
-      { value: "ms", label: "Malay" },
-      { value: "zh", label: "Chinese" },
-      { value: "ta", label: "Tamil" },
-    ],
-  };
+      key: "preferredLocale",
+      label: "Locale",
+      type: "enum",
+      options: [
+        { value: "en", label: "English" },
+        { value: "ms", label: "Malay" },
+        { value: "zh", label: "Chinese" },
+        { value: "ta", label: "Tamil" },
+      ],
+    };
 
   return {
     defaults: {

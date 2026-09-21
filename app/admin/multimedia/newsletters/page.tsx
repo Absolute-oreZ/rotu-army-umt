@@ -63,8 +63,7 @@ function buildCampaignsBaseQuery() {
       id: newsletterCampaigns.id,
       subject: newsletterCampaigns.subject,
       previewText: newsletterCampaigns.previewText,
-      contentHtml: newsletterCampaigns.contentHtml,
-      contentText: newsletterCampaigns.contentText,
+      // Exclude heavy content fields from list view
       status: newsletterCampaigns.status,
       scheduledAt: newsletterCampaigns.scheduledAt,
       sentAt: newsletterCampaigns.sentAt,
@@ -113,6 +112,7 @@ export default async function NewslettersPage({
 
     const orderBy = buildSortOrderBy(campaignState.sortRules, NEWSLETTERS_SORT_FIELD_MAP);
     orderBy.push(desc(newsletterCampaigns.createdAt));
+    orderBy.push(desc(newsletterCampaigns.id));
 
     const [countRow, rows] = await Promise.all([
       db.select({ count: sql<number>`count(*)::int` }).from(newsletterCampaigns).where(where),
@@ -139,6 +139,7 @@ export default async function NewslettersPage({
 
     const orderBy = buildSortOrderBy(subscriberState.sortRules, SUBSCRIBERS_SORT_FIELD_MAP);
     orderBy.push(desc(newsletterSubscribers.createdAt));
+    orderBy.push(desc(newsletterSubscribers.id));
 
     const [countRow, rows] = await Promise.all([
       db.select({ count: sql<number>`count(*)::int` }).from(newsletterSubscribers).where(where),

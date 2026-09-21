@@ -32,8 +32,8 @@ export type NewsletterEmailCopy = {
   emailUnsubscribeLabel: string;
 };
 
-export type NewsletterConfirmationStatus = "confirmed" | "already_confirmed" | "invalid";
-export type NewsletterUnsubscribeStatus = "unsubscribed" | "already_unsubscribed" | "invalid";
+export type NewsletterConfirmationStatus = "confirmed" | "already_confirmed" | "pending_confirmation" | "invalid";
+export type NewsletterUnsubscribeStatus = "unsubscribed" | "already_unsubscribed" | "pending_unsubscribe" | "invalid";
 
 export function normalizeNewsletterEmail(email: string) {
   return email.trim().toLowerCase();
@@ -216,12 +216,9 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
     .limit(1);
 
   if (!subscriber) {
-    // Perform a timing-safe fake compare and randomized delay to reduce timing
-    // side-channel leakage for non-existing tokens.
     try {
       const tokenBuf = Buffer.from(tokenHash, "hex");
       const fake = crypto.randomBytes(tokenBuf.length);
-      // timingSafeEqual will throw if buffers length mismatch, guarded above
       crypto.timingSafeEqual(tokenBuf, fake);
     } catch {
       // ignore
@@ -231,7 +228,56 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
   }
 
   if (subscriber.status === "ACTIVE" || subscriber.confirmedAt) {
-    // Clear the confirmation token to prevent re-use and enumeration.
+    await db
+      .update(newsletterSubscribers)
+      .set({ confirmationTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    await randomDelay();
+    return "already_confirmed";
+  }
+
+  if (subscriber.status !== "PENDING") {
+    await db
+      .update(newsletterSubscribers)
+      .set({ confirmationTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    await randomDelay();
+    return "invalid";
+  }
+
+  return "pending_confirmation";
+}
+
+export async function confirmNewsletterSubscriptionAction(token: string): Promise<NewsletterConfirmationStatus> {
+  const tokenHash = hashNewsletterToken(token);
+
+  const [subscriber] = await db
+    .select({
+      confirmedAt: newsletterSubscribers.confirmedAt,
+      id: newsletterSubscribers.id,
+      status: newsletterSubscribers.status,
+    })
+    .from(newsletterSubscribers)
+    .where(
+      or(
+        eq(newsletterSubscribers.confirmationTokenHash, tokenHash),
+      ),
+    )
+    .limit(1);
+
+  if (!subscriber) {
+    try {
+      const tokenBuf = Buffer.from(tokenHash, "hex");
+      const fake = crypto.randomBytes(tokenBuf.length);
+      crypto.timingSafeEqual(tokenBuf, fake);
+    } catch {
+      // ignore
+    }
+    await randomDelay();
+    return "invalid";
+  }
+
+  if (subscriber.status === "ACTIVE" || subscriber.confirmedAt) {
     await db
       .update(newsletterSubscribers)
       .set({ confirmationTokenHash: null })
@@ -259,7 +305,6 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
     .where(eq(newsletterSubscribers.id, subscriber.id));
 
   await randomDelay();
-
   return "confirmed";
 }
 
@@ -281,7 +326,35 @@ export async function unsubscribeNewsletterSubscription(token: string): Promise<
   }
 
   if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
-    // Clear token hash to prevent re-use and enumeration.
+    await db
+      .update(newsletterSubscribers)
+      .set({ unsubscribeTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    await randomDelay();
+    return "already_unsubscribed";
+  }
+
+  return "pending_unsubscribe";
+}
+
+export async function unsubscribeNewsletterSubscriptionAction(token: string): Promise<NewsletterUnsubscribeStatus> {
+  const tokenHash = hashNewsletterToken(token);
+  const signedSubscriberId = verifySignedUnsubscribeToken(token);
+  const [subscriber] = await db.select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt }).from(newsletterSubscribers).where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : or(eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash))).limit(1);
+
+  if (!subscriber) {
+    try {
+      const tokenBuf = Buffer.from(tokenHash, "hex");
+      const fake = crypto.randomBytes(tokenBuf.length);
+      crypto.timingSafeEqual(tokenBuf, fake);
+    } catch {
+      // ignore
+    }
+    await randomDelay();
+    return "invalid";
+  }
+
+  if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
     await db
       .update(newsletterSubscribers)
       .set({ unsubscribeTokenHash: null })

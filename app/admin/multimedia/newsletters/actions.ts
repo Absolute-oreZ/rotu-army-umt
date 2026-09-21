@@ -25,7 +25,11 @@ import { locales, type Locale } from "@/lib/i18n/config";
 import { createNewsletterTokens, sendNewsletterConfirmationEmail } from "@/lib/newsletter";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { deleteFromStorage, uploadToStorage } from "@/lib/supabase/storage";
+import { deleteFromStorage, saveUpload } from "@/lib/supabase/storage";
+import { sanitizeHtml } from "@/lib/newsletter/sanitize-html";
+
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENT_TOTAL_BYTES = 5 * 1024 * 1024;
 
 export type CampaignRow = {
   id: number;
@@ -163,7 +167,19 @@ export async function createCampaign(formData: FormData) {
     return { success: false as const, error: "You do not have permission to manage newsletters." };
   }
 
-  const variants = locales.map((locale) => ({ locale, subject: takeString(formData.get(`subject_${locale}`)), previewText: takeString(formData.get(`previewText_${locale}`)), contentHtml: takeString(formData.get(`contentHtml_${locale}`)), contentText: takeString(formData.get(`contentText_${locale}`)) }));
+  const variants = locales.map((locale) => {
+    const subjectKey = `subject_${locale}`;
+    const previewKey = `previewText_${locale}`;
+    const htmlKey = `contentHtml_${locale}`;
+    const textKey = `contentText_${locale}`;
+    return {
+      locale,
+      subject: takeString(formData.get(subjectKey)),
+      previewText: takeString(formData.get(previewKey)),
+      contentHtml: sanitizeHtml(takeString(formData.get(htmlKey)) ?? ""),
+      contentText: takeString(formData.get(textKey)),
+    };
+  });
   const english = variants.find((variant) => variant.locale === "en")!;
   const subject = english.subject;
   const previewText = english.previewText;
@@ -181,12 +197,31 @@ export async function createCampaign(formData: FormData) {
     return { success: false as const, error: "Scheduled date is required for scheduled campaigns." };
   }
   if (status === "SCHEDULED" && (!scheduledAt || Number.isNaN(new Date(scheduledAt).getTime()) || new Date(scheduledAt) <= new Date())) return { success: false as const, error: "Scheduled date must be in the future." };
-  if (attachments.some((file) => file.size > 10 * 1024 * 1024)) return { success: false as const, error: "Each attachment must be 10 MB or smaller." };
-  if (attachments.reduce((total, file) => total + file.size, 0) > 25 * 1024 * 1024) return { success: false as const, error: "Attachments must be 25 MB or smaller in total." };
+  if (attachments.some((file) => file.size > MAX_ATTACHMENT_BYTES)) return { success: false as const, error: "Each attachment must be 5 MB or smaller." };
+  if (attachments.reduce((total, file) => total + file.size, 0) > MAX_ATTACHMENT_TOTAL_BYTES) return { success: false as const, error: "Attachments must be 5 MB or smaller in total." };
 
-  let campaignId: number | null = null;
   const uploadedPaths: string[] = [];
+  const attachmentRows: Array<Omit<typeof newsletterCampaignAttachments.$inferInsert, "campaignId">> = [];
+
   try {
+    if (attachments.length) {
+      const supabase = createSupabaseAdminClient();
+      const prefix = `newsletter/${crypto.randomUUID()}/attachments`;
+      for (const file of attachments) {
+        const saved = await saveUpload({
+          supabase,
+          file,
+          prefix,
+          stem: crypto.randomUUID(),
+          kinds: ["image", "pdf"],
+          maxBytes: MAX_ATTACHMENT_BYTES,
+        });
+        if (!saved.ok) throw new Error(saved.error);
+        uploadedPaths.push(saved.path);
+        attachmentRows.push({ fileName: file.name, storagePath: saved.path, contentType: saved.contentType, fileSize: saved.size });
+      }
+    }
+
     const campaign = await db.transaction(async (tx) => {
       const [created] = await tx.insert(newsletterCampaigns).values({
         subject,
@@ -196,31 +231,19 @@ export async function createCampaign(formData: FormData) {
         status: status as "DRAFT" | "SENT" | "SCHEDULED" | "SENDING" | "FAILED",
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
       }).returning({ id: newsletterCampaigns.id });
-      campaignId = created.id;
       await tx.insert(newsletterCampaignTranslations).values(variants.filter((variant) => variant.contentHtml && variant.subject).map((variant) => ({ campaignId: created.id, locale: variant.locale as Locale, subject: variant.subject!, previewText: variant.previewText, contentHtml: variant.contentHtml!, contentText: variant.contentText })));
+      if (attachmentRows.length) {
+        await tx.insert(newsletterCampaignAttachments).values(attachmentRows.map((row) => ({ ...row, campaignId: created.id })));
+      }
       return created;
     });
-
-    if (attachments.length) {
-      const supabase = createSupabaseAdminClient();
-      const attachmentRows = [];
-      for (const file of attachments) {
-        const path = `newsletter/${campaign.id}/attachments/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-        const uploadedPath = await uploadToStorage(supabase, file, path, file.type);
-        if (!uploadedPath) throw new Error("Attachment upload failed.");
-        uploadedPaths.push(uploadedPath);
-        attachmentRows.push({ campaignId: campaign.id, fileName: file.name, storagePath: uploadedPath, contentType: file.type || "application/octet-stream", fileSize: file.size });
-      }
-      await db.insert(newsletterCampaignAttachments).values(attachmentRows);
-    }
 
     revalidatePath("/admin/multimedia/newsletters");
     return { success: true as const, data: { id: campaign.id } };
   } catch (err) {
-    if (campaignId) {
+    if (uploadedPaths.length) {
       const supabase = createSupabaseAdminClient();
       await Promise.all(uploadedPaths.map((path) => deleteFromStorage(supabase, path)));
-      await db.delete(newsletterCampaigns).where(eq(newsletterCampaigns.id, campaignId));
     }
     console.error("createCampaign failed", err);
     return { success: false as const, error: "Failed to create campaign." };
@@ -248,11 +271,23 @@ export async function updateCampaign(formData: FormData) {
     return { success: false as const, error: "Campaign not found." };
   }
 
-  if (existing.status === "SENT") {
-    return { success: false as const, error: "Cannot edit a sent campaign." };
-  }
+  if (existing.status === "SENT" || existing.status === "SENDING") {
+        return { success: false as const, error: "Cannot edit a sent or currently sending campaign." };
+      }
 
-  const variants = locales.map((locale) => ({ locale, subject: takeString(formData.get(`subject_${locale}`)), previewText: takeString(formData.get(`previewText_${locale}`)), contentHtml: takeString(formData.get(`contentHtml_${locale}`)), contentText: takeString(formData.get(`contentText_${locale}`)) }));
+    const variants = locales.map((locale) => {
+      const subjectKey = `subject_${locale}`;
+      const previewKey = `previewText_${locale}`;
+      const htmlKey = `contentHtml_${locale}`;
+      const textKey = `contentText_${locale}`;
+      return {
+        locale,
+        subject: takeString(formData.get(subjectKey)),
+        previewText: takeString(formData.get(previewKey)),
+        contentHtml: sanitizeHtml(takeString(formData.get(htmlKey)) ?? ""),
+        contentText: takeString(formData.get(textKey)),
+      };
+    });
   const english = variants.find((variant) => variant.locale === "en")!;
   const subject = english.subject;
   const previewText = english.previewText;
@@ -266,10 +301,31 @@ export async function updateCampaign(formData: FormData) {
   if (!contentHtml) return { success: false as const, error: "HTML content is required." };
   if (status !== "DRAFT" && status !== "SCHEDULED") return { success: false as const, error: "Invalid campaign status." };
   if (status === "SCHEDULED" && (!scheduledAt || Number.isNaN(new Date(scheduledAt).getTime()) || new Date(scheduledAt) <= new Date())) return { success: false as const, error: "Scheduled date must be in the future." };
-  if (attachments.some((file) => file.size > 10 * 1024 * 1024)) return { success: false as const, error: "Each attachment must be 10 MB or smaller." };
-  if (attachments.reduce((total, file) => total + file.size, 0) > 25 * 1024 * 1024) return { success: false as const, error: "Attachments must be 25 MB or smaller in total." };
+  if (attachments.some((file) => file.size > MAX_ATTACHMENT_BYTES)) return { success: false as const, error: "Each attachment must be 5 MB or smaller." };
+  if (attachments.reduce((total, file) => total + file.size, 0) > MAX_ATTACHMENT_TOTAL_BYTES) return { success: false as const, error: "Attachments must be 5 MB or smaller in total." };
+
+  const uploadedPaths: string[] = [];
+  const attachmentRows: Array<Omit<typeof newsletterCampaignAttachments.$inferInsert, "campaignId">> = [];
 
   try {
+    if (attachments.length) {
+      const supabase = createSupabaseAdminClient();
+      const prefix = `newsletter/${crypto.randomUUID()}/attachments`;
+      for (const file of attachments) {
+        const saved = await saveUpload({
+          supabase,
+          file,
+          prefix,
+          stem: crypto.randomUUID(),
+          kinds: ["image", "pdf"],
+          maxBytes: MAX_ATTACHMENT_BYTES,
+        });
+        if (!saved.ok) throw new Error(saved.error);
+        uploadedPaths.push(saved.path);
+        attachmentRows.push({ fileName: file.name, storagePath: saved.path, contentType: saved.contentType, fileSize: saved.size });
+      }
+    }
+
     await db.transaction(async (tx) => {
       await tx.update(newsletterCampaigns).set({
         subject,
@@ -281,23 +337,18 @@ export async function updateCampaign(formData: FormData) {
       }).where(eq(newsletterCampaigns.id, campaignId));
       await tx.delete(newsletterCampaignTranslations).where(eq(newsletterCampaignTranslations.campaignId, campaignId));
       await tx.insert(newsletterCampaignTranslations).values(variants.filter((variant) => variant.contentHtml && variant.subject).map((variant) => ({ campaignId, locale: variant.locale as Locale, subject: variant.subject!, previewText: variant.previewText, contentHtml: variant.contentHtml!, contentText: variant.contentText })));
-    });
-
-    if (attachments.length) {
-      const supabase = createSupabaseAdminClient();
-      const attachmentRows = [];
-      for (const file of attachments) {
-        const path = `newsletter/${campaignId}/attachments/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-        const uploadedPath = await uploadToStorage(supabase, file, path, file.type);
-        if (!uploadedPath) throw new Error("Attachment upload failed.");
-        attachmentRows.push({ campaignId, fileName: file.name, storagePath: uploadedPath, contentType: file.type || "application/octet-stream", fileSize: file.size });
+      if (attachmentRows.length) {
+        await tx.insert(newsletterCampaignAttachments).values(attachmentRows.map((row) => ({ ...row, campaignId })));
       }
-      await db.insert(newsletterCampaignAttachments).values(attachmentRows);
-    }
+    });
 
     revalidatePath("/admin/multimedia/newsletters");
     return { success: true as const };
   } catch (err) {
+    if (uploadedPaths.length) {
+      const supabase = createSupabaseAdminClient();
+      await Promise.all(uploadedPaths.map((path) => deleteFromStorage(supabase, path)));
+    }
     console.error("updateCampaign failed", err);
     return { success: false as const, error: "Failed to update campaign." };
   }
@@ -460,6 +511,20 @@ export async function deleteSubscriber(subscriberId: string) {
   return { success: true as const };
 }
 
+function escapeCsvField(value: string): string {
+  if (!value) return "";
+  const startsWithDangerous = /^[=+\-@]/.test(value.trim());
+  const needsQuotes = value.includes(",") || value.includes("\"") || value.includes("\n") || startsWithDangerous;
+  let escaped = value.replace(/"/g, "\"\"");
+  if (startsWithDangerous) {
+    escaped = "'" + escaped;
+  }
+  if (needsQuotes || startsWithDangerous) {
+    escaped = "\"" + escaped + "\"";
+  }
+  return escaped;
+}
+
 /** Export all subscribers as CSV */
 export async function exportSubscribers() {
   const admin = await requireCurrentAdmin();
@@ -487,19 +552,23 @@ export async function exportSubscribers() {
     "Email,Preferred Locale,Status,Confirmed At,Unsubscribed At,Created At",
     ...rows.map((r) =>
       [
-        r.email,
-        r.preferredLocale,
-        r.status,
-        r.confirmedAt?.toISOString() ?? "",
-        r.unsubscribedAt?.toISOString() ?? "",
-        r.createdAt.toISOString(),
+        escapeCsvField(r.email),
+        escapeCsvField(r.preferredLocale),
+        escapeCsvField(r.status),
+        escapeCsvField(r.confirmedAt?.toISOString() ?? ""),
+        escapeCsvField(r.unsubscribedAt?.toISOString() ?? ""),
+        escapeCsvField(r.createdAt.toISOString()),
       ].join(",")
     ),
   ].join("\n");
 
+  // Prepend UTF-8 BOM for Excel compatibility with non-ASCII characters
+  const bom = "\uFEFF";
+  const csvWithBom = bom + csv;
+
   return {
     success: true as const,
-    data: csv,
+    data: csvWithBom,
     filename: `newsletter-subscribers-${new Date().toISOString().split("T")[0]}.csv`,
   };
 }

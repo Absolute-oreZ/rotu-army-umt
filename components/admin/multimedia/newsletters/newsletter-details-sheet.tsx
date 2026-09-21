@@ -218,7 +218,7 @@ function ViewMode({
 
           <section className="flex flex-col gap-3">
             <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Email Content</h3>
-            <div className="min-h-80 py-2 text-sm text-foreground [&_a]:text-primary [&_a]:underline [&_img]:mx-0 [&_img]:block [&_img]:max-w-full [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6" dangerouslySetInnerHTML={{ __html: getEditableHtml(d.contentHtml) }} />
+            <div className="min-h-80 py-2 text-sm text-foreground [&_a]:text-primary [&_a]:underline [&_img]:mx-0 [&_img]:block [&_img]:max-w-full [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6" dangerouslySetInnerHTML={{ __html: getEditableHtml(d.contentHtml ?? "") }} />
           </section>
         </div>
       </div>
@@ -423,8 +423,8 @@ function buildCampaignVariants(details: CampaignRow) {
     acc[locale] = {
       subject: variant?.subject ?? (locale === "en" ? details.subject : ""),
       previewText: variant?.previewText ?? (locale === "en" ? details.previewText ?? "" : ""),
-      contentHtml: getEditableHtml(variant?.contentHtml ?? (locale === "en" ? details.contentHtml : "")),
-      contentText: variant?.contentText ?? (locale === "en" ? details.contentText ?? "" : ""),
+      contentHtml: getEditableHtml(variant?.contentHtml ?? details.contentHtml ?? ""),
+      contentText: variant?.contentText ?? details.contentText ?? "",
     };
     return acc;
   }, {} as Record<string, { subject: string; previewText: string; contentHtml: string; contentText: string }>);

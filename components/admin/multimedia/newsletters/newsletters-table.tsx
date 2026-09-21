@@ -31,8 +31,8 @@ export type CampaignRow = {
   id: number;
   subject: string;
   previewText: string | null;
-  contentHtml: string;
-  contentText: string | null;
+  contentHtml?: string;
+  contentText?: string | null;
   status: "DRAFT" | "SENT" | "SCHEDULED" | "SENDING" | "FAILED";
   scheduledAt: string | null;
   sentAt: string | null;

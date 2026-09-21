@@ -60,9 +60,9 @@ export function NewslettersPageClient({
 
   function handleTabChange(value: string) {
     setActiveTab(value);
-    if (value === "subscribers") {
-      // Subscribers data is already loaded from server
-    }
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", value);
+    router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
   }
 
   const handleSend = async (campaign: CampaignRow) => {

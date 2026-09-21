@@ -11,9 +11,36 @@ import {
   normalizeNewsletterEmail,
   sendNewsletterConfirmationEmail,
 } from "@/lib/newsletter";
+import { verifyTurnstileToken } from "@/lib/turnstile";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { headers } from "next/headers";
 
 export async function subscribeToNewsletter(formData: FormData) {
-  if (typeof formData.get("website") === "string" && String(formData.get("website")).trim()) return { error: "Unable to subscribe at this time." };
+  // Get client IP for rate limiting
+  const requestHeaders = await headers();
+  const clientIp = getClientIp(requestHeaders);
+
+  // Rate limiting: max 5 requests per IP per 15 minutes
+  const rateLimitResult = await checkRateLimit(clientIp, "newsletter_subscribe", {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+
+  if (!rateLimitResult.allowed) {
+    return { error: "Too many subscription attempts. Please try again later." };
+  }
+
+  // Honeypot check
+  if (typeof formData.get("website") === "string" && String(formData.get("website")).trim()) {
+    return { error: "Unable to subscribe at this time." };
+  }
+
+  // Turnstile verification
+  const turnstileToken = formData.get("cf-turnstile-response");
+  const turnstileResult = await verifyTurnstileToken(typeof turnstileToken === "string" ? turnstileToken : null);
+  if (!turnstileResult.success) {
+    return { error: "Security check failed. Please try again." };
+  }
   const rawEmail = formData.get("email");
   const rawLocale = formData.get("locale");
   const preferredLocale: Locale =
