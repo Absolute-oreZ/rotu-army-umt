@@ -31,10 +31,10 @@ export type Account = {
   intakeId: number;
   intakeNo: string;
   bankName: string;
-  accountNumber: number;
+  accountNumberText: string;
   qrCodePath: string | null;
   qrCodeUrl: string | null;
-  duitNowId: number | null;
+  duitNowIdText: string | null;
   treasurerName: string;
   createdAt: string;
 };
@@ -124,7 +124,7 @@ export function AccountsTable({
               <SortableHead columnKey="intakeNo" label="Intake" state={state} onChange={update} />
               <SortableHead columnKey="treasurerName" label="Account Holder" state={state} onChange={update} />
               <SortableHead columnKey="bankName" label="Bank" state={state} onChange={update} />
-              <SortableHead columnKey="accountNumber" label="Account No" state={state} onChange={update} />
+              <SortableHead columnKey="accountNumberText" label="Account No" state={state} onChange={update} />
               <TableHead>DuitNow</TableHead>
               <TableHead>QR</TableHead>
               <TableHead className="pr-5 text-right w-24">Actions</TableHead>
@@ -141,15 +141,15 @@ export function AccountsTable({
                 </TableCell>
                 <TableCell className="font-medium">{formatBank(account.bankName)}</TableCell>
                 <TableCell className="font-mono tabular-nums">
-                  <CopyableValue value={account.accountNumber} valueClassName="font-mono tabular-nums">
-                    {account.accountNumber}
-                  </CopyableValue>
-                </TableCell>
-                <TableCell className="font-mono tabular-nums">
-                  <CopyableValue value={account.duitNowId} valueClassName="font-mono tabular-nums">
-                    {account.duitNowId ?? "—"}
-                  </CopyableValue>
-                </TableCell>
+                                  <CopyableValue value={account.accountNumberText} valueClassName="font-mono tabular-nums">
+                                    {account.accountNumberText}
+                                  </CopyableValue>
+                                </TableCell>
+                                <TableCell className="font-mono tabular-nums">
+                                  <CopyableValue value={account.duitNowIdText} valueClassName="font-mono tabular-nums">
+                                    {account.duitNowIdText ?? "—"}
+                                  </CopyableValue>
+                                </TableCell>
                 <TableCell>
                   {account.qrCodeUrl ? (
                     <Image
@@ -161,6 +161,7 @@ export function AccountsTable({
                       onClick={() => {
                         if (account.qrCodeUrl) onQrPreview(account.qrCodeUrl);
                       }}
+                                      unoptimized
                                     />
                                   ) : (
                                     <span className="text-muted-foreground">—</span>

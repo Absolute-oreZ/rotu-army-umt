@@ -198,6 +198,7 @@ export function AddExpenseDialog({
                   value={amount}
                   onChange={(e) => setAmount(currencyOnly(e.target.value))}
                   placeholder="0.00"
+                  inputMode="decimal"
                 />
               </Field>
 

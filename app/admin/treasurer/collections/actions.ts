@@ -14,6 +14,7 @@ import {
   takeString,
   takeNumber,
 } from "@/lib/admin/form-helpers";
+import { ActionResult, ok, err } from "@/lib/actions/result";
 
 async function generateUniqueSlug(title: string): Promise<string> {
   let slug = slugify(title);
@@ -34,16 +35,16 @@ async function generateUniqueSlug(title: string): Promise<string> {
   }
 }
 
-export async function createCollection(formData: FormData) {
+export async function createCollection(formData: FormData): Promise<ActionResult> {
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
   if (!canAccessAdminModule(admin.role, "collections")) {
-    return { error: "You do not have permission to manage collections." };
+    return err("You do not have permission to manage collections.");
   }
 
   const resolved = resolveScopedIntakeId(formData, intakeScope);
-  if (!resolved.ok) return { error: resolved.error };
+  if (!resolved.ok) return err(resolved.error);
   const effectiveIntakeId = resolved.intakeId;
 
   const title = takeString(formData.get("title"));
@@ -54,19 +55,19 @@ export async function createCollection(formData: FormData) {
   const isReceiptRequired = formData.get("isReceiptRequired") !== "false";
   const rawPaymentAccountId = takeNumber(formData.get("paymentAccountId"));
 
-  if (!title) return { error: "Title is required." };
-  if (title.length > 200) return { error: "Title is too long." };
+  if (!title) return err("Title is required.");
+  if (title.length > 200) return err("Title is too long.");
 
   if (!purpose || !collectionPurposeEnum.enumValues.includes(purpose as (typeof collectionPurposeEnum.enumValues)[number])) {
-    return { error: "Valid purpose is required." };
+    return err("Valid purpose is required.");
   }
 
   if (isFixedAmount && (rawAmount === null || rawAmount <= 0)) {
-    return { error: "Valid amount is required for fixed-amount collections." };
+    return err("Valid amount is required for fixed-amount collections.");
   }
 
   if (rawPaymentAccountId === null || !Number.isInteger(rawPaymentAccountId) || rawPaymentAccountId <= 0) {
-    return { error: "Valid payment account is required." };
+    return err("Valid payment account is required.");
   }
 
   const [account] = await db
@@ -76,11 +77,11 @@ export async function createCollection(formData: FormData) {
     .limit(1);
 
   if (!account) {
-    return { error: "Payment account not found." };
+    return err("Payment account not found.");
   }
 
   if (account.intakeId !== effectiveIntakeId) {
-    return { error: "Payment account must belong to the selected intake." };
+    return err("Payment account must belong to the selected intake.");
   }
 
   const slug = await generateUniqueSlug(title);
@@ -99,13 +100,13 @@ export async function createCollection(formData: FormData) {
       paymentAccountId: rawPaymentAccountId,
       status: "DRAFT",
     });
-  } catch (err) {
-    console.error("createCollection failed", err);
-    return { error: "Failed to create collection." };
+  } catch (e) {
+    console.error("createCollection failed", e);
+    return err("Failed to create collection.");
   }
 
   revalidatePath("/admin/treasurer/collections");
-  return { success: true };
+  return ok();
 }
 
 type CollectionRow = {
@@ -140,18 +141,18 @@ async function loadOwnedCollection(
   return { ok: true, row: existing, id: collectionId };
 }
 
-export async function publishCollection(formData: FormData) {
+export async function publishCollection(formData: FormData): Promise<ActionResult> {
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
   if (!canAccessAdminModule(admin.role, "collections")) {
-    return { error: "You do not have permission to manage collections." };
+    return err("You do not have permission to manage collections.");
   }
 
   const loaded = await loadOwnedCollection(formData, intakeScope);
-  if (!loaded.ok) return { error: loaded.error };
+  if (!loaded.ok) return err(loaded.error);
   if (loaded.row.status === "PUBLISHED") {
-    return { error: "Collection is already published." };
+    return err("Collection is already published.");
   }
 
   try {
@@ -159,52 +160,52 @@ export async function publishCollection(formData: FormData) {
       .update(collections)
       .set({ status: "PUBLISHED" })
       .where(eq(collections.id, loaded.id));
-  } catch (err) {
-    console.error("publishCollection failed", err);
-    return { error: "Failed to publish collection." };
+  } catch (e) {
+    console.error("publishCollection failed", e);
+    return err("Failed to publish collection.");
   }
 
   revalidatePath("/admin/treasurer/collections");
-  return { success: true };
+  return ok();
 }
 
-export async function archiveCollection(formData: FormData) {
+export async function archiveCollection(formData: FormData): Promise<ActionResult> {
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
   if (!canAccessAdminModule(admin.role, "collections")) {
-    return { error: "You do not have permission to manage collections." };
+    return err("You do not have permission to manage collections.");
   }
 
   const loaded = await loadOwnedCollection(formData, intakeScope);
-  if (!loaded.ok) return { error: loaded.error };
+  if (!loaded.ok) return err(loaded.error);
 
   try {
     await db
       .update(collections)
       .set({ status: "ARCHIVED" })
       .where(eq(collections.id, loaded.id));
-  } catch (err) {
-    console.error("archiveCollection failed", err);
-    return { error: "Failed to archive collection." };
+  } catch (e) {
+    console.error("archiveCollection failed", e);
+    return err("Failed to archive collection.");
   }
 
   revalidatePath("/admin/treasurer/collections");
-  return { success: true };
+  return ok();
 }
 
-export async function restoreCollection(formData: FormData) {
+export async function restoreCollection(formData: FormData): Promise<ActionResult> {
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
   if (!canAccessAdminModule(admin.role, "collections")) {
-    return { error: "You do not have permission to manage collections." };
+    return err("You do not have permission to manage collections.");
   }
 
   const loaded = await loadOwnedCollection(formData, intakeScope);
-  if (!loaded.ok) return { error: loaded.error };
+  if (!loaded.ok) return err(loaded.error);
   if (loaded.row.status !== "ARCHIVED") {
-    return { error: "Only archived collections can be restored." };
+    return err("Only archived collections can be restored.");
   }
 
   try {
@@ -212,27 +213,27 @@ export async function restoreCollection(formData: FormData) {
       .update(collections)
       .set({ status: "PUBLISHED" })
       .where(eq(collections.id, loaded.id));
-  } catch (err) {
-    console.error("restoreCollection failed", err);
-    return { error: "Failed to restore collection." };
+  } catch (e) {
+    console.error("restoreCollection failed", e);
+    return err("Failed to restore collection.");
   }
 
   revalidatePath("/admin/treasurer/collections");
-  return { success: true };
+  return ok();
 }
 
-export async function unpublishCollection(formData: FormData) {
+export async function unpublishCollection(formData: FormData): Promise<ActionResult> {
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
   if (!canAccessAdminModule(admin.role, "collections")) {
-    return { error: "You do not have permission to manage collections." };
+    return err("You do not have permission to manage collections.");
   }
 
   const loaded = await loadOwnedCollection(formData, intakeScope);
-  if (!loaded.ok) return { error: loaded.error };
+  if (!loaded.ok) return err(loaded.error);
   if (loaded.row.status !== "PUBLISHED") {
-    return { error: "Only published collections can be unpublished." };
+    return err("Only published collections can be unpublished.");
   }
 
   try {
@@ -240,25 +241,25 @@ export async function unpublishCollection(formData: FormData) {
       .update(collections)
       .set({ status: "DRAFT", updatedAt: new Date() })
       .where(eq(collections.id, loaded.id));
-  } catch (err) {
-    console.error("unpublishCollection failed", err);
-    return { error: "Failed to unpublish collection." };
+  } catch (e) {
+    console.error("unpublishCollection failed", e);
+    return err("Failed to unpublish collection.");
   }
 
   revalidatePath("/admin/treasurer/collections");
-  return { success: true };
+  return ok();
 }
 
-export async function deleteCollection(formData: FormData) {
+export async function deleteCollection(formData: FormData): Promise<ActionResult> {
   const admin = await requireCurrentAdmin();
   const intakeScope = getIntakeScope(admin);
 
   if (!canAccessAdminModule(admin.role, "collections")) {
-    return { error: "You do not have permission to manage collections." };
+    return err("You do not have permission to manage collections.");
   }
 
   const loaded = await loadOwnedCollection(formData, intakeScope);
-  if (!loaded.ok) return { error: loaded.error };
+  if (!loaded.ok) return err(loaded.error);
 
   const [payment] = await db
     .select({ id: collectionPayments.id })
@@ -267,16 +268,16 @@ export async function deleteCollection(formData: FormData) {
     .limit(1);
 
   if (payment) {
-    return { error: "Cannot delete collection with existing payments." };
+    return err("Cannot delete collection with existing payments.");
   }
 
   try {
     await db.delete(collections).where(eq(collections.id, loaded.id));
-  } catch (err) {
-    console.error("deleteCollection failed", err);
-    return { error: "Failed to delete collection." };
+  } catch (e) {
+    console.error("deleteCollection failed", e);
+    return err("Failed to delete collection.");
   }
 
   revalidatePath("/admin/treasurer/collections");
-  return { success: true };
+  return ok();
 }

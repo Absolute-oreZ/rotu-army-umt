@@ -12,7 +12,8 @@ type Account = {
   id: number;
   intakeId: number;
   bankName: string;
-  accountNumber: number;
+  accountNumberText: string;
+  duitNowIdText: string | null;
   treasurerName: string;
 };
 
@@ -44,40 +45,40 @@ export function CollectionsPageClient({
   const [isPending, startTransition] = useTransition();
 
   function handlePublish(collectionId: number) {
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("collectionId", String(collectionId));
-      const result = await publishCollection(fd);
-      if (result?.error) setError(result.error);
-    });
-  }
+      startTransition(async () => {
+        const fd = new FormData();
+        fd.set("collectionId", String(collectionId));
+        const result = await publishCollection(fd);
+        if (!result.success) setError(result.error);
+      });
+    }
 
-  function handleUnpublish(collectionId: number) {
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("collectionId", String(collectionId));
-      const result = await unpublishCollection(fd);
-      if (result?.error) setError(result.error);
-    });
-  }
+    function handleUnpublish(collectionId: number) {
+      startTransition(async () => {
+        const fd = new FormData();
+        fd.set("collectionId", String(collectionId));
+        const result = await unpublishCollection(fd);
+        if (!result.success) setError(result.error);
+      });
+    }
 
-  function handleArchive(collectionId: number) {
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("collectionId", String(collectionId));
-      const result = await archiveCollection(fd);
-      if (result?.error) setError(result.error);
-    });
-  }
+    function handleArchive(collectionId: number) {
+      startTransition(async () => {
+        const fd = new FormData();
+        fd.set("collectionId", String(collectionId));
+        const result = await archiveCollection(fd);
+        if (!result.success) setError(result.error);
+      });
+    }
 
-  function handleRestore(collectionId: number) {
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("collectionId", String(collectionId));
-      const result = await restoreCollection(fd);
-      if (result?.error) setError(result.error);
-    });
-  }
+    function handleRestore(collectionId: number) {
+      startTransition(async () => {
+        const fd = new FormData();
+        fd.set("collectionId", String(collectionId));
+        const result = await restoreCollection(fd);
+        if (!result.success) setError(result.error);
+      });
+    }
 
   function copyPaymentUrl(slug: string) {
     const url = `${window.location.origin}/cadet/collections/${slug}`;

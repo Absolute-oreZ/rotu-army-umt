@@ -29,7 +29,7 @@ import {
   type AccountDetails,
 } from "@/app/admin/treasurer/accounts/actions";
 import { SingleFileField } from "@/components/ui/single-file-field";
-import { BANKS } from "@/lib/data";
+import { BANKS } from "@/lib/constants";
 
 export function AccountDetailsSheet({
   accountId,
@@ -150,8 +150,8 @@ function ViewMode({ details, onEdit }: { details: AccountDetails; onEdit: () => 
               <DetailRow label="Intake" value={d.intakeNo} />
               <DetailRow label="Account Holder" value={d.treasurerName} />
               <DetailRow label="Bank" value={formatBank(d.bankName)} />
-              <DetailRow label="Account No" value={d.accountNumber} />
-              <DetailRow label="DuitNow ID" value={d.duitNowId ?? "—"} />
+              <DetailRow label="Account No" value={d.accountNumberText} />
+              <DetailRow label="DuitNow ID" value={d.duitNowIdText ?? "—"} />
               <DetailRow
                 label="Created"
                 value={format(new Date(d.createdAt), "dd MMM yyyy")}
@@ -170,6 +170,7 @@ function ViewMode({ details, onEdit }: { details: AccountDetails; onEdit: () => 
                 width={192}
                 height={192}
                 className="w-48 rounded-lg border border-border object-contain"
+                unoptimized
               />
             ) : (
               <span className="text-sm text-muted-foreground">No QR code uploaded.</span>
@@ -201,8 +202,8 @@ function EditMode({
   const [error, setError] = useState<string | null>(null);
 
   const [bank, setBank] = useState(details.bankName);
-  const [accountNumber, setAccountNumber] = useState(String(details.accountNumber));
-  const [duitNowId, setDuitNowId] = useState(String(details.duitNowId ?? ""));
+  const [accountNumber, setAccountNumber] = useState(details.accountNumberText);
+  const [duitNowId, setDuitNowId] = useState(details.duitNowIdText ?? "");
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [removeQr, setRemoveQr] = useState(false);
 

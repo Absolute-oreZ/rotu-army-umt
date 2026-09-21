@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { EyeIcon, PencilIcon, Trash2Icon, ReceiptIcon } from "lucide-react";
+import { EyeIcon, PencilIcon, Trash2Icon, ReceiptIcon, FileTextIcon } from "lucide-react";
 import Image from "next/image";
 import {
   Table,
@@ -26,6 +26,7 @@ import { buildExpensesTableConfig } from "@/components/admin/treasurer/expenses/
 export type ExpenseReceipt = {
   id: number;
   fileUrl: string | null;
+  isPdf: boolean;
   createdAt: string;
 };
 
@@ -134,6 +135,7 @@ export function ExpensesTable({
             {expenses.map((expense) => {
               const firstReceipt = expense.receipts[0];
               const firstReceiptUrl = firstReceipt?.fileUrl ?? null;
+              const firstReceiptIsPdf = firstReceipt?.isPdf ?? false;
 
               return (
                 <TableRow key={expense.id}>
@@ -157,13 +159,20 @@ export function ExpensesTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {firstReceiptUrl ? (
-                        <Image
-                          src={firstReceiptUrl}
-                          alt=""
-                          width={40}
-                          height={40}
-                          className="size-10 rounded-md border border-border object-cover"
-                        />
+                        firstReceiptIsPdf ? (
+                          <div className="flex size-10 items-center justify-center rounded-md border border-border text-muted-foreground">
+                            <FileTextIcon className="size-4" />
+                          </div>
+                        ) : (
+                          <Image
+                            src={firstReceiptUrl}
+                            alt=""
+                            width={40}
+                            height={40}
+                            unoptimized
+                            className="size-10 rounded-md border border-border object-cover"
+                          />
+                        )
                       ) : (
                         <div className="flex size-10 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
                           {expense.receipts.length}

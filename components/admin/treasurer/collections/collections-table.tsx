@@ -41,7 +41,7 @@ export type Collection = {
   intakeId: number;
   intakeNo: string;
   paymentBankName: string | null;
-  paymentAccountNumber: number | null;
+  paymentAccountNumberText: string | null;
   paymentCount: number;
   totalCollected: string;
   createdAt: string;

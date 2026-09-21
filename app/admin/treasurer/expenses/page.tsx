@@ -11,7 +11,7 @@ import {
 import { buildExpensesTableConfig, EXPENSES_SORT_FIELD_MAP } from "@/components/admin/treasurer/expenses/table-config";
 import { ExpensesPageClient } from "@/components/admin/treasurer/expenses/expenses-page-client";
 import type { Expense } from "@/components/admin/treasurer/expenses/expenses-table";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { batchSignedStorageUrls } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { db } from "@/db";
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
@@ -105,32 +105,39 @@ export default async function ExpensesPage({
   ]);
 
   const expenseIds = expenseRows.map((expense) => expense.id);
-  const receiptRows = expenseIds.length > 0
-    ? await db
-        .select({
-          id: expenseReceipts.id,
-          expenseId: expenseReceipts.expenseId,
-          filePath: expenseReceipts.filePath,
-          createdAt: expenseReceipts.createdAt,
-        })
-        .from(expenseReceipts)
-        .where(inArray(expenseReceipts.expenseId, expenseIds))
-        .orderBy(sql`${expenseReceipts.createdAt} ASC`, sql`${expenseReceipts.id} ASC`)
-    : [];
+    const receiptRows = expenseIds.length > 0
+      ? await db
+          .select({
+            id: expenseReceipts.id,
+            expenseId: expenseReceipts.expenseId,
+            filePath: expenseReceipts.filePath,
+            createdAt: expenseReceipts.createdAt,
+          })
+          .from(expenseReceipts)
+          .where(inArray(expenseReceipts.expenseId, expenseIds))
+          .orderBy(sql`${expenseReceipts.createdAt} ASC`, sql`${expenseReceipts.id} ASC`)
+      : [];
 
-  const receiptsByExpense = new Map<number, Expense["receipts"]>();
-  if (receiptRows.length > 0) {
-    const supabase = createSupabaseAdminClient();
-    for (const receipt of receiptRows) {
-      const current = receiptsByExpense.get(receipt.expenseId) ?? [];
-      current.push({
-        id: receipt.id,
-        fileUrl: await signedStorageUrl(supabase, receipt.filePath),
-        createdAt: receipt.createdAt.toISOString(),
-      });
-      receiptsByExpense.set(receipt.expenseId, current);
+    const receiptsByExpense = new Map<number, Expense["receipts"]>();
+    if (receiptRows.length > 0) {
+      const supabase = createSupabaseAdminClient();
+
+      // Batch sign all receipt URLs
+      const filePaths = receiptRows.map((r) => r.filePath);
+      const fileUrls = await batchSignedStorageUrls(supabase, filePaths);
+
+      for (let i = 0; i < receiptRows.length; i++) {
+        const receipt = receiptRows[i];
+        const current = receiptsByExpense.get(receipt.expenseId) ?? [];
+        current.push({
+          id: receipt.id,
+          fileUrl: fileUrls[i],
+          isPdf: receipt.filePath.toLowerCase().endsWith(".pdf"),
+          createdAt: receipt.createdAt.toISOString(),
+        });
+        receiptsByExpense.set(receipt.expenseId, current);
+      }
     }
-  }
 
   return (
     <ExpensesPageClient

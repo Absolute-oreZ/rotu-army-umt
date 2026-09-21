@@ -23,7 +23,7 @@ import { createTreasuryAccount } from "@/app/admin/treasurer/accounts/actions";
 import { formatBank } from "@/components/admin/treasurer/accounts/table-config";
 import { digitsOnly } from "@/lib/admin/form-helpers";
 import { Field } from "@/components/ui/field";
-import { BANKS } from "@/lib/data";
+import { BANKS } from "@/lib/constants";
 
 type DialogIntakeOption = {
   id: number;

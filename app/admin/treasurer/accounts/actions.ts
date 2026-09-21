@@ -14,7 +14,6 @@ import {
   getAllowedImageExtension,
   resolveScopedIntakeId,
   takeString,
-  takeNumber,
 } from "@/lib/admin/form-helpers";
 
 export type AccountDetails = {
@@ -22,10 +21,12 @@ export type AccountDetails = {
   intakeId: number;
   intakeNo: string;
   bankName: string;
-  accountNumber: number;
+  accountNumber: number | null;
+  accountNumberText: string;
   qrCodePath: string | null;
   qrCodeUrl: string | null;
   duitNowId: number | null;
+  duitNowIdText: string | null;
   treasurerName: string;
   createdAt: string;
 };
@@ -49,8 +50,10 @@ export async function getAccountDetails(accountId: number): Promise<{ data: Acco
       intakeNo: intakes.intakeNo,
       bankName: treasuryAccounts.bankName,
       accountNumber: treasuryAccounts.accountNumber,
+      accountNumberText: treasuryAccounts.accountNumberText,
       qrCodePath: treasuryAccounts.qrCodePath,
       duitNowId: treasuryAccounts.duitNowId,
+      duitNowIdText: treasuryAccounts.duitNowIdText,
       treasurerName: members.name,
       createdAt: treasuryAccounts.createdAt,
     })
@@ -73,7 +76,7 @@ export async function getAccountDetails(accountId: number): Promise<{ data: Acco
   return {
     data: {
       ...row,
-      qrCodeUrl: await signedStorageUrl(createSupabaseAdminClient(), row.qrCodePath),
+      qrCodeUrl: await signedStorageUrl(createSupabaseAdminClient(), row.qrCodePath, undefined, "image"),
       createdAt: row.createdAt.toISOString(),
     },
     error: null,
@@ -93,18 +96,18 @@ export async function createTreasuryAccount(formData: FormData) {
   const effectiveIntakeId = resolved.intakeId;
 
   const bankName = takeString(formData.get("bankName"));
-  const accountNumber = takeNumber(formData.get("accountNumber"));
-  const duitNowId = takeNumber(formData.get("duitNowId"));
+  const accountNumberText = takeString(formData.get("accountNumber"));
+  const duitNowIdText = takeString(formData.get("duitNowId"));
 
   if (!bankName || !bankEnum.enumValues.includes(bankName as (typeof bankEnum.enumValues)[number])) {
     return { error: "Valid bank name is required." };
   }
 
-  if (accountNumber === null || !Number.isInteger(accountNumber) || accountNumber <= 0) {
+  if (!accountNumberText || !/^\d+$/.test(accountNumberText)) {
     return { error: "Valid account number is required." };
   }
 
-  if (duitNowId !== null && (!Number.isInteger(duitNowId) || duitNowId <= 0)) {
+  if (duitNowIdText !== null && duitNowIdText !== "" && !/^\d+$/.test(duitNowIdText)) {
     return { error: "Valid DuitNow ID is required." };
   }
 
@@ -127,8 +130,8 @@ export async function createTreasuryAccount(formData: FormData) {
         intakeId: effectiveIntakeId,
         treasurerId: admin.id,
         bankName: bankName as (typeof bankEnum.enumValues)[number],
-        accountNumber,
-        duitNowId,
+        accountNumberText,
+        duitNowIdText,
         qrCodePath: null,
       })
       .returning({ id: treasuryAccounts.id });
@@ -209,20 +212,24 @@ export async function updateTreasuryAccount(formData: FormData) {
   if (scopeError) return { error: scopeError };
 
   const bankName = takeString(formData.get("bankName"));
-  const accountNumber = takeNumber(formData.get("accountNumber"));
-  const duitNowId = takeNumber(formData.get("duitNowId"));
+  const accountNumberText = takeString(formData.get("accountNumber"));
+  const duitNowIdText = takeString(formData.get("duitNowId"));
 
   if (!bankName || !bankEnum.enumValues.includes(bankName as (typeof bankEnum.enumValues)[number])) {
     return { error: "Valid bank name is required." };
   }
 
-  if (accountNumber === null || !Number.isInteger(accountNumber) || accountNumber <= 0) {
+  if (!accountNumberText || !/^\d+$/.test(accountNumberText)) {
     return { error: "Valid account number is required." };
   }
 
-  if (duitNowId !== null && (!Number.isInteger(duitNowId) || duitNowId <= 0)) {
+  if (duitNowIdText !== null && duitNowIdText !== "" && !/^\d+$/.test(duitNowIdText)) {
     return { error: "Valid DuitNow ID is required." };
   }
+
+  // Store only text columns (numeric columns will be dropped after migration)
+  const accountNumber = null;
+  const duitNowId = null;
 
   const rawQr = formData.get("qrCode");
   const qrFile = rawQr instanceof File && rawQr.size > 0 ? rawQr : null;
@@ -263,7 +270,9 @@ export async function updateTreasuryAccount(formData: FormData) {
     await db.update(treasuryAccounts).set({
       bankName: bankName as (typeof bankEnum.enumValues)[number],
       accountNumber,
+      accountNumberText,
       duitNowId,
+      duitNowIdText,
       ...(uploadedQrPath !== null
         ? { qrCodePath: uploadedQrPath }
         : removeQr

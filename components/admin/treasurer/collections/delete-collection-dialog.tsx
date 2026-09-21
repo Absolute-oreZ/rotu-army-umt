@@ -28,18 +28,18 @@ export function DeleteCollectionDialog({
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
-    if (!collection) return;
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("collectionId", String(collection.id));
-      const result = await deleteCollection(fd);
-      if (result?.error) {
-        onError(result.error);
-      } else {
-        onOpenChange(false);
-      }
-    });
-  }
+      if (!collection) return;
+      startTransition(async () => {
+        const fd = new FormData();
+        fd.set("collectionId", String(collection.id));
+        const result = await deleteCollection(fd);
+        if (!result.success) {
+          onError(result.error);
+        } else {
+          onOpenChange(false);
+        }
+      });
+    }
 
   return (
     <Dialog open={!!collection} onOpenChange={onOpenChange}>

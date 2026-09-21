@@ -108,57 +108,59 @@ export default async function CollectionsPage({
   const orderBy = buildOrderBy(state.sortRules);
 
   const [countRow, collectionRows, accounts] = await Promise.all([
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(collections)
-      .where(where),
-    db
-      .select({
-        id: collections.id,
-        title: collections.title,
-        slug: collections.slug,
-        purpose: collections.purpose,
-        description: collections.description,
-        amount: collections.amount,
-        isFixedAmount: collections.isFixedAmount,
-        isReceiptRequired: collections.isReceiptRequired,
-        status: collections.status,
-        paymentAccountId: collections.paymentAccountId,
-        intakeId: collections.intakeId,
-        intakeNo: intakes.intakeNo,
-        paymentBankName: treasuryAccounts.bankName,
-        paymentAccountNumber: treasuryAccounts.accountNumber,
-        paymentCount: sql<number>`coalesce(count(${collectionPayments.id}), 0)::int`.as("payment_count"),
-        totalCollected: sql<string>`coalesce(sum(${collectionPayments.amountPaid}), '0')`.as("total_collected"),
-        createdAt: collections.createdAt,
-      })
-      .from(collections)
-      .innerJoin(intakes, eq(intakes.id, collections.intakeId))
-      .leftJoin(treasuryAccounts, eq(treasuryAccounts.id, collections.paymentAccountId))
-      .leftJoin(collectionPayments, eq(collectionPayments.collectionId, collections.id))
-      .where(where)
-      .groupBy(collections.id, intakes.intakeNo, treasuryAccounts.bankName, treasuryAccounts.accountNumber)
-      .orderBy(...orderBy)
-      .limit(state.pageSize)
-      .offset((state.page - 1) * state.pageSize),
-    db
-      .select({
-        id: treasuryAccounts.id,
-        intakeId: treasuryAccounts.intakeId,
-        bankName: treasuryAccounts.bankName,
-        accountNumber: treasuryAccounts.accountNumber,
-        treasurerName: members.name,
-      })
-      .from(treasuryAccounts)
-      .innerJoin(adminUsers, eq(adminUsers.id, treasuryAccounts.treasurerId))
-      .innerJoin(members, eq(members.id, adminUsers.memberId))
-      .where(
-        intakeScope !== null
-          ? eq(treasuryAccounts.intakeId, intakeScope)
-          : undefined,
-      )
-      .orderBy(desc(treasuryAccounts.createdAt)),
-  ]);
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(collections)
+        .innerJoin(intakes, eq(intakes.id, collections.intakeId))
+        .where(where),
+      db
+              .select({
+                id: collections.id,
+                title: collections.title,
+                slug: collections.slug,
+                purpose: collections.purpose,
+                description: collections.description,
+                amount: collections.amount,
+                isFixedAmount: collections.isFixedAmount,
+                isReceiptRequired: collections.isReceiptRequired,
+                status: collections.status,
+                paymentAccountId: collections.paymentAccountId,
+                intakeId: collections.intakeId,
+                intakeNo: intakes.intakeNo,
+                paymentBankName: treasuryAccounts.bankName,
+                paymentAccountNumberText: treasuryAccounts.accountNumberText,
+                paymentCount: sql<number>`coalesce(count(${collectionPayments.id}), 0)::int`.as("payment_count"),
+                totalCollected: sql<string>`coalesce(sum(${collectionPayments.amountPaid}), '0')`.as("total_collected"),
+                createdAt: collections.createdAt,
+              })
+              .from(collections)
+              .innerJoin(intakes, eq(intakes.id, collections.intakeId))
+              .leftJoin(treasuryAccounts, eq(treasuryAccounts.id, collections.paymentAccountId))
+              .leftJoin(collectionPayments, eq(collectionPayments.collectionId, collections.id))
+              .where(where)
+              .groupBy(collections.id, intakes.intakeNo, treasuryAccounts.bankName, treasuryAccounts.accountNumberText)
+              .orderBy(...orderBy)
+              .limit(state.pageSize)
+              .offset((state.page - 1) * state.pageSize),
+          db
+                .select({
+                  id: treasuryAccounts.id,
+                  intakeId: treasuryAccounts.intakeId,
+                  bankName: treasuryAccounts.bankName,
+                  accountNumberText: treasuryAccounts.accountNumberText,
+                  duitNowIdText: treasuryAccounts.duitNowIdText,
+                  treasurerName: members.name,
+                })
+                .from(treasuryAccounts)
+                .innerJoin(adminUsers, eq(adminUsers.id, treasuryAccounts.treasurerId))
+                .innerJoin(members, eq(members.id, adminUsers.memberId))
+                .where(
+                  intakeScope !== null
+                    ? eq(treasuryAccounts.intakeId, intakeScope)
+                    : undefined,
+                )
+                .orderBy(desc(treasuryAccounts.createdAt)),
+        ]);
 
   const totalCount = countRow[0]?.count ?? 0;
 

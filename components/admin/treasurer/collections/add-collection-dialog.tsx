@@ -27,7 +27,8 @@ type Account = {
   id: number;
   intakeId: number;
   bankName: string;
-  accountNumber: number;
+  accountNumberText: string;
+  duitNowIdText: string | null;
   treasurerName: string;
 };
 
@@ -310,20 +311,20 @@ export function AddCollectionDialog({
           <Field label="Payment Account" required>
             <Select value={accountId} onValueChange={setAccountId}>
               <SelectTrigger>
-                {accountId
-                  ? (() => {
-                    const a = filteredAccounts.find((acc) => String(acc.id) === accountId);
-                    return a ? `${a.treasurerName} - ${a.accountNumber}(${formatBank(a.bankName)})` : "Select account";
-                  })()
-                  : "Select treasury account"}
+                              {accountId
+                                ? (() => {
+                                  const a = filteredAccounts.find((acc) => String(acc.id) === accountId);
+                                  return a ? `${a.treasurerName} - ${a.accountNumberText}(${formatBank(a.bankName)})` : "Select account";
+                                })()
+                                : "Select treasury account"}
               </SelectTrigger>
               <SelectContent>
-                {filteredAccounts.map((a) => (
-                  <SelectItem key={a.id} value={String(a.id)}>
-                    {a.treasurerName} - {a.accountNumber}({formatBank(a.bankName)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
+                              {filteredAccounts.map((a) => (
+                                <SelectItem key={a.id} value={String(a.id)}>
+                                  {a.treasurerName} - {a.accountNumberText}({formatBank(a.bankName)})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
             </Select>
           </Field>
 

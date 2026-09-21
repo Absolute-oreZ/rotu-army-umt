@@ -40,6 +40,7 @@ export function ReceiptPreviewDialog({
           height={600}
           className="max-h-full max-w-full object-contain"
           onClick={(event) => event.stopPropagation()}
+          unoptimized
         />
       </div>
     </div>

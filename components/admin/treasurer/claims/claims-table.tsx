@@ -174,6 +174,7 @@ export function ClaimsTable({
                           fill
                           sizes="36px"
                           className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <span className="flex size-full items-center justify-center text-[11px] font-semibold uppercase text-muted-foreground">

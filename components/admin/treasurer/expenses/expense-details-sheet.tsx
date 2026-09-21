@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { format } from "date-fns";
 import { PencilIcon, Loader2Icon, AlertCircleIcon, Trash2Icon } from "lucide-react";
-import Image from "next/image";
 import {
   Sheet,
   SheetContent,
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
+import { ReceiptThumbnail } from "@/components/admin/treasurer/receipt-thumbnail";
 import { currencyOnly } from "@/lib/admin/form-helpers";
 import {
   getExpenseDetails,
@@ -25,7 +25,9 @@ import {
 
 export type ExpenseReceipt = {
   id: number;
-  filePath: string | null;
+  signedUrl: string | null;
+  fileName: string;
+  isPdf: boolean;
   createdAt: string;
 };
 
@@ -158,31 +160,20 @@ function ViewMode({ details, onEdit }: { details: ExpenseDetails; onEdit: () => 
             </h3>
             {d.receipts.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {d.receipts.map((receipt) => {
-                  const url = receipt.filePath;
-                  return (
-                    <div key={receipt.id} className="overflow-hidden rounded-lg border border-border">
-                      {url ? (
-                        <Image
-                          src={url}
-                          alt=""
-                          fill
-                          sizes="(min-width: 1024px) 130px, (min-width: 640px) 190px, calc(100vw - 6rem)"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
-                          No preview
-                        </div>
-                      )}
-                      <div className="bg-linear-to-t from-black/70 via-black/20 to-transparent px-2 py-1.5">
-                        <p className="truncate text-[11px] font-medium text-white/90">
-                          {receipt.filePath?.split("/").pop() ?? "Receipt"}
-                        </p>
-                      </div>
+                {d.receipts.map((receipt) => (
+                  <div key={receipt.id} className="overflow-hidden rounded-lg border border-border">
+                    <ReceiptThumbnail
+                      url={receipt.signedUrl}
+                      fileName={receipt.fileName}
+                      isPdf={receipt.isPdf}
+                    />
+                    <div className="bg-muted px-2 py-1.5">
+                      <p className="truncate text-[11px] font-medium text-muted-foreground">
+                        {receipt.fileName}
+                      </p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">No receipts.</span>
@@ -334,31 +325,21 @@ function EditMode({
 
             {existingReceipts.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {existingReceipts.map((receipt) => {
-                  const url = receipt.filePath;
-                  return (
-                    <div key={receipt.id} className="rounded-xl border border-border bg-background p-2 shadow-sm">
-                      <div className="relative overflow-hidden rounded-lg border border-border bg-muted">
-                        {url ? (
-                          <Image
-                            src={url}
-                            alt=""
-                            fill
-                            sizes="(min-width: 1024px) 130px, (min-width: 640px) 190px, calc(100vw - 6rem)"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
-                            No preview
-                          </div>
-                        )}
-                        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/20 to-transparent p-2">
-                          <p className="truncate text-[11px] font-medium text-white/90">
-                            {receipt.filePath?.split("/").pop() ?? "Receipt"}
-                          </p>
-                        </div>
+                {existingReceipts.map((receipt) => (
+                  <div key={receipt.id} className="rounded-xl border border-border bg-background p-2 shadow-sm">
+                    <div className="overflow-hidden rounded-lg border border-border">
+                      <ReceiptThumbnail
+                        url={receipt.signedUrl}
+                        fileName={receipt.fileName}
+                        isPdf={receipt.isPdf}
+                      />
+                      <div className="bg-muted px-2 py-1.5">
+                        <p className="truncate text-[11px] font-medium text-muted-foreground">
+                          {receipt.fileName}
+                        </p>
                       </div>
-                      <div className="mt-2 flex items-center justify-end">
+                    </div>
+                    <div className="mt-2 flex items-center justify-end">
                         <Button
                           type="button"
                           variant="ghost"
@@ -373,8 +354,7 @@ function EditMode({
                         </Button>
                       </div>
                     </div>
-                  );
-                })}
+                ))}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No existing receipts.</p>

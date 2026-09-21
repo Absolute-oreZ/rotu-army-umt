@@ -3,7 +3,7 @@ import type { SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { claims, cadets, members } from "@/db/schema";
 import { getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { batchSignedStorageUrls } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import {
   buildEnumFilterClause,
@@ -66,58 +66,65 @@ export default async function ClaimsPage({
   orderBy.push(desc(claims.id));
 
   const [countRow, rows] = await Promise.all([
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(claims)
-      .innerJoin(members, eq(members.id, claims.memberId))
-      .where(where),
-    db
-      .select({
-        id: claims.id,
-        title: claims.title,
-        amount: claims.amount,
-        receiptPath: claims.receiptPath,
-        qrCodePath: claims.qrCodePath,
-        description: claims.description,
-        status: claims.status,
-        fulfilledAt: claims.fulfilledAt,
-        rejectedAt: claims.rejectedAt,
-        createdAt: claims.createdAt,
-        memberId: members.id,
-        memberName: members.name,
-        rank: members.rank,
-        armyNo: members.armyNo,
-        avatarPath: cadets.displayPhotoPath,
-      })
-      .from(claims)
-      .innerJoin(members, eq(members.id, claims.memberId))
-      .leftJoin(cadets, eq(cadets.memberId, claims.memberId))
-      .where(where)
-      .orderBy(...orderBy)
-      .limit(state.pageSize)
-      .offset((state.page - 1) * state.pageSize),
-  ]);
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(claims)
+        .innerJoin(members, eq(members.id, claims.memberId))
+        .where(where),
+      db
+        .select({
+          id: claims.id,
+          title: claims.title,
+          amount: claims.amount,
+          receiptPath: claims.receiptPath,
+          qrCodePath: claims.qrCodePath,
+          description: claims.description,
+          status: claims.status,
+          fulfilledAt: claims.fulfilledAt,
+          rejectedAt: claims.rejectedAt,
+          createdAt: claims.createdAt,
+          memberId: members.id,
+          memberName: members.name,
+          rank: members.rank,
+          armyNo: members.armyNo,
+          avatarPath: cadets.displayPhotoPath,
+        })
+        .from(claims)
+        .innerJoin(members, eq(members.id, claims.memberId))
+        .leftJoin(cadets, eq(cadets.memberId, claims.memberId))
+        .where(where)
+        .orderBy(...orderBy)
+        .limit(state.pageSize)
+        .offset((state.page - 1) * state.pageSize),
+    ]);
 
-  const totalCount = countRow[0]?.count ?? 0;
+    const totalCount = countRow[0]?.count ?? 0;
 
-  const supabase = createSupabaseAdminClient();
-  const claimsWithUrls = await Promise.all(
-    rows.map(async (r) => ({
+    const supabase = createSupabaseAdminClient();
+
+    // Batch sign receipt and QR code URLs
+    const receiptPaths = rows.map((r) => r.receiptPath);
+    const qrCodePaths = rows.map((r) => r.qrCodePath);
+    const [receiptUrls, qrCodeUrls] = await Promise.all([
+      batchSignedStorageUrls(supabase, receiptPaths),
+      batchSignedStorageUrls(supabase, qrCodePaths),
+    ]);
+
+    const claimsWithUrls = rows.map((r, index) => ({
       ...r,
       avatarPath: r.avatarPath,
-      receiptUrl: await signedStorageUrl(supabase, r.receiptPath),
-      qrCodeUrl: await signedStorageUrl(supabase, r.qrCodePath),
+      receiptUrl: receiptUrls[index],
+      qrCodeUrl: qrCodeUrls[index],
       fulfilledAt: r.fulfilledAt ? r.fulfilledAt.toISOString() : null,
       rejectedAt: r.rejectedAt ? r.rejectedAt.toISOString() : null,
       createdAt: r.createdAt.toISOString(),
-    })),
-  );
+    }));
 
-  return (
-    <ClaimsPageClient
-      searchParams={raw}
-      claims={claimsWithUrls}
-      totalCount={totalCount}
-    />
-  );
+    return (
+      <ClaimsPageClient
+        searchParams={raw}
+        claims={claimsWithUrls}
+        totalCount={totalCount}
+      />
+    );
 }

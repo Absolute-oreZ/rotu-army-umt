@@ -8,7 +8,7 @@ import {
   cadets,
 } from "@/db/schema";
 import { getIntakeScope, requireAdminModule } from "@/lib/admin/rbac";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { batchSignedStorageUrls } from "@/lib/supabase/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import {
   buildEnumFilterClause,
@@ -98,12 +98,14 @@ export default async function PaymentsPage({
       ? parsedCollectionId
       : null;
 
+  // Get all collections visible to this admin (respecting intake scope)
   const intakeCollections = await db
     .select({
       id: collections.id,
       title: collections.title,
       amount: collections.amount,
       isFixedAmount: collections.isFixedAmount,
+      intakeId: collections.intakeId,
     })
     .from(collections)
     .where(
@@ -113,8 +115,20 @@ export default async function PaymentsPage({
     )
     .orderBy(desc(collections.createdAt));
 
-  const effectiveCollectionId =
-    collectionId ?? (intakeCollections.length > 0 ? intakeCollections[0].id : null);
+  // Determine effective collection and validate intake ownership
+  let effectiveCollectionId = collectionId ?? (intakeCollections.length > 0 ? intakeCollections[0].id : null);
+  let collectionIntakeId: number | null = null;
+
+  if (effectiveCollectionId !== null) {
+    const selectedCollection = intakeCollections.find((c) => c.id === effectiveCollectionId);
+    if (!selectedCollection) {
+      // Collection not found or not in accessible intakes - fall back to first accessible
+      effectiveCollectionId = intakeCollections.length > 0 ? intakeCollections[0].id : null;
+      collectionIntakeId = effectiveCollectionId ? intakeCollections[0].intakeId : null;
+    } else {
+      collectionIntakeId = selectedCollection.intakeId;
+    }
+  }
 
   const collectionOptions: IntakeOption[] = intakeCollections.map((c) => ({
     value: c.title,
@@ -216,11 +230,7 @@ export default async function PaymentsPage({
         db
           .select({ count: sql<number>`count(*)::int` })
           .from(cadets)
-          .where(
-            intakeScope !== null
-              ? eq(cadets.intakeId, intakeScope)
-              : undefined,
-          ),
+          .where(eq(cadets.intakeId, collectionIntakeId!)),
       ]);
       const expectedCount = cadetCountRow[0]?.count ?? 0;
       summary = {
@@ -267,17 +277,14 @@ async function mapPaymentsWithSignedReceipts(
   }[],
 ) {
   const supabase = createSupabaseAdminClient();
-  const rows = await Promise.all(
-    payments.map(async (p) => {
-      const receiptUrl = p.receiptPath
-        ? await signedStorageUrl(supabase, p.receiptPath)
-        : null;
-      return {
-        ...p,
-        paidAt: p.paidAt ? p.paidAt.toISOString() : null,
-        receiptUrl,
-      };
-    }),
-  );
-  return rows;
+  
+  // Batch sign all receipt URLs
+  const receiptPaths = payments.map((p) => p.receiptPath);
+  const receiptUrls = await batchSignedStorageUrls(supabase, receiptPaths);
+
+  return payments.map((p, index) => ({
+    ...p,
+    paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+    receiptUrl: receiptUrls[index],
+  }));
 }

@@ -8,13 +8,13 @@ import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import {
   assertIntakeOwnership,
-  getAllowedImageExtension,
+  getAllowedReceiptExtension,
   resolveScopedIntakeId,
   sanitizeMoney,
   takeString,
 } from "@/lib/admin/form-helpers";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { deleteFromStorage, saveImage, signedStorageUrl } from "@/lib/supabase/storage";
+import { deleteFromStorage, saveUpload, signedStorageUrl } from "@/lib/supabase/storage";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
@@ -29,7 +29,9 @@ export type ExpenseDetails = {
   createdAt: string;
   receipts: {
     id: number;
-    filePath: string | null;
+    signedUrl: string | null;
+    fileName: string;
+    isPdf: boolean;
     createdAt: string;
   }[];
 };
@@ -45,8 +47,8 @@ function takeFiles(values: FormDataEntryValue[]): File[] {
 
 function validateReceipts(files: File[]): string | null {
   for (const file of files) {
-    if (!getAllowedImageExtension(file)) {
-      return "Receipt files must be JPG, PNG, or WebP images.";
+    if (!getAllowedReceiptExtension(file)) {
+      return "Receipt files must be JPG, PNG, WebP images, or PDF.";
     }
     if (file.size > MAX_RECEIPT_SIZE) {
       return "Each receipt must be under 5 MB.";
@@ -71,11 +73,13 @@ async function uploadExpenseReceipts(
   const rows: ReceiptInsert[] = [];
 
   for (const file of files) {
-    const saved = await saveImage({
+    const saved = await saveUpload({
       supabase,
       file,
       prefix: `expenses/${intakeId}/${expenseId}`,
       stem: "receipt",
+      kinds: ["image", "pdf"],
+      maxBytes: MAX_RECEIPT_SIZE,
     });
 
     if (!saved.ok) {
@@ -169,10 +173,18 @@ export async function getExpenseDetails(expenseId: number): Promise<{ data: Expe
   const supabase = createSupabaseAdminClient();
   const receipts = await Promise.all(
     receiptRows.map(async (r) => {
-      const signedUrl = await signedStorageUrl(supabase, r.filePath);
+      const isPdf = r.filePath.toLowerCase().endsWith(".pdf");
+      const signedUrl = await signedStorageUrl(
+        supabase,
+        r.filePath,
+        undefined,
+        isPdf ? "document" : "image",
+      );
       return {
         id: r.id,
-        filePath: signedUrl,
+        signedUrl,
+        fileName: r.filePath.split("/").pop() ?? "Receipt",
+        isPdf,
         createdAt: r.createdAt.toISOString(),
       };
     }),

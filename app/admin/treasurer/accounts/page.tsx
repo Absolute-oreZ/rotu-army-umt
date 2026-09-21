@@ -17,7 +17,7 @@ import {
 } from "@/components/admin/treasurer/accounts/table-config";
 import { AccountsPageClient } from "@/components/admin/treasurer/accounts/accounts-page-client";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { batchSignedStorageUrls } from "@/lib/supabase/storage";
 
 function buildFilters(
   state: { q: string; filters: Record<string, FilterCondition[]> },
@@ -30,8 +30,8 @@ function buildFilters(
     const prefix = wrapLikePattern(state.q, "prefix");
     const searchClause = or(
       ilike(members.name, contains),
-      sql`${treasuryAccounts.accountNumber}::text ILIKE ${prefix}`,
-      sql`${treasuryAccounts.duitNowId}::text ILIKE ${prefix}`,
+      sql`${treasuryAccounts.accountNumberText} ILIKE ${prefix}`,
+      sql`${treasuryAccounts.duitNowIdText} ILIKE ${prefix}`,
     );
     if (searchClause) clauses.push(searchClause);
   }
@@ -53,9 +53,9 @@ function buildBaseQuery() {
       intakeId: treasuryAccounts.intakeId,
       intakeNo: intakes.intakeNo,
       bankName: treasuryAccounts.bankName,
-      accountNumber: treasuryAccounts.accountNumber,
+      accountNumberText: treasuryAccounts.accountNumberText,
       qrCodePath: treasuryAccounts.qrCodePath,
-      duitNowId: treasuryAccounts.duitNowId,
+      duitNowIdText: treasuryAccounts.duitNowIdText,
       treasurerName: members.name,
       createdAt: treasuryAccounts.createdAt,
     })
@@ -109,28 +109,32 @@ export default async function AccountsPage({
   orderBy.push(sql`${treasuryAccounts.id} ASC`);
 
   const [countRow, accountRows] = await Promise.all([
-    buildCountQuery().where(where),
-    buildBaseQuery()
-      .where(where)
-      .orderBy(...orderBy)
-      .limit(state.pageSize)
-      .offset((state.page - 1) * state.pageSize),
-  ]);
+      buildCountQuery().where(where),
+      buildBaseQuery()
+        .where(where)
+        .orderBy(...orderBy)
+        .limit(state.pageSize)
+        .offset((state.page - 1) * state.pageSize),
+    ]);
 
-  const totalCount = countRow[0]?.count ?? 0;
-  const supabase = createSupabaseAdminClient();
+    const totalCount = countRow[0]?.count ?? 0;
+    const supabase = createSupabaseAdminClient();
 
-  return (
-    <AccountsPageClient
-      searchParams={raw}
-      accounts={await Promise.all(accountRows.map(async (a) => ({
-        ...a,
-        qrCodeUrl: await signedStorageUrl(supabase, a.qrCodePath),
-        createdAt: a.createdAt.toISOString(),
-      })))}
-      totalCount={totalCount}
-      intakeOptions={intakeDialogOptions}
-      isAdminIntakeScoped={intakeScope !== null}
-    />
-  );
+    // Batch sign QR code URLs
+    const qrCodePaths = accountRows.map((a) => a.qrCodePath);
+    const qrCodeUrls = await batchSignedStorageUrls(supabase, qrCodePaths);
+
+    return (
+      <AccountsPageClient
+        searchParams={raw}
+        accounts={accountRows.map((a, index) => ({
+          ...a,
+          qrCodeUrl: qrCodeUrls[index],
+          createdAt: a.createdAt.toISOString(),
+        }))}
+        totalCount={totalCount}
+        intakeOptions={intakeDialogOptions}
+        isAdminIntakeScoped={intakeScope !== null}
+      />
+    );
 }

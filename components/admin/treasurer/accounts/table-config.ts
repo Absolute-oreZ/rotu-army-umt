@@ -36,7 +36,7 @@ export function buildAccountsTableConfig(intakeOptions?: IntakeOption[]): TableC
     sortKeys: ["intakeNo", "treasurerName", "bankName", "accountNumber"],
     sortLabels: { treasurerName: "Account Holder", accountNumber: "Account No" },
     filterColumns,
-    copyableColumns: ["treasurerName", "accountNumber", "duitNowId"],
+    copyableColumns: ["treasurerName", "accountNumber", "accountNumberText", "duitNowId", "duitNowIdText"],
     pageSizeOptions: [10, 25, 50],
   };
 }

@@ -48,7 +48,7 @@ export function DeleteAccountDialog({
         <DialogHeader>
           <DialogTitle>Delete Treasury Account</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the {account ? formatBank(account.bankName) : ""} account ({account?.accountNumber})? This action cannot be undone.
+            Are you sure you want to delete the {account ? formatBank(account.bankName) : ""} account ({account?.accountNumberText})? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
 

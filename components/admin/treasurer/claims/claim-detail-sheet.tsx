@@ -111,6 +111,7 @@ export function ClaimDetailSheet({
                               fill
                               sizes="(min-width: 640px) 400px, calc(100vw - 4rem)"
                               className="object-cover"
+                              unoptimized
                             />
                           ) : null;
                         })()}
@@ -142,6 +143,7 @@ export function ClaimDetailSheet({
                             fill
                             sizes="(min-width: 640px) 400px, calc(100vw - 4rem)"
                             className="object-cover"
+                            unoptimized
                           />
                         ) : null;
                       })()}
