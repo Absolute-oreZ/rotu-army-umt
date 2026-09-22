@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/ui/field";
 import { AlertCircleIcon, Loader2Icon } from "lucide-react";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
@@ -185,7 +186,7 @@ export function AddExpenseDialog({
               </Field>
 
               <Field label="Description">
-                <textarea
+                <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Optional notes"
@@ -209,8 +210,9 @@ export function AddExpenseDialog({
                 onAddFiles={addReceiptFiles}
                 onReplaceFile={replaceReceiptFile}
                 onRemoveFile={removeReceiptFile}
+                accept="image/*,.pdf,application/pdf"
                 addLabel="Add receipt images"
-                helperText="Select one or more receipt images. You can replace or remove each thumbnail before saving."
+                helperText="Select one or more receipt images or PDFs. You can replace or remove each file before saving."
               />
             </div>
           </div>

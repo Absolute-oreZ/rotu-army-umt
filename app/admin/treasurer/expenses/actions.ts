@@ -7,12 +7,11 @@ import { expenses, expenseReceipts, intakes } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
 import {
-  assertIntakeOwnership,
-  getAllowedReceiptExtension,
-  resolveScopedIntakeId,
   sanitizeMoney,
   takeString,
 } from "@/lib/admin/form-helpers";
+import { assertIntakeOwnership, resolveScopedIntakeId } from "@/lib/admin/scope";
+import { getAllowedReceiptExtension } from "@/lib/storage/files";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { deleteFromStorage, saveUpload, signedStorageUrl } from "@/lib/supabase/storage";
 import type { SupabaseClient } from "@supabase/supabase-js";

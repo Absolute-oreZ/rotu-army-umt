@@ -6,7 +6,8 @@ import { db } from "@/db";
 import { claims } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
-import { assertIntakeOwnership, takeString } from "@/lib/admin/form-helpers";
+import { takeString } from "@/lib/admin/form-helpers";
+import { assertIntakeOwnership } from "@/lib/admin/scope";
 
 export async function updateClaimStatus(formData: FormData) {
   const admin = await requireCurrentAdmin();

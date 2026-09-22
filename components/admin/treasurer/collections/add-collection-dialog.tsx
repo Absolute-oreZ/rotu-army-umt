@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectTrigger,
@@ -269,7 +271,7 @@ export function AddCollectionDialog({
             </Field>
           )}
           <Field label="Description">
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -279,7 +281,7 @@ export function AddCollectionDialog({
           </Field>
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-sm">
-              <input
+              <Checkbox
                 type="checkbox"
                 checked={isFixedAmount}
                 onChange={(e) => setIsFixedAmount(e.target.checked)}
@@ -287,7 +289,7 @@ export function AddCollectionDialog({
               Fixed amount
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input
+              <Checkbox
                 type="checkbox"
                 checked={isReceiptRequired}
                 onChange={(e) => setIsReceiptRequired(e.target.checked)}

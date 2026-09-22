@@ -9,11 +9,10 @@ import { canAccessAdminModule } from "@/lib/admin/roles";
 import { collectionPurposeEnum } from "@/db/schema";
 import { slugify } from "@/lib/slugify";
 import {
-  assertIntakeOwnership,
-  resolveScopedIntakeId,
   takeString,
   takeNumber,
 } from "@/lib/admin/form-helpers";
+import { assertIntakeOwnership, resolveScopedIntakeId } from "@/lib/admin/scope";
 import { ActionResult, ok, err } from "@/lib/actions/result";
 
 async function generateUniqueSlug(title: string): Promise<string> {

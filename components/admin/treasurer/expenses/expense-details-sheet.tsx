@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/ui/field";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
 import { ReceiptThumbnail } from "@/components/admin/treasurer/receipt-thumbnail";
@@ -297,7 +298,7 @@ function EditMode({
           </Field>
 
           <Field label="Description">
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional notes"
@@ -366,6 +367,7 @@ function EditMode({
               onAddFiles={addReceiptFiles}
               onReplaceFile={replaceReceiptFile}
               onRemoveFile={removeReceiptFile}
+              accept="image/*,.pdf,application/pdf"
               addLabel="Add receipt images"
               helperText="Select one or more receipt images. They will be uploaded when you save."
             />

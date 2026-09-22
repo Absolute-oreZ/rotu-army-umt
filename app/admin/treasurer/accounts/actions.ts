@@ -10,11 +10,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { deleteFromStorage, saveImage, signedStorageUrl } from "@/lib/supabase/storage";
 import { bankEnum } from "@/db/schema";
 import {
-  assertIntakeOwnership,
-  getAllowedImageExtension,
-  resolveScopedIntakeId,
   takeString,
 } from "@/lib/admin/form-helpers";
+import { assertIntakeOwnership, resolveScopedIntakeId } from "@/lib/admin/scope";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 
 export type AccountDetails = {
   id: number;
