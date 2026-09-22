@@ -18,6 +18,7 @@ export function MultiFileField({
   onReplaceFile,
   onRemoveFile,
   helperText = "Select one or more image files.",
+  accept = "image/*",
   required,
   addLabel = "Add files",
   className,
@@ -28,6 +29,7 @@ export function MultiFileField({
   onReplaceFile: (id: string, file: File | null) => void;
   onRemoveFile: (id: string) => void;
   helperText?: ReactNode;
+  accept?: string;
   required?: boolean;
   addLabel?: string;
   className?: string;
@@ -59,7 +61,7 @@ export function MultiFileField({
         <input
           ref={addInputRef}
           type="file"
-          accept="image/*"
+          accept={accept}
           multiple
           onChange={handleAddChange}
           className="hidden"
@@ -112,7 +114,7 @@ export function MultiFileField({
                         replaceInputRefs.current[item.id] = el;
                       }}
                       type="file"
-                      accept="image/*"
+                      accept={accept}
                       className="hidden"
                       onChange={(e) => handleReplaceChange(item.id, e)}
                     />
