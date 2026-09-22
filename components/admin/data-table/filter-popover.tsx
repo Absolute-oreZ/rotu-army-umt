@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FilterIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverTrigger,
@@ -166,11 +167,11 @@ function EnumFilterBody({
             key={opt.value}
             className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-accent"
           >
-            <input
+            <Checkbox
               type="checkbox"
               checked={selected.has(opt.value)}
               onChange={() => toggle(opt.value)}
-              className="size-3.5 rounded border-border accent-primary"
+              className="size-3.5"
             />
             <span className="truncate">{opt.label}</span>
           </label>

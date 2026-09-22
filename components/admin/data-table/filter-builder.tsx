@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { FilterColumn } from "@/lib/admin/table-search-params";
 
 const VALID_OPS: Record<FilterColumn["type"], string[]> = {
@@ -115,11 +117,11 @@ export function FilterBuilder({
     <div className="flex items-center gap-2">
       {step === "column" && (
         <div className="relative">
-          <input
+          <Input
             ref={columnRef}
             type="text"
             placeholder="Select column..."
-            className="h-8 w-40 rounded-md border border-border bg-background px-2.5 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+            className="h-8 w-40 px-2.5 text-xs"
             list="filter-columns"
             onChange={(e) => {
               const match = filterColumns.find((c) => c.label.toLowerCase() === e.target.value.toLowerCase());
@@ -139,52 +141,35 @@ export function FilterBuilder({
 
       {step === "value" && selectedColumn && (
         <>
-          <select
-            value={operator}
-            onChange={(e) => handleOperatorSelect(e.target.value)}
-            className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-          >
-            {VALID_OPS[selectedColumn.type].map((op) => (
-              <option key={op} value={op}>
-                {OP_LABELS[op]}
-              </option>
-            ))}
-          </select>
+          <Select value={operator} onValueChange={handleOperatorSelect}>
+            <SelectTrigger size="sm" className="w-32 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {VALID_OPS[selectedColumn.type].map((op) => <SelectItem key={op} value={op}>{OP_LABELS[op]}</SelectItem>)}
+            </SelectContent>
+          </Select>
 
           {selectedColumn.type === "enum" ? (
-            <select
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleValueSubmit();
-                if (e.key === "Escape") reset();
-              }}
-            >
-              <option value="">Select value...</option>
-              {selectedColumn.options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <Select value={value} onValueChange={setValue}>
+              <SelectTrigger size="sm" className="w-32 text-xs"><SelectValue placeholder="Select value..." /></SelectTrigger>
+              <SelectContent>{selectedColumn.options.map((opt) => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
+            </Select>
           ) : selectedColumn.type === "time" ? (
             <div className="flex items-center gap-1">
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={timeMinutes}
                 onChange={(e) => setTimeMinutes(e.target.value)}
                 placeholder="Min"
                 aria-label="Minutes"
-                className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                className="h-8 w-16 px-2 text-xs"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleValueSubmit();
                   if (e.key === "Escape") reset();
                 }}
               />
               <span className="text-xs text-muted-foreground">m</span>
-              <input
+              <Input
                 type="number"
                 min="0"
                 max="59"
@@ -192,7 +177,7 @@ export function FilterBuilder({
                 onChange={(e) => setTimeSeconds(e.target.value)}
                 placeholder="Sec"
                 aria-label="Seconds"
-                className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                className="h-8 w-16 px-2 text-xs"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleValueSubmit();
                   if (e.key === "Escape") reset();
@@ -201,13 +186,13 @@ export function FilterBuilder({
               <span className="text-xs text-muted-foreground">s</span>
             </div>
           ) : (
-            <input
+            <Input
               ref={valueRef}
               type={selectedColumn.type === "number" ? "number" : selectedColumn.type === "date" ? "date" : "text"}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder="Value..."
-              className="h-8 w-32 rounded-md border border-border bg-background px-2.5 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+              className="h-8 w-32 px-2.5 text-xs"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleValueSubmit();
                 if (e.key === "Escape") reset();

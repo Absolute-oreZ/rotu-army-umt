@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowDownUpIcon, ArrowUpIcon, ArrowDownIcon, TrashIcon, GripVerticalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Popover,
   PopoverTrigger,
@@ -142,25 +143,10 @@ export function SortControl({
             <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Add Rule
             </label>
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  addRule(e.target.value);
-                  e.target.value = "";
-                }
-              }}
-              className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Select column...
-              </option>
-              {availableKeys.map((key) => (
-                <option key={key} value={key}>
-                  {columnLabels[key] || key}
-                </option>
-              ))}
-            </select>
+            <Select value="" onValueChange={addRule}>
+              <SelectTrigger size="sm" className="w-full text-xs"><SelectValue placeholder="Select column..." /></SelectTrigger>
+              <SelectContent>{availableKeys.map((key) => <SelectItem key={key} value={key}>{columnLabels[key] || key}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
         )}
 
