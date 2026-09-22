@@ -1,16 +1,9 @@
-import { requireRoleGroup } from "@/lib/admin/rbac";
-import { AccessDenied } from "@/components/admin/access-denied";
+import { AdminRoleLayout } from "@/components/admin/admin-role-layout";
 
 export default async function AcademicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const result = await requireRoleGroup("academic");
-
-  if (!result.authorized) {
-    return <AccessDenied admin={result.admin} />;
-  }
-
-  return <>{children}</>;
+  return <AdminRoleLayout group="academic">{children}</AdminRoleLayout>;
 }

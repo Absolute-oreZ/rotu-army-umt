@@ -4,7 +4,7 @@ import type { CurrentAdmin } from "@/lib/admin/rbac";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/seperator";
+import { Separator } from "@/components/ui/separator";
 
 export function AdminShell({
   admin,

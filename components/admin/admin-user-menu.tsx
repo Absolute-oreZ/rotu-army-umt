@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/seperator";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { signOutAdmin } from "@/app/admin/actions";
 import type { CurrentAdmin } from "@/lib/admin/rbac";
