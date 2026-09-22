@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterSubscribers } from "@/db/schema";
-import { escapeHtml } from "./utils";
+import { escapeHtml } from "@/lib/format";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM_EMAIL =

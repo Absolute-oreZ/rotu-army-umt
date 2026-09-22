@@ -3,9 +3,9 @@ import "server-only";
 import { and, eq, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterCampaignAttachments, newsletterCampaignDeliveries, newsletterCampaigns, newsletterCampaignTranslations, newsletterSubscribers } from "@/db/schema";
-import { createSignedUnsubscribeToken } from "@/lib/newsletter";
+import { createSignedUnsubscribeToken } from "@/lib/newsletter/core";
 import { sanitizeHtmlForEmail } from "@/lib/newsletter/sanitize-html";
-import { escapeHtml } from "@/lib/utils";
+import { escapeHtml } from "@/lib/format";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 
