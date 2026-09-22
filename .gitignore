@@ -45,3 +45,6 @@ next-env.d.ts
 .claude
 .qoder
 .codex
+
+# MCP
+.codebase-memory

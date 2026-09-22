@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
-import { getDueNewsletterCampaignIds, getStuckSendingCampaigns, getFailedNewsletterCampaignIds, deliverNewsletterCampaign, retryFailedDeliveries } from "@/lib/newsletter-campaigns";
+import { getDueNewsletterCampaignIds, getStuckSendingCampaigns, getFailedNewsletterCampaignIds, deliverNewsletterCampaign, retryFailedDeliveries } from "@/lib/newsletter/campaigns";
 
 export const dynamic = "force-dynamic";
 

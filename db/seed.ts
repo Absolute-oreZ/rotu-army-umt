@@ -44,12 +44,9 @@ import {
   DEFAULT_BLUE_BG_PHOTO_PATH,
   DEFAULT_PLATOONS,
 } from "@/lib/constants";
-import {
-  calculateAgeAt,
-  calculateBMI,
-  computeAcademicSchedule,
-  getBMIClassification,
-} from "@/lib/utils";
+import { calculateAgeAt } from "@/lib/time/date";
+import { calculateBMI, getBMIClassification } from "@/lib/health/bmi";
+import { computeAcademicSchedule } from "@/lib/academic/schedule";
 import { evaluatePass, getAssessmentStandards } from "@/lib/assessment/standards";
 
 function loadDotEnv() {
@@ -920,13 +917,30 @@ async function seed() {
       (${campaignIds[0]}, 'update.pdf', 'newsletter/seed/update.pdf', 'application/pdf', 2048)
   `;
 
-  await sql`
-    insert into newsletter_campaign_deliveries
-      (campaign_id, subscriber_id, email, locale, status, provider_message_id, sent_at)
-    values
-      (${campaignIds[0]}, ${subscriberIds[0]}, ${DEFAULT_NEWSLETTER_SUBSCRIBERS[0].email}, 'en',
-       'SENT', 'seed-message-id', '2026-02-15T08:00:00.000Z')
-  `;
+await sql`
+  insert into newsletter_campaign_deliveries
+    (
+      campaign_id,
+      subscriber_id,
+      email,
+      locale,
+      status,
+      provider_message_id,
+      idempotency_key,
+      sent_at
+    )
+  values
+    (
+      ${campaignIds[0]},
+      ${subscriberIds[0]},
+      ${DEFAULT_NEWSLETTER_SUBSCRIBERS[0].email},
+      'en',
+      'SENT',
+      'seed-message-id',
+      'seed-idempotency-key-1',
+      '2026-02-15T08:00:00.000Z'
+    )
+`;
 
   const treasuryAccountIds: number[] = [];
   for (const account of DEFAULT_TREASURY_ACCOUNTS) {
@@ -990,7 +1004,7 @@ async function seed() {
 
   await sql`
     insert into cadet_accounts
-      (member_id, bank_name, account_number, duitnow_id, qr_code_path)
+      (member_id, bank_name, account_number_text, duitnow_id_text, qr_code_path)
     values
       (${cadetRows[0].member_id}, 'RHB', 3344556677, 60112233445, 'cadet-accounts/seed/qr.png')
   `;
