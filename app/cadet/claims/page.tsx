@@ -42,7 +42,7 @@ export default async function CadetClaimsPage() {
   
   // Batch sign QR code URL
   const qrCodeUrl = accountRow?.qrCodePath
-    ? (await batchSignedStorageUrls(supabase, [accountRow.qrCodePath]))[0]
+    ? (await batchSignedStorageUrls(supabase, [accountRow.qrCodePath], "image"))[0]
     : null;
 
   const accountRecord = accountRow

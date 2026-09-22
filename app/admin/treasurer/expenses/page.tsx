@@ -124,7 +124,7 @@ export default async function ExpensesPage({
 
       // Batch sign all receipt URLs
       const filePaths = receiptRows.map((r) => r.filePath);
-      const fileUrls = await batchSignedStorageUrls(supabase, filePaths);
+      const fileUrls = await batchSignedStorageUrls(supabase, filePaths, "document");
 
       for (let i = 0; i < receiptRows.length; i++) {
         const receipt = receiptRows[i];

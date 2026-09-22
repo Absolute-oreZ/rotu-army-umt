@@ -28,7 +28,7 @@ export async function getCadetAccountByMemberId(
   if (!row) return null;
 
   const supabase = createSupabaseAdminClient();
-  const qrCodeUrl = await signedStorageUrl(supabase, row.qrCodePath);
+  const qrCodeUrl = await signedStorageUrl(supabase, row.qrCodePath, undefined, "image");
 
   return {
     id: row.id,

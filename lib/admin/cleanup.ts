@@ -71,13 +71,13 @@ export async function withCleanup<T>(
     cleanup.commit();
     return { success: true, data };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Operation failed after upload cleanup", err);
     try {
       await cleanup.execute(supabase);
     } catch {
       console.error("Cleanup failed after operation error:", err);
     }
-    return { success: false, error: message };
+    return { success: false, error: "Failed to complete the operation." };
   }
 }
 

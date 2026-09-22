@@ -59,6 +59,8 @@ function buildFilters(
     clauses.push(eq(cadets.intakeId, intakeScope));
   }
 
+  clauses.push(eq(cadets.isActive, true));
+
   if (collectionId !== null) {
     clauses.push(eq(collections.id, collectionId));
   }
@@ -227,7 +229,7 @@ export default async function PaymentsPage({
         db
           .select({ count: sql<number>`count(*)::int` })
           .from(cadets)
-          .where(eq(cadets.intakeId, collectionIntakeId!)),
+          .where(and(eq(cadets.intakeId, collectionIntakeId!), eq(cadets.isActive, true))),
       ]);
       const expectedCount = cadetCountRow[0]?.count ?? 0;
       summary = {
@@ -277,7 +279,7 @@ async function mapPaymentsWithSignedReceipts(
   
   // Batch sign all receipt URLs
   const receiptPaths = payments.map((p) => p.receiptPath);
-  const receiptUrls = await batchSignedStorageUrls(supabase, receiptPaths);
+  const receiptUrls = await batchSignedStorageUrls(supabase, receiptPaths, "document");
 
   return payments.map((p, index) => ({
     ...p,

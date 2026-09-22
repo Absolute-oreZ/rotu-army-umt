@@ -13,21 +13,15 @@ import {
   takeString,
 } from "@/lib/admin/form-helpers";
 import { calculateAgeAt, calculateBMI, getBMIClassification } from "@/lib/utils";
+import { getMalaysiaDateISO, parseMalaysiaDate } from "@/lib/time/malaysia";
 
 const MIN_HEIGHT_CM = 50;
 const MAX_HEIGHT_CM = 250;
 const MIN_WEIGHT_KG = 20;
 const MAX_WEIGHT_KG = 200;
 
-function getMalaysiaDateISO(): string {
-  const now = new Date();
-  // Malaysia is UTC+8
-  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return malaysiaTime.toISOString().slice(0, 10);
-}
-
 function toDateOnly(value: string): Date {
-  return new Date(`${value}T00:00:00+08:00`);
+  return parseMalaysiaDate(value)!;
 }
 
 function parseMetricValue(

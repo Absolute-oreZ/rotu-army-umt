@@ -106,8 +106,8 @@ export default async function ClaimsPage({
     const receiptPaths = rows.map((r) => r.receiptPath);
     const qrCodePaths = rows.map((r) => r.qrCodePath);
     const [receiptUrls, qrCodeUrls] = await Promise.all([
-      batchSignedStorageUrls(supabase, receiptPaths),
-      batchSignedStorageUrls(supabase, qrCodePaths),
+      batchSignedStorageUrls(supabase, receiptPaths, "document"),
+      batchSignedStorageUrls(supabase, qrCodePaths, "image"),
     ]);
 
     const claimsWithUrls = rows.map((r, index) => ({

@@ -122,7 +122,7 @@ export default async function AccountsPage({
 
     // Batch sign QR code URLs
     const qrCodePaths = accountRows.map((a) => a.qrCodePath);
-    const qrCodeUrls = await batchSignedStorageUrls(supabase, qrCodePaths);
+    const qrCodeUrls = await batchSignedStorageUrls(supabase, qrCodePaths, "image");
 
     return (
       <AccountsPageClient

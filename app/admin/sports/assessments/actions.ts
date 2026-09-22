@@ -22,6 +22,7 @@ import {
 import { evaluatePass, getAssessmentStandards } from "@/lib/assessment/standards";
 import type { AssessmentGender, AssessmentRecordType } from "@/lib/assessment/types";
 import { parseDuration } from "@/lib/utils";
+import { getMalaysiaDateISO, parseMalaysiaDate } from "@/lib/time/malaysia";
 
 const COUNT_MAX = 500;
 const SWIMMING_MAX = 5000;
@@ -30,13 +31,6 @@ const RECORD_MODULE: Record<AssessmentRecordType, AdminModule> = {
   UKA: "uka",
   APFA: "apfa",
 };
-
-function getMalaysiaDateISO(): string {
-  const now = new Date();
-  // Malaysia is UTC+8
-  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return malaysiaTime.toISOString().slice(0, 10);
-}
 
 type ParsedItemResult =
   | { ok: true; value: number | null }
@@ -55,9 +49,7 @@ function parseRecordId(formData: FormData): number | null {
 
 function isValidRecordDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T00:00:00+08:00`); // Malaysia timezone (UTC+8)
-  return !Number.isNaN(date.getTime())
-    && date.toISOString().slice(0, 10) === value;
+  return parseMalaysiaDate(value) !== null;
 }
 
 function parseCadetId(formData: FormData): number | null {

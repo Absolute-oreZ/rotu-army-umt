@@ -12,6 +12,8 @@ import { Stepper } from "@/components/ui/stepper";
 import { createCampaign } from "@/app/admin/multimedia/newsletters/actions";
 import { locales } from "@/lib/i18n/config";
 import { NewsletterRichEditor } from "@/components/admin/multimedia/newsletters/newsletter-rich-editor";
+import { formatMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
+import { parseMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 
 type Variant = { subject: string; contentHtml: string };
 type Props = { trigger: ReactNode; onCreated?: () => void };
@@ -61,7 +63,7 @@ export function AddNewsletterDialog({ trigger, onCreated }: Props) {
     if (step === 0 && (!variants.en.subject.trim() || !htmlToText(variants.en.contentHtml))) {
       return "English subject and message are required.";
     }
-    if (step === 1 && status === "SCHEDULED" && (!scheduledAt || new Date(scheduledAt) <= new Date())) {
+    if (step === 1 && status === "SCHEDULED" && (!scheduledAt || !parseMalaysiaDateTimeLocal(scheduledAt) || parseMalaysiaDateTimeLocal(scheduledAt)! <= new Date())) {
       return "Scheduled date must be in the future.";
     }
     return null;
@@ -180,7 +182,7 @@ export function AddNewsletterDialog({ trigger, onCreated }: Props) {
                   </Select>
                 </Field>
                 <Field label="Scheduled at">
-                  <Input type="datetime-local" value={scheduledAt} min={new Date().toISOString().slice(0, 16)} onChange={(event) => setScheduledAt(event.target.value)} disabled={status !== "SCHEDULED"} />
+                  <Input type="datetime-local" value={scheduledAt} min={formatMalaysiaDateTimeLocal(new Date())} onChange={(event) => setScheduledAt(event.target.value)} disabled={status !== "SCHEDULED"} />
                 </Field>
               </div>
               {/* attachments are selected with the composer control in step one */}

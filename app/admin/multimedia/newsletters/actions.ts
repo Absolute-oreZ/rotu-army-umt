@@ -27,6 +27,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { deleteFromStorage, saveUpload } from "@/lib/supabase/storage";
 import { sanitizeHtml } from "@/lib/newsletter/sanitize-html";
+import { parseMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENT_TOTAL_BYTES = 5 * 1024 * 1024;
@@ -180,7 +181,8 @@ export async function createCampaign(formData: FormData) {
   if (status === "SCHEDULED" && !scheduledAt) {
     return { success: false as const, error: "Scheduled date is required for scheduled campaigns." };
   }
-  if (status === "SCHEDULED" && (!scheduledAt || Number.isNaN(new Date(scheduledAt).getTime()) || new Date(scheduledAt) <= new Date())) return { success: false as const, error: "Scheduled date must be in the future." };
+  const scheduledDate = scheduledAt ? parseMalaysiaDateTimeLocal(scheduledAt) : null;
+  if (status === "SCHEDULED" && (!scheduledDate || scheduledDate <= new Date())) return { success: false as const, error: "Scheduled date must be in the future." };
   if (attachments.some((file) => file.size > MAX_ATTACHMENT_BYTES)) return { success: false as const, error: "Each attachment must be 5 MB or smaller." };
   if (attachments.reduce((total, file) => total + file.size, 0) > MAX_ATTACHMENT_TOTAL_BYTES) return { success: false as const, error: "Attachments must be 5 MB or smaller in total." };
 
@@ -213,7 +215,7 @@ export async function createCampaign(formData: FormData) {
         contentHtml,
         contentText,
         status: status as "DRAFT" | "SENT" | "SCHEDULED" | "SENDING" | "FAILED",
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        scheduledAt: scheduledDate,
       }).returning({ id: newsletterCampaigns.id });
       await tx.insert(newsletterCampaignTranslations).values(variants.filter((variant) => variant.contentHtml && variant.subject).map((variant) => ({ campaignId: created.id, locale: variant.locale as Locale, subject: variant.subject!, previewText: variant.previewText, contentHtml: variant.contentHtml!, contentText: variant.contentText })));
       if (attachmentRows.length) {
@@ -284,7 +286,8 @@ export async function updateCampaign(formData: FormData) {
   if (!subject) return { success: false as const, error: "Subject is required." };
   if (!contentHtml) return { success: false as const, error: "HTML content is required." };
   if (status !== "DRAFT" && status !== "SCHEDULED") return { success: false as const, error: "Invalid campaign status." };
-  if (status === "SCHEDULED" && (!scheduledAt || Number.isNaN(new Date(scheduledAt).getTime()) || new Date(scheduledAt) <= new Date())) return { success: false as const, error: "Scheduled date must be in the future." };
+  const scheduledDate = scheduledAt ? parseMalaysiaDateTimeLocal(scheduledAt) : null;
+  if (status === "SCHEDULED" && (!scheduledDate || scheduledDate <= new Date())) return { success: false as const, error: "Scheduled date must be in the future." };
   if (attachments.some((file) => file.size > MAX_ATTACHMENT_BYTES)) return { success: false as const, error: "Each attachment must be 5 MB or smaller." };
   if (attachments.reduce((total, file) => total + file.size, 0) > MAX_ATTACHMENT_TOTAL_BYTES) return { success: false as const, error: "Attachments must be 5 MB or smaller in total." };
 
@@ -317,7 +320,7 @@ export async function updateCampaign(formData: FormData) {
         contentHtml,
         contentText,
         status: status as "DRAFT" | "SENT" | "SCHEDULED",
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        scheduledAt: scheduledDate,
       }).where(eq(newsletterCampaigns.id, campaignId));
       await tx.delete(newsletterCampaignTranslations).where(eq(newsletterCampaignTranslations.campaignId, campaignId));
       await tx.insert(newsletterCampaignTranslations).values(variants.filter((variant) => variant.contentHtml && variant.subject).map((variant) => ({ campaignId, locale: variant.locale as Locale, subject: variant.subject!, previewText: variant.previewText, contentHtml: variant.contentHtml!, contentText: variant.contentText })));
@@ -416,8 +419,8 @@ export async function scheduleCampaign(campaignId: number, scheduledAt: string) 
     return { success: false as const, error: "Cannot schedule a sent campaign." };
   }
 
-  const scheduledDate = new Date(scheduledAt);
-  if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
+  const scheduledDate = parseMalaysiaDateTimeLocal(scheduledAt);
+  if (!scheduledDate || scheduledDate <= new Date()) {
     return { success: false as const, error: "Scheduled date must be in the future." };
   }
 

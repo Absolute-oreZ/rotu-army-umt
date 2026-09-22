@@ -299,8 +299,7 @@ export async function updateWebappContent(formData: FormData) {
     if (heroImagePath) {
       await deleteFromStorage(supabase, heroImagePath);
     }
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return { success: false as const, error: message };
+    return { success: false as const, error: "Failed to update portfolio." };
   }
 }
 

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/ui/field";
 import {
@@ -324,8 +325,8 @@ function EditMode({
 
   const [formData, setFormData] = useState({
     name: details.name,
-    startDate: new Date(details.startDate).toISOString().slice(0, 16),
-    endDate: new Date(details.endDate).toISOString().slice(0, 16),
+    startDate: formatMalaysiaDateTimeLocal(new Date(details.startDate)),
+    endDate: formatMalaysiaDateTimeLocal(new Date(details.endDate)),
     location: details.location,
     participantCount: details.participantCount ?? "",
     status: details.status,
@@ -536,7 +537,7 @@ function EditMode({
               <Input
                 type="datetime-local"
                 value={formData.startDate}
-                max={new Date().toISOString().slice(0, 16)}
+                max={formatMalaysiaDateTimeLocal(new Date())}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               />
             </Field>
@@ -545,7 +546,7 @@ function EditMode({
                 type="datetime-local"
                 value={formData.endDate}
                 min={formData.startDate || undefined}
-                max={new Date().toISOString().slice(0, 16)}
+                max={formatMalaysiaDateTimeLocal(new Date())}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
               />
               {formData.startDate && formData.endDate && new Date(formData.endDate) < new Date(formData.startDate) && (

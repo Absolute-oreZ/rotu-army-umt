@@ -22,12 +22,7 @@ import {
 } from "@/components/ui/select";
 import { createAttendRecord } from "@/app/admin/welfare/attend/actions";
 import { searchCadets } from "@/app/admin/welfare/attend/search-actions";
-
-function getMalaysiaDateISO(): string {
-  const now = new Date();
-  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return malaysiaTime.toISOString().slice(0, 10);
-}
+import { getMalaysiaDateISO } from "@/lib/time/malaysia";
 
 interface CadetSearchResult {
   id: number;

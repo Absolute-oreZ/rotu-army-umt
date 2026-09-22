@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   parseTableSearchParams,
@@ -70,7 +70,11 @@ export function useTableURL({
   const [optimistic, setOptimistic] = useState<TableState | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
 
-  const current = optimistic ?? baseState;
+  const optimisticActive =
+    optimistic !== null &&
+    pendingKey !== null &&
+    pendingKey !== deriveKey(searchParams);
+  const current = optimisticActive ? optimistic : baseState;
 
   const totalPages = Math.max(1, Math.ceil(totalCount / current.pageSize));
 
@@ -83,10 +87,20 @@ export function useTableURL({
 
   const baseKey = useMemo(() => deriveKey(searchParams), [searchParams]);
 
-  if (pendingKey && baseKey === pendingKey) {
-    setOptimistic(null);
-    setPendingKey(null);
-  }
+  useEffect(() => {
+    if (pendingKey !== null && baseKey === pendingKey) {
+      let cancelled = false;
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setOptimistic(null);
+          setPendingKey(null);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [baseKey, pendingKey]);
 
   const update = useCallback(
     (patch: Partial<TableState>) => {

@@ -6,8 +6,8 @@ import {
   CONTENT_TYPE_BY_EXTENSION,
   MAX_BYTES_BY_KIND,
   describeAllowedKinds,
+  detectFileKind,
   formatMegabytes,
-  isAllowedContentType,
   isAllowedExtension,
   normalizeExtension,
   type UploadKind,
@@ -33,6 +33,46 @@ export interface VerifyUploadInput {
   path: string;
   kinds: readonly UploadKind[];
   maxBytes?: number;
+}
+
+const VERIFY_PREFIX_BYTES = 64 * 1024;
+
+function isCompatibleExtension(path: string, detectedExt: string): boolean {
+  const pathExtension = normalizeExtension(path.slice(path.lastIndexOf(".") + 1));
+  const normalizedDetectedExt = normalizeExtension(detectedExt);
+  if (normalizedDetectedExt === "jpg" && pathExtension === "jpeg") return true;
+  if (normalizedDetectedExt === "jpeg" && pathExtension === "jpg") return true;
+  return pathExtension === normalizedDetectedExt;
+}
+
+async function readVerificationPrefix(response: Response): Promise<Uint8Array> {
+  if (!response.body) return new Uint8Array();
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  try {
+    while (total < VERIFY_PREFIX_BYTES) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+      const remaining = VERIFY_PREFIX_BYTES - total;
+      const chunk = value.byteLength > remaining ? value.slice(0, remaining) : value;
+      chunks.push(chunk);
+      total += chunk.byteLength;
+      if (total >= VERIFY_PREFIX_BYTES) break;
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+
+  const prefix = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    prefix.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return prefix;
 }
 
 function resolveMaxBytes(kinds: readonly UploadKind[], maxBytes?: number): number {
@@ -114,7 +154,8 @@ export async function verifyUpload(
     const { data, error } = await supabase.storage.from(bucket).list(directory, { search: name, limit: 1 });
 
     if (error) {
-      return { success: false, error: `Failed to verify upload: ${error.message}` };
+      console.error("Failed to list uploaded object", error);
+      return { success: false, error: "Failed to verify upload. Please try again." };
     }
 
     const stored = data?.find((entry) => entry.name === name);
@@ -124,8 +165,6 @@ export async function verifyUpload(
     }
 
     const size = typeof stored.metadata?.size === "number" ? stored.metadata.size : null;
-    const contentType = typeof stored.metadata?.mimetype === "string" ? stored.metadata.mimetype : null;
-
     if (size === null) {
       return { success: false, error: "Uploaded file size could not be verified." };
     }
@@ -134,13 +173,32 @@ export async function verifyUpload(
       return { success: false, error: `File must be under ${formatMegabytes(maxBytes)}.` };
     }
 
-    if (!contentType || !isAllowedContentType(contentType, kinds)) {
+    const { data: signed, error: signedError } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 60);
+
+    if (signedError || !signed?.signedUrl) {
+      console.error("Failed to create upload verification URL", signedError);
+      return { success: false, error: "Failed to verify upload. Please try again." };
+    }
+
+    const response = await fetch(signed.signedUrl, {
+      headers: { Range: `bytes=0-${VERIFY_PREFIX_BYTES - 1}` },
+    });
+
+    if (!response.ok) {
+      return { success: false, error: "Failed to verify upload. Please try again." };
+    }
+
+    const detected = detectFileKind(await readVerificationPrefix(response));
+    if (!detected || !kinds.includes(detected.kind) || !isCompatibleExtension(path, detected.ext)) {
       return { success: false, error: describeAllowedKinds(kinds) };
     }
 
-    return { success: true, size, contentType };
+    return { success: true, size, contentType: detected.contentType };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : "Verification failed." };
+    console.error("Upload verification failed", error);
+    return { success: false, error: "Failed to verify upload. Please try again." };
   }
 }
 

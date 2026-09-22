@@ -268,6 +268,12 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `isValidPersonalEmail(email)` — personal email validation (rejects `@ocean.umt.edu.my`).
 - `isValidEduEmail(email)` — validates `@ocean.umt.edu.my` domain.
 
+**`lib/time/malaysia.ts`** — Malaysia timezone helpers:
+- `getMalaysiaDateISO(date?)` — returns the calendar date in `Asia/Kuala_Lumpur` as `YYYY-MM-DD`.
+- `formatMalaysiaDateTimeLocal(date)` — formats a Date for a `datetime-local` input.
+- `parseMalaysiaDateTimeLocal(value)` — parses a Malaysia wall-clock `datetime-local` value.
+- `parseMalaysiaDate(value)` — parses a Malaysia calendar date into a Date.
+
 **`lib/env/schema.ts`** — Env validation schema (no `server-only`, importable by scripts):
 - `collectEnvIssues(env, { production })` — validates required/production keys, URL shapes, bucket-name divergence, secret lengths and uniqueness, `NEXT_PUBLIC_SPORTS_*` thresholds (positive numbers) and `NEXT_PUBLIC_WELFARE_*` lists (at least one value).
 - `REQUIRED_ENV_KEYS`, `PRODUCTION_REQUIRED_ENV_KEYS`, `THRESHOLD_ENV_KEYS`, `LIST_ENV_KEYS`.
@@ -466,7 +472,7 @@ Primary schema domains in `db/schema.ts`:
 - Academic structure:
   - `academic_years` (per intake, year number + calendar year), `sessions` (per academic year, session number), `exams`, `academic_exam_results`.
   - `academic_results` (per session+cadet: GPA, CGPA, result slip path; unique per session+cadet). Saving scores syncs `cadets.cgpa`.
-  - `academic_timetables` (per session+cadet: `occupied_slots` jsonb string array of slot keys like `SUN_0800`, timetable PDF path; unique per session+cadet). Lunch slots (`1300`, `1330`) are never occupied.
+  - `academic_timetables` (per session+cadet: `occupied_slots` jsonb string array of hourly slot keys like `SUN_0800`, timetable PDF path; unique per session+cadet). The Sunday-Thursday schedule runs from 08:00 through 18:00, and the 13:00-14:00 lunch slot (`1300`) is never occupied.
   - Session provisioning: `public.provision_next_sessions()` (pg_cron Oct 1 / Apr 1), an after-insert trigger on `sessions`, the seed script, and `ensureCadetSessionRecords()` all insert initial result/timetable rows for active cadets whose `calendarYear - intakeStartYear + 1 <= completionYear`.
 - Members and cadet data:
   - `members` (with birthdate, age, kor/regiment fields), `cadets` (with physical metrics: height, weight, BMI, CGPA), `study_programs` (with `completion_year` default 3 and `is_supported` flag; `is_active` removed), `officers_and_instructors`.

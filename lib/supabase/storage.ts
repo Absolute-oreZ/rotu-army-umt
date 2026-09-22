@@ -27,6 +27,8 @@ export const SIGNED_URL_TTL_BY_PURPOSE = {
   image: 86400,
 } as const;
 
+export type SignedUrlPurpose = keyof typeof SIGNED_URL_TTL_BY_PURPOSE;
+
 export function bucketFor(visibility: StorageVisibility): string {
   return visibility === "private"
     ? getServerEnv().supabasePrivateStorageRootPath
@@ -115,7 +117,7 @@ export async function deleteManyFromStorage(
 export async function batchSignedStorageUrls(
   supabase: SupabaseClient,
   paths: (string | null | undefined)[],
-  expiresIn = DEFAULT_SIGNED_URL_TTL_SECONDS,
+  purpose: SignedUrlPurpose,
 ): Promise<(string | null)[]> {
   const validPaths = paths.filter((p): p is string => !!p);
   if (validPaths.length === 0) return paths.map(() => null);
@@ -138,7 +140,7 @@ export async function batchSignedStorageUrls(
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
-        .createSignedUrls(bucketPaths, expiresIn);
+        .createSignedUrls(bucketPaths, SIGNED_URL_TTL_BY_PURPOSE[purpose]);
 
       if (error || !data) {
         console.error(`Batch signing failed for bucket ${bucket}:`, error?.message);

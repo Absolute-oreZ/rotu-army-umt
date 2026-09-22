@@ -21,6 +21,7 @@ import {
 import { createAssessmentRecord } from "@/app/admin/sports/assessments/actions";
 import { Field } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
+import { getMalaysiaDateISO } from "@/lib/time/malaysia";
 
 function parseRecordDate(value: string) {
   if (!value) return undefined;
@@ -47,13 +48,6 @@ type DialogIntakeOption = {
   id: number;
   intakeNo: string;
 };
-
-function getMalaysiaDateISO(): string {
-  const now = new Date();
-  // Malaysia is UTC+8
-  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return malaysiaTime.toISOString().slice(0, 10);
-}
 
 export function CreateRecordDialog({
   recordType,

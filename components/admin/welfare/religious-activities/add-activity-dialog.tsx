@@ -24,19 +24,13 @@ import { Stepper } from "@/components/ui/stepper";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
 import { createReligiousActivity } from "@/app/admin/welfare/religious-activities/actions";
 import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { getMalaysiaDateISO } from "@/lib/time/malaysia";
 
 const STEPS = [
   { label: "Details" },
   { label: "Info" },
   { label: "Photos" },
 ];
-
-function getMalaysiaDateISO(): string {
-  const now = new Date();
-  // Malaysia is UTC+8
-  const malaysiaTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return malaysiaTime.toISOString().slice(0, 10);
-}
 
 type AddActivityDialogProps = {
   trigger?: React.ReactNode;

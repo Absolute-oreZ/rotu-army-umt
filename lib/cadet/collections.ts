@@ -39,7 +39,7 @@ export async function getPublishedCollectionBySlug(
   if (!row) return null;
 
   const supabase = createSupabaseAdminClient();
-  const [qrCodeUrl] = await batchSignedStorageUrls(supabase, [row.qrCodePath]);
+  const [qrCodeUrl] = await batchSignedStorageUrls(supabase, [row.qrCodePath], "image");
 
   return {
     ...row,

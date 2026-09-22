@@ -33,6 +33,7 @@ import { Field } from "@/components/ui/field";
 import { Stepper } from "@/components/ui/stepper";
 import { locales } from "@/lib/i18n/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 import { StoryTagSelector } from "@/components/admin/multimedia/stories/story-tag-selector";
 import type { AvailableStoryTag } from "@/app/admin/multimedia/stories/actions";
 
@@ -433,7 +434,7 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
                     <Input
                       type="datetime-local"
                       value={formData.startDate}
-                      max={new Date().toISOString().slice(0, 16)}
+                      max={formatMalaysiaDateTimeLocal(new Date())}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     />
                   </Field>
@@ -442,7 +443,7 @@ export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
                       type="datetime-local"
                       value={formData.endDate}
                       min={formData.startDate || undefined}
-                      max={new Date().toISOString().slice(0, 16)}
+                      max={formatMalaysiaDateTimeLocal(new Date())}
                       onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     />
                     {formData.startDate && formData.endDate && new Date(formData.endDate) < new Date(formData.startDate) && (

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 import { Field } from "@/components/ui/field";
 import {
   Select,
@@ -375,7 +376,7 @@ function EditMode({
               <Input
                 type="datetime-local"
                 value={formData.scheduledAt}
-                min={new Date().toISOString().slice(0, 16)}
+                min={formatMalaysiaDateTimeLocal(new Date())}
                 onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
                 disabled={formData.status !== "SCHEDULED"}
               />

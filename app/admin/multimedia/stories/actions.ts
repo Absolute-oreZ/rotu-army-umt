@@ -29,6 +29,7 @@ import {
 } from "@/lib/admin/form-helpers";
 import { locales } from "@/lib/i18n/config";
 import { slugify } from "@/lib/slugify";
+import { parseMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 
 export type AvailableStoryTag = { id: number; slug: string; name: string };
 
@@ -74,10 +75,10 @@ export type AddStoryData = {
 };
 
 function validateStoryDates(startDate: string, endDate: string) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (Number.isNaN(start.getTime())) return "Start date is invalid.";
-  if (Number.isNaN(end.getTime())) return "End date is invalid.";
+  const start = parseMalaysiaDateTimeLocal(startDate);
+  const end = parseMalaysiaDateTimeLocal(endDate);
+  if (!start) return "Start date is invalid.";
+  if (!end) return "End date is invalid.";
   const now = new Date();
   if (start > now) return "Start date cannot be after now.";
   if (end > now) return "End date cannot be after now.";
@@ -162,8 +163,8 @@ export async function createStory(formData: FormData) {
       .values({
         name,
         slug,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: parseMalaysiaDateTimeLocal(startDate)!,
+        endDate: parseMalaysiaDateTimeLocal(endDate)!,
         location,
         participantCount,
         videoPath: null,
@@ -337,8 +338,7 @@ export async function requestStoryVideoUpload(
     return { success: true, data: ticket };
   } catch (err) {
     console.error("requestStoryVideoUpload failed", err);
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return { success: false, error: message };
+    return { success: false, error: "Failed to prepare video upload. Please try again." };
   }
 }
 
@@ -669,8 +669,8 @@ export async function updateStory(storyId: number, formData: FormData) {
         .set({
           name,
           slug,
-          startDate: new Date(startDate),
-          endDate: new Date(endDate),
+          startDate: parseMalaysiaDateTimeLocal(startDate)!,
+          endDate: parseMalaysiaDateTimeLocal(endDate)!,
           location,
           participantCount,
           status: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
