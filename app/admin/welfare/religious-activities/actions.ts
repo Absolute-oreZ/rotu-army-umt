@@ -12,8 +12,8 @@ import { deleteManyFromStorage, saveImage } from "@/lib/supabase/storage";
 import {
   takeString,
   takeFile,
-  getAllowedImageExtension,
 } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 
 function parseRecordDate(value: string | null): string | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;

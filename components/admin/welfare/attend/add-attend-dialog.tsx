@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -52,6 +53,7 @@ export function AddAttendDialog({
   const [isSearching, setIsSearching] = useState(false);
   const searchTimerRef = useRef<number | null>(null);
   const searchRequestRef = useRef(0);
+  const recordDateValue = new Date(`${recordDate}T00:00:00`);
 
   const formValid = cadetId !== "" && recordDate !== "" && attendType !== "" && source !== "";
 
@@ -191,10 +193,11 @@ export function AddAttendDialog({
           </Field>
 
           <Field label="Date" required>
-            <Input
-              type="date"
-              value={recordDate}
-              onChange={(e) => setRecordDate(e.target.value)}
+            <DatePicker
+              value={recordDate ? recordDateValue : undefined}
+              onChange={(date) => setRecordDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : "")}
+              maxDate={new Date()}
+              placeholder="Select date"
             />
           </Field>
 

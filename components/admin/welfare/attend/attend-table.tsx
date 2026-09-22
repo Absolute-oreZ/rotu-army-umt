@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CopyableValue } from "@/components/admin/data-table/copyable-value";
 import { TableToolbar } from "@/components/admin/data-table/table-toolbar";
@@ -239,7 +240,7 @@ function AttendRecordRowView({
     onCancelEdit();
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleKeyDown(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === "Enter" && formValid && !isPending) {
       event.preventDefault();
       handleSave();
@@ -283,32 +284,17 @@ function AttendRecordRowView({
             />
           </TableCell>
           <TableCell>
-            <select
-              value={attendType}
-              onChange={(e) => setAttendType(e.target.value as "B" | "C")}
-              onKeyDown={handleKeyDown}
-              disabled={isPending}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
+            <Select value={attendType} onValueChange={(value) => setAttendType(value as "B" | "C")}>
+              <SelectTrigger size="sm" disabled={isPending} onKeyDown={handleKeyDown}><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+            </Select>
           </TableCell>
           <TableCell>
             <div className="space-y-1">
-              <select
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isPending}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {sourceOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={source} onValueChange={setSource}>
+                <SelectTrigger size="sm" disabled={isPending} onKeyDown={handleKeyDown}><SelectValue /></SelectTrigger>
+                <SelectContent>{sourceOptions.map((opt) => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
+              </Select>
               {error && <p className="text-[11px] text-destructive">{error}</p>}
             </div>
           </TableCell>

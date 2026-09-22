@@ -23,7 +23,7 @@ import { Field } from "@/components/ui/field";
 import { Stepper } from "@/components/ui/stepper";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
 import { createReligiousActivity } from "@/app/admin/welfare/religious-activities/actions";
-import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 import { getMalaysiaDateISO } from "@/lib/time/malaysia";
 
 const STEPS = [
