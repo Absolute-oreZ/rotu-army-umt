@@ -11,7 +11,8 @@ import { CopyableValue } from "@/components/admin/data-table/copyable-value";
 import { currencyOnly } from "@/lib/admin/form-helpers";
 import { updateCadetMetric } from "@/app/admin/sports/metrics/actions";
 import { formatRank } from "@/components/admin/secretary/cadets/table-config";
-import { cn, formatLabel } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatLabel } from "@/lib/format";
 import { CadetProfileCell } from "@/components/admin/sports/cadet-profile-cell";
 import type { MetricRow } from "./metrics-table";
 

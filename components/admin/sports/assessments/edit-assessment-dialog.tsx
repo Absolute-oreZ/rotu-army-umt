@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { saveApfaAssessment, saveUkaAssessment } from "@/app/admin/sports/assessments/actions";
 import { formatRank } from "@/components/admin/secretary/cadets/table-config";
-import { parseDuration } from "@/lib/utils";
+import { parseDuration } from "@/lib/sports/duration";
 import type { AssessmentStandard } from "@/lib/assessment/types";
 import {
   getAssessmentItems,

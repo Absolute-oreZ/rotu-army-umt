@@ -10,7 +10,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { CopyableValue } from "@/components/admin/data-table/copyable-value";
 import { saveApfaAssessment, saveUkaAssessment } from "@/app/admin/sports/assessments/actions";
 import { formatRank } from "@/components/admin/secretary/cadets/table-config";
-import { cn, formatDuration, parseDuration } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatDuration, parseDuration } from "@/lib/sports/duration";
 import type { AssessmentStandard } from "@/lib/assessment/types";
 import { CadetProfileCell } from "@/components/admin/sports/cadet-profile-cell";
 import {

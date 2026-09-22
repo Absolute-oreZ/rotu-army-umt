@@ -6,13 +6,10 @@ import { db } from "@/db";
 import { cadets, healthRecordMetrics, healthRecords, members } from "@/db/schema";
 import { requireCurrentAdmin, getIntakeScope } from "@/lib/admin/rbac";
 import { canAccessAdminModule } from "@/lib/admin/roles";
-import {
-  assertIntakeOwnership,
-  resolveScopedIntakeId,
-  takeNumber,
-  takeString,
-} from "@/lib/admin/form-helpers";
-import { calculateAgeAt, calculateBMI, getBMIClassification } from "@/lib/utils";
+import { takeNumber, takeString } from "@/lib/admin/form-helpers";
+import { assertIntakeOwnership, resolveScopedIntakeId } from "@/lib/admin/scope";
+import { calculateAgeAt } from "@/lib/time/date";
+import { calculateBMI, getBMIClassification } from "@/lib/health/bmi";
 import { getMalaysiaDateISO, parseMalaysiaDate } from "@/lib/time/malaysia";
 
 const MIN_HEIGHT_CM = 50;

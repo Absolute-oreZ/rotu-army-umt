@@ -13,15 +13,11 @@ import {
 } from "@/db/schema";
 import { getIntakeScope, requireCurrentAdmin } from "@/lib/admin/rbac";
 import { canAccessAdminModule, type AdminModule } from "@/lib/admin/roles";
-import {
-  assertIntakeOwnership,
-  resolveScopedIntakeId,
-  takeNumber,
-  takeString,
-} from "@/lib/admin/form-helpers";
+import { takeNumber, takeString } from "@/lib/admin/form-helpers";
+import { assertIntakeOwnership, resolveScopedIntakeId } from "@/lib/admin/scope";
 import { evaluatePass, getAssessmentStandards } from "@/lib/assessment/standards";
 import type { AssessmentGender, AssessmentRecordType } from "@/lib/assessment/types";
-import { parseDuration } from "@/lib/utils";
+import { parseDuration } from "@/lib/sports/duration";
 import { getMalaysiaDateISO, parseMalaysiaDate } from "@/lib/time/malaysia";
 
 const COUNT_MAX = 500;

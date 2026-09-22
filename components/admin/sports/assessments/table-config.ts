@@ -9,7 +9,7 @@ import { digitsOnly } from "@/lib/admin/form-helpers";
 import type { FilterColumn, TableConfig } from "@/lib/admin/table-search-params";
 import type { AssessmentRecordType } from "@/lib/assessment/types";
 import type { IntakeOption } from "@/lib/admin/table-search-params";
-import { formatDuration } from "@/lib/utils";
+import { formatDuration } from "@/lib/sports/duration";
 
 export type AssessmentItemColumn = {
   key: string;
