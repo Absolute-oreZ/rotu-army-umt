@@ -10,6 +10,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateIntakeStatus } from "@/app/admin/secretary/intakes/actions";
 import type { IntakeRow } from "./intakes-table";
 
@@ -62,7 +64,7 @@ export function ChangeIntakeStatusDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { setShowConfirm(false); setError(null); } onOpenChange(o); }}>
-      <DialogContent className="w-[400px] max-w-[calc(100vw-2rem)]">
+      <DialogContent className="w-100 max-w-[calc(100vw-2rem)]">
         <DialogHeader>
           <DialogTitle>Change Status</DialogTitle>
           <DialogDescription>
@@ -78,25 +80,20 @@ export function ChangeIntakeStatusDialog({
             <span className="text-sm font-medium">{intake.status}</span>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              New Status
-            </label>
-            <select
+          <Field label="New Status" required>
+            <Select
               value={newStatus}
-              onChange={(e) => {
-                setNewStatus(e.target.value);
+              onValueChange={(value) => {
+                setNewStatus(value as typeof newStatus);
                 setShowConfirm(false);
               }}
-              className="h-9 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
             >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((opt) => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
 
           {needsConfirmation && showConfirm && newStatus !== intake.status && (
             <div className="rounded-lg bg-orange-500/10 px-3 py-2 text-xs font-medium text-orange-500">

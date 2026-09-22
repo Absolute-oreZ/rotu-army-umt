@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
-import { calculateAge, isValidPersonalEmail, isValidEduEmail, defaultBirthdate, formatLabel } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { calculateAge, defaultBirthdate } from "@/lib/time/date";
+import { isValidPersonalEmail, isValidEduEmail } from "@/lib/member/validation";
+import { formatLabel } from "@/lib/format";
 import { digitsOnly } from "@/lib/admin/form-helpers";
 import { addCadet } from "@/app/admin/secretary/cadets/actions";
 import {
@@ -368,7 +371,7 @@ export function AddCadetDialog({
                   <Input value={eduEmail} onChange={(e) => setEduEmail(e.target.value)} onBlur={() => touch("eduEmail")} placeholder="edu@ocean.umt.edu.my (optional)" type="email" />
                 </Field>
                 <Field label="Address" required>
-                  <textarea
+                  <Textarea
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Full address"

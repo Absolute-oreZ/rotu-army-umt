@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { addAdminUser } from "@/app/admin/secretary/rank-holders/actions";
 import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { storageUrl } from "@/lib/supabase/storage-public";
 
 const ROLE_LABELS: Record<AdminRole, string> = {
@@ -189,13 +190,13 @@ export function AddAdminDialog({
                     <div className="border-b border-border p-2">
                       <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2">
                         <SearchIcon className="size-3.5 text-muted-foreground" />
-                        <input
+                        <Input
                           ref={memberSearchRef}
                           type="text"
                           value={memberSearch}
                           onChange={(e) => setMemberSearch(e.target.value)}
                           placeholder="Search by name or email..."
-                          className="h-7 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                          className="h-7 w-full border-0 bg-transparent px-0 text-sm shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0"
                         />
                       </div>
                     </div>
@@ -264,13 +265,13 @@ export function AddAdminDialog({
                     <div className="border-b border-border p-2">
                       <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2">
                         <SearchIcon className="size-3.5 text-muted-foreground" />
-                        <input
+                        <Input
                           ref={roleSearchRef}
                           type="text"
                           value={roleSearch}
                           onChange={(e) => setRoleSearch(e.target.value)}
                           placeholder="Search roles..."
-                          className="h-7 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                          className="h-7 w-full border-0 bg-transparent px-0 text-sm shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0"
                         />
                       </div>
                     </div>
