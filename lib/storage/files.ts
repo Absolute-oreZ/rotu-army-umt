@@ -28,6 +28,32 @@ export const CONTENT_TYPES_BY_KIND: Record<UploadKind, readonly string[]> = {
   video: ["video/mp4", "video/quicktime", "video/webm", "video/x-msvideo", "video/avi"],
 };
 
+const ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"] as const;
+export type AllowedImageExtension = (typeof ALLOWED_IMAGE_EXTENSIONS)[number];
+
+const ALLOWED_RECEIPT_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "pdf"] as const;
+export type AllowedReceiptExtension = (typeof ALLOWED_RECEIPT_EXTENSIONS)[number];
+
+export function getFileExtension(file: File): string {
+  const dotIndex = file.name.lastIndexOf(".");
+  if (dotIndex === -1 || dotIndex === file.name.length - 1) return "jpg";
+  return file.name.slice(dotIndex + 1).toLowerCase();
+}
+
+export function getAllowedImageExtension(file: File): AllowedImageExtension | null {
+  const extension = getFileExtension(file);
+  return ALLOWED_IMAGE_EXTENSIONS.includes(extension as AllowedImageExtension)
+    ? (extension as AllowedImageExtension)
+    : null;
+}
+
+export function getAllowedReceiptExtension(file: File): AllowedReceiptExtension | null {
+  const extension = getFileExtension(file);
+  return ALLOWED_RECEIPT_EXTENSIONS.includes(extension as AllowedReceiptExtension)
+    ? (extension as AllowedReceiptExtension)
+    : null;
+}
+
 export const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",

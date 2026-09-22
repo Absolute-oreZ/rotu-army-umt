@@ -36,27 +36,6 @@ export function isUniqueViolation(error: unknown): boolean {
 }
 
 /**
- * Checks if the error is a foreign key violation (PostgreSQL error code 23503).
- */
-export function isForeignKeyViolation(error: unknown): boolean {
-  return getDatabaseErrorCode(error) === "23503";
-}
-
-/**
- * Checks if the error is a check constraint violation (PostgreSQL error code 23514).
- */
-export function isCheckViolation(error: unknown): boolean {
-  return getDatabaseErrorCode(error) === "23514";
-}
-
-/**
- * Checks if the error is a not-null violation (PostgreSQL error code 23502).
- */
-export function isNotNullViolation(error: unknown): boolean {
-  return getDatabaseErrorCode(error) === "23502";
-}
-
-/**
  * User-friendly error messages for common database errors.
  * Never exposes raw SQL or query parameters to the client.
  */

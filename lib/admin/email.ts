@@ -1,5 +1,5 @@
 import "server-only";
-import { escapeHtml } from "../utils";
+import { escapeHtml } from "@/lib/format";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM_EMAIL =
