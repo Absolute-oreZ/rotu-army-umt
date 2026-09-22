@@ -608,7 +608,7 @@ Important modeling notes:
 
 ## Newsletter Reliability (C10)
 
-- SENDING lease with 2-minute TTL and 30-second heartbeat (`lib/newsletter-campaigns.ts`)
+- SENDING lease with 2-minute TTL and 30-second heartbeat (`lib/newsletter/campaigns.ts`)
 - Idempotency keys on `newsletter_campaign_deliveries` (unique index)
 - Resend batch requests carry a request-level `Idempotency-Key` header (`newsletter-batch-<campaignId>-<first-delivery-key>`) so provider-accepted batches survive worker crashes without duplicate sends
 - Cumulative sent/failed counts (not overwritten per cron run); `recipientCount` accumulates across chunked invocations
@@ -694,7 +694,7 @@ Conventions:
 **Admin module structure and shared helpers (must-read before editing admin pages):**
 
 - Admin list/entity pages must be split into small components under `components/admin/<entity>/` — never place a monolithic `client.tsx` under `app/admin/.../`. See `docs/architecture.md` §3.6 for the canonical file layout, responsibility boundaries, and anti-patterns.
-- Before writing inline logic, check `lib/admin/*` and `lib/utils.ts` — the helper you need may already exist (e.g., `digitsOnly`, `takeNumber`, `isValidEduEmail`, `cn`). See `docs/architecture.md` §3.7 for the full catalog.
+- Before writing inline logic, check the domain helper modules under `lib/` and `lib/admin/*` — the helper you need may already exist (e.g., `digitsOnly`, `takeNumber`, `isValidEduEmail`, `cn`). See `docs/architecture.md` §3.7 for the catalog.
 - When adding a new helper to `lib/`, run the `update-helpers-doc` skill to refresh the §3.7 catalog in `docs/architecture.md`.
 
 

@@ -120,6 +120,21 @@ components/admin/<role>/<entity>/
   table-config.ts               # buildXTableConfig() + X_SORT_FIELD_MAP for that entity's table.
 ```
 
+### 3.6.1 Implemented Module Structure
+
+The route entry points and domain components currently follow this layout. The table is a map of ownership, not a requirement to create every listed file for every entity.
+
+| Module | Route entry points | Domain components | Notes |
+| --- | --- | --- | --- |
+| Secretary | `app/admin/secretary/{rank-holders,intakes,cadets}` | `components/admin/secretary/<entity>/` | Cadet forms reuse shared field and file primitives. |
+| Treasurer | `app/admin/treasurer/{accounts,collections,payments,expenses,claims}` | `components/admin/treasurer/<entity>/` | Receipt and QR previews use shared storage-aware components. |
+| Multimedia | `app/admin/multimedia/{portfolio,stories,newsletters}` | `components/admin/multimedia/<entity>/` | Portfolio and story resources have separate forms and tables. |
+| Sports | `app/admin/sports/{metrics,uka,apfa,assessments}` | `components/admin/sports/<entity>/` | Metrics and assessment tables support guarded inline editing. |
+| Welfare | `app/admin/welfare/{attend,accommodations,religious-activities}` | `components/admin/welfare/<entity>/` | Attend uses compact inline editing; other entities use dialogs/sheets. |
+| Academic | `app/admin/academic/{courses,results,timetables}` | `components/admin/academic/<entity>/` plus `shared/` | Shared searchable selects, PDF dialogs, and provisioning UI live under `shared/`. |
+
+ Normal admin forms and table controls use the shared primitives in `components/ui/`: `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, `DatePicker`, `SingleFileField`, `MultiFileField`, or `DocumentFileField`. The only native form controls intentionally retained are hidden file inputs used internally by file-picker components. New forms and controls should use the shared primitives.
+
 **Responsibility boundaries:**
 
 1. **`page.tsx` (Server Component)**
@@ -165,8 +180,9 @@ components/admin/<role>/<entity>/
 **Server actions (`app/admin/<role>/<entity>/actions.ts`)** live next to the page, not in `components/`. They are `"use server"` and return `{ success: true } | { success: false; error: string }` so callers can branch on success/failure.
 
 **Shared form primitives** used across admin modules:
-- `components/admin/cadets/cadet-form-fields.tsx` — exports `Field`, `Input` (custom wrapper with `onChange: (v: string) => void`), `Dropdown`, `FileField`, and constants (`RANK_OPTIONS`, `GENDER_OPTIONS`, `RELIGION_OPTIONS`, `RACE_OPTIONS`, `MIN_AGE`, `MAX_AGE`, `formatLabel`). Despite the path name, this is used by **multiple modules** (cadets, treasurer accounts, intakes) — do not duplicate these primitives.
-- `components/ui/input.tsx` — the native `<input>` wrapper. Its `onChange` signature is the standard `React.ChangeEvent<HTMLInputElement>` (event-based, not string-based). When passing sanitizers like `digitsOnly` to this Input, wrap them: `onChange={(e) => setX(digitsOnly(e.target.value))}`. When passing to the custom `Input` from `cadet-form-fields`, pass directly: `onChange={(v) => setX(digitsOnly(v))}`.
+- `components/ui/field.tsx`, `input.tsx`, `select.tsx`, `textarea.tsx`, `checkbox.tsx`, and `date-picker.tsx` — shared labels and form controls.
+- `components/ui/single-file-field.tsx`, `multi-file-field.tsx`, and `document-file-field.tsx` — shared image, multi-file, and document upload controls.
+- `components/ui/input.tsx` — the shared input wrapper. Its `onChange` signature is the standard `React.ChangeEvent<HTMLInputElement>` (event-based). When passing sanitizers like `digitsOnly`, wrap them: `onChange={(e) => setX(digitsOnly(e.target.value))}`.
 
 **Anti-patterns to avoid:**
 - Do not create `app/admin/<role>/<page>/client.tsx` monoliths.
@@ -174,7 +190,7 @@ components/admin/<role>/<entity>/
 - Do not use `useEffect` to sync edit form state from props — use the key-remount pattern instead.
 - Do not use `useRef` to adjust state during render.
 - Do not silently drop `result.error` from server actions — always propagate via `onError` callback.
-- Do not duplicate `Field`/`Input`/`Dropdown`/`FileField` — reuse from `cadet-form-fields.tsx`.
+- Do not duplicate `Field`, `Input`, `Select`, `Textarea`, `Checkbox`, or file-field primitives — reuse the shared components under `components/ui/`.
 
 ### 3.7 Shared Helper Functions (lib/)
 Helper functions are organized by domain. **Always check here before writing inline logic** — the pattern may already exist. When adding a new helper, also update this section and the registry below (or run the `update-helpers-doc` skill).
@@ -183,9 +199,15 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `takeString(value)` — extracts a trimmed string from `FormDataEntryValue`, or `null` if empty/missing.
 - `takeNumber(value)` — extracts a finite `number` from `FormDataEntryValue`, or `null`.
 - `takeFile(value)` — extracts a non-empty `File` from `FormDataEntryValue`, or `null`.
-- `getFileExtension(file)` — returns the lowercase extension (defaults to `"jpg"`).
 - `digitsOnly(value)` — strips every non-digit character. Use as an `onChange` sanitizer for numeric-only fields (army no, account no, DuitNow ID).
 - `currencyOnly(value)` — keeps digits and at most one decimal point, stripping everything else and dropping leading zeros (e.g. `"007.5"` → `"7.5"`). Use as an `onChange` sanitizer for money/price fields instead of `digitsOnly`, which would strip the decimal and prevent entering cents.
+
+**`lib/admin/scope.ts`** — Intake ownership guards:
+- `resolveScopedIntakeId(formData, intakeScope)` — resolves and validates the effective intake for scoped actions.
+- `assertIntakeOwnership(rowIntakeId, intakeScope)` — rejects cross-intake updates and deletes.
+
+**`lib/storage/files.ts`** — Upload file validation:
+- `getFileExtension(file)`, `getAllowedImageExtension(file)`, and `getAllowedReceiptExtension(file)` — canonical extension allow-lists.
 
 **`lib/admin/table-search-params.ts`** — Server-side table state parsing (see §3.5).
 
@@ -255,18 +277,16 @@ Helper functions are organized by domain. **Always check here before writing inl
 
 **`lib/cadet/accounts.ts`** — Server-only helper: `getCadetAccountByMemberId(memberId)` queries `cadetAccounts` by memberId, returns a `CadetAccountRecord` (with `qrCodeUrl` and ISO dates) or null.
 
-**`lib/utils.ts`** — General-purpose utilities:
+**`lib/utils.ts`** — Shared UI utility:
 - `cn(...inputs)` — Tailwind class merge (clsx + tailwind-merge).
-- `utcDate(year, month, day)` — builds a UTC `Date`.
-- `computeAcademicSchedule(startYear)` — returns the academic year's session/exam date ranges.
-- `formatDate(date, locale)` / `formatDateRange(start, end, locale)` — locale-aware date formatters.
-- `escapeHtml(str)` — HTML-entity escape for server-rendered strings.
-- `calculateBMI(heightM, weightKg)` / `getBMIClassification(bmi)` — BMI math and `BMIClassification` tagger.
-- `calculateAge(birthdate)` — years-from-birthdate calculation.
-- `calculateAgeAt(birthdate, asOf)` — age as of a specific date (used for age-at-record-time health metrics).
-- `parseDuration(value)` / `formatDuration(seconds)` — `mm:ss` ⇄ seconds helpers for assessment time entries (accepts plain seconds input; caps below 2 hours).
-- `isValidPersonalEmail(email)` — personal email validation (rejects `@ocean.umt.edu.my`).
-- `isValidEduEmail(email)` — validates `@ocean.umt.edu.my` domain.
+
+**Domain helper modules**:
+- `lib/time/date.ts` — generic date calculations and localized date display.
+- `lib/academic/schedule.ts` — academic schedule construction.
+- `lib/health/bmi.ts` — BMI calculation and classification.
+- `lib/member/validation.ts` — member email normalization and validation.
+- `lib/sports/duration.ts` — assessment duration parsing and formatting.
+- `lib/format.ts` — HTML escaping and enum-label formatting.
 
 **`lib/time/malaysia.ts`** — Malaysia timezone helpers:
 - `getMalaysiaDateISO(date?)` — returns the calendar date in `Asia/Kuala_Lumpur` as `YYYY-MM-DD`.
@@ -308,8 +328,6 @@ Helper functions are organized by domain. **Always check here before writing inl
 - `saveImage(input)` / `saveDocument(input)` — `saveUpload` restricted to images / PDFs.
 
 **`lib/slugify.ts`** — URL-slug generator.
-
-**`lib/server-utils.ts`** — Server-only utilities.
 
 **`lib/public/content.ts`** — Server-side read models for public pages (published intakes, events, homepage content) with fallback chains.
 
