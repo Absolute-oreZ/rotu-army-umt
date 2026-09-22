@@ -47,6 +47,7 @@ export function PaymentsPageClient({
     (value: string) => {
       const current = new URLSearchParams(window.location.search);
       current.set("collectionId", value);
+      current.delete("page");
       const qs = current.toString();
       router.push(`${window.location.pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
     },
@@ -102,13 +103,19 @@ export function PaymentsPageClient({
           description="Create collections first to start tracking payments."
           icon={<CreditCardIcon className="size-5 text-muted-foreground" />}
         />
+      ) : collectionId === null ? (
+        <Empty
+          title="No collection selected"
+          description="Select a collection above to view cadet payments."
+          icon={<CreditCardIcon className="size-5 text-muted-foreground" />}
+        />
       ) : (
         <PaymentsTable
           payments={payments}
           searchParams={searchParams}
           totalCount={totalCount}
           collections={collections}
-          hasCollection={collectionId !== null}
+          hasCollection={true}
           onViewReceipt={(url) => setReceiptPreview(url)}
         />
       )}

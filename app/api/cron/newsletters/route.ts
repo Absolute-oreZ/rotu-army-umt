@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { getDueNewsletterCampaignIds, getStuckSendingCampaigns, getFailedNewsletterCampaignIds, deliverNewsletterCampaign, retryFailedDeliveries } from "@/lib/newsletter-campaigns";
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  const bufA = Buffer.from(a, "utf8");
-  const bufB = Buffer.from(b, "utf8");
-  return bufA.equals(bufB);
-}
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +13,10 @@ export async function GET(request: Request) {
   }
 
   const expected = `Bearer ${cronSecret}`;
-  if (!timingSafeEqual(authorization, expected)) {
+  const provided = Buffer.from(authorization, "utf8");
+  const target = Buffer.from(expected, "utf8");
+  const mismatch = provided.length !== target.length || !timingSafeEqual(provided, target);
+  if (mismatch) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

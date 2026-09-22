@@ -1,1 +1,0 @@
-ALTER TABLE "health_record_metrics" ALTER COLUMN "height" SET DATA TYPE numeric(5, 2);

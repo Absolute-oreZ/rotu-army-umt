@@ -141,3 +141,20 @@ export function itemPlaceholder(standard: AssessmentItemStandard | undefined): s
 export function sanitizeItemValue(unit: AssessmentItemColumn["unit"], value: string): string {
   return unit === "seconds" ? value.replace(/[^\d:]/g, "") : digitsOnly(value);
 }
+
+export function getInitialAssessmentValues(
+  rowItems: Record<string, { value: number | null; pass: boolean | null }>,
+  columns: AssessmentItemColumn[],
+): Record<string, string> {
+  const initial: Record<string, string> = {};
+  for (const col of columns) {
+    const item = rowItems[col.key];
+    if (item && item.value !== null && item.value !== undefined) {
+      initial[col.key] =
+        col.unit === "seconds" ? formatDuration(item.value) : String(item.value);
+    } else {
+      initial[col.key] = "";
+    }
+  }
+  return initial;
+}

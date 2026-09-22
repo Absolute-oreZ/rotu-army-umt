@@ -36,6 +36,7 @@ import {
   retryFailedCampaign,
 } from "@/app/admin/multimedia/newsletters/actions";
 import { type CampaignRow } from "@/components/admin/multimedia/newsletters/newsletters-table";
+import { sanitizeHtml, sanitizeHtmlForEmail } from "@/lib/newsletter/sanitize-html";
 import { locales } from "@/lib/i18n/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { campaignStatusClass, formatCampaignStatus } from "@/components/admin/multimedia/newsletters/table-config";
@@ -403,18 +404,21 @@ function EditMode({
 }
 
 function buildCampaignEmailHtml(contentHtml: string) {
-  return `<div style="max-width:640px;margin:0 auto;padding:32px 20px;font-family:Arial,sans-serif;color:#0f172a"><div style="border:1px solid #e2e8f0;border-radius:16px;padding:32px;background:#ffffff"><p style="margin:0 0 24px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#64748b">ROTU Army UMT</p><div style="line-height:1.7;color:#334155">${contentHtml}</div></div></div>`;
+  const safe = sanitizeHtmlForEmail(contentHtml);
+  return `<div style="max-width:640px;margin:0 auto;padding:32px 20px;font-family:Arial,sans-serif;color:#0f172a"><div style="border:1px solid #e2e8f0;border-radius:16px;padding:32px;background:#ffffff"><p style="margin:0 0 24px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#64748b">ROTU Army UMT</p><div style="line-height:1.7;color:#334155">${safe}</div></div></div>`;
 }
 
 function htmlToText(html: string) {
+  const safe = sanitizeHtml(html);
   const container = document.createElement("div");
-  container.innerHTML = html;
+  container.innerHTML = safe;
   return container.innerText.trim();
 }
 
 function getEditableHtml(html: string) {
-  const documentRoot = new DOMParser().parseFromString(html, "text/html");
-  return documentRoot.querySelector('div[style*="line-height:1.7"]')?.innerHTML ?? html;
+  const safe = sanitizeHtml(html);
+  const documentRoot = new DOMParser().parseFromString(safe, "text/html");
+  return documentRoot.querySelector('div[style*="line-height:1.7"]')?.innerHTML ?? safe;
 }
 
 function buildCampaignVariants(details: CampaignRow) {

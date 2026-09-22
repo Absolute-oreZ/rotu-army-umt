@@ -1194,8 +1194,8 @@ export const DEFAULT_NEWSLETTER_CAMPAIGNS = [
 ] as const;
 
 export const DEFAULT_TREASURY_ACCOUNTS = [
-  { bankName: "MAYBANK", accountNumber: 1122334455, duitNowId: 60123456789, qrCodePath: "treasury/seed/maybank-qr.png" },
-  { bankName: "CIMB", accountNumber: 2233445566, duitNowId: null, qrCodePath: null },
+  { bankName: "MAYBANK", accountNumberText: "1122334455", duitNowIdText: "60123456789", qrCodePath: "treasury/seed/maybank-qr.png" },
+  { bankName: "CIMB", accountNumberText: "2233445566", duitNowIdText: null, qrCodePath: null },
 ] as const;
 
 export const DEFAULT_COLLECTIONS = [

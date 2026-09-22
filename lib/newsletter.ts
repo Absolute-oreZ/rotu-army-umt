@@ -6,19 +6,13 @@ import { db } from "@/db";
 import { newsletterSubscribers } from "@/db/schema";
 import { escapeHtml } from "./utils";
 
-function sleep(ms: number) {
-  return new Promise((res) => setTimeout(res, ms));
-}
-
-function randomDelay() {
-  const min = 150;
-  const max = 300;
-  return sleep(min + Math.floor(Math.random() * (max - min + 1)));
-}
-
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM_EMAIL =
   process.env.NEXT_PUBLIC_RESEND_FROM_EMAIL ?? "ROTU Army UMT <onboarding@resend.dev>";
+
+function randomDelay() {
+  return new Promise((resolve) => setTimeout(resolve, 150 + Math.floor(Math.random() * 150)));
+}
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -60,7 +54,7 @@ export function createNewsletterTokens() {
 }
 
 export function createSignedUnsubscribeToken(subscriberId: string) {
-  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET;
+  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
   if (!secret) throw new Error("NEWSLETTER_UNSUBSCRIBE_SECRET is not configured");
   const payload = Buffer.from(JSON.stringify({ subscriberId }), "utf8").toString("base64url");
   const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
@@ -68,7 +62,7 @@ export function createSignedUnsubscribeToken(subscriberId: string) {
 }
 
 export function verifySignedUnsubscribeToken(token: string) {
-  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET;
+  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
   if (!secret) return null;
   const [payload, signature] = token.split(".");
   if (!payload || !signature) return null;
@@ -248,32 +242,89 @@ export async function confirmNewsletterSubscription(token: string): Promise<News
   return "pending_confirmation";
 }
 
-export async function confirmNewsletterSubscriptionAction(token: string): Promise<NewsletterConfirmationStatus> {
+export async function unsubscribeNewsletterSubscription(token: string): Promise<NewsletterUnsubscribeStatus> {
   const tokenHash = hashNewsletterToken(token);
-
+  const signedSubscriberId = verifySignedUnsubscribeToken(token);
   const [subscriber] = await db
-    .select({
-      confirmedAt: newsletterSubscribers.confirmedAt,
-      id: newsletterSubscribers.id,
-      status: newsletterSubscribers.status,
-    })
+    .select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt })
     .from(newsletterSubscribers)
-    .where(
-      or(
-        eq(newsletterSubscribers.confirmationTokenHash, tokenHash),
-      ),
-    )
+    .where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : or(eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash)))
     .limit(1);
 
   if (!subscriber) {
-    try {
-      const tokenBuf = Buffer.from(tokenHash, "hex");
-      const fake = crypto.randomBytes(tokenBuf.length);
-      crypto.timingSafeEqual(tokenBuf, fake);
-    } catch {
-      // ignore
-    }
-    await randomDelay();
+    return "invalid";
+  }
+
+  if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
+    await db
+      .update(newsletterSubscribers)
+      .set({ unsubscribeTokenHash: null })
+      .where(eq(newsletterSubscribers.id, subscriber.id));
+    return "already_unsubscribed";
+  }
+
+  return "pending_unsubscribe";
+}
+
+export async function getNewsletterConfirmationStatus(token: string): Promise<{
+  status: NewsletterConfirmationStatus;
+  subscriberId: string | null;
+}> {
+  const tokenHash = hashNewsletterToken(token);
+  const [subscriber] = await db
+    .select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, confirmedAt: newsletterSubscribers.confirmedAt })
+    .from(newsletterSubscribers)
+    .where(eq(newsletterSubscribers.confirmationTokenHash, tokenHash))
+    .limit(1);
+
+  if (!subscriber) {
+    return { status: "invalid", subscriberId: null };
+  }
+
+  if (subscriber.status === "ACTIVE" || subscriber.confirmedAt) {
+    return { status: "already_confirmed", subscriberId: subscriber.id };
+  }
+
+  if (subscriber.status !== "PENDING") {
+    return { status: "invalid", subscriberId: subscriber.id };
+  }
+
+  return { status: "pending_confirmation", subscriberId: subscriber.id };
+}
+
+export async function getNewsletterUnsubscribeStatus(token: string): Promise<{
+  status: NewsletterUnsubscribeStatus;
+  subscriberId: string | null;
+}> {
+  const tokenHash = hashNewsletterToken(token);
+  const signedSubscriberId = verifySignedUnsubscribeToken(token);
+
+  const [subscriber] = await db
+    .select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt })
+    .from(newsletterSubscribers)
+    .where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : or(eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash)))
+    .limit(1);
+
+  if (!subscriber) {
+    return { status: "invalid", subscriberId: null };
+  }
+
+  if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
+    return { status: "already_unsubscribed", subscriberId: subscriber.id };
+  }
+
+  return { status: "pending_unsubscribe", subscriberId: subscriber.id };
+}
+
+export async function confirmNewsletterSubscriptionAction(token: string): Promise<NewsletterConfirmationStatus> {
+  const tokenHash = hashNewsletterToken(token);
+  const [subscriber] = await db
+    .select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, confirmedAt: newsletterSubscribers.confirmedAt })
+    .from(newsletterSubscribers)
+    .where(eq(newsletterSubscribers.confirmationTokenHash, tokenHash))
+    .limit(1);
+
+  if (!subscriber) {
     return "invalid";
   }
 
@@ -282,7 +333,6 @@ export async function confirmNewsletterSubscriptionAction(token: string): Promis
       .update(newsletterSubscribers)
       .set({ confirmationTokenHash: null })
       .where(eq(newsletterSubscribers.id, subscriber.id));
-    await randomDelay();
     return "already_confirmed";
   }
 
@@ -291,7 +341,6 @@ export async function confirmNewsletterSubscriptionAction(token: string): Promis
       .update(newsletterSubscribers)
       .set({ confirmationTokenHash: null })
       .where(eq(newsletterSubscribers.id, subscriber.id));
-    await randomDelay();
     return "invalid";
   }
 
@@ -304,62 +353,30 @@ export async function confirmNewsletterSubscriptionAction(token: string): Promis
     })
     .where(eq(newsletterSubscribers.id, subscriber.id));
 
-  await randomDelay();
   return "confirmed";
 }
 
-export async function unsubscribeNewsletterSubscription(token: string): Promise<NewsletterUnsubscribeStatus> {
-  const tokenHash = hashNewsletterToken(token);
-  const signedSubscriberId = verifySignedUnsubscribeToken(token);
-  const [subscriber] = await db.select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt }).from(newsletterSubscribers).where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : or(eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash))).limit(1);
+export async function confirmNewsletterSubscriptionFormAction(formData: FormData): Promise<void> {
+  const token = formData.get("token") as string | null;
+  if (!token) return;
 
-  if (!subscriber) {
-    try {
-      const tokenBuf = Buffer.from(tokenHash, "hex");
-      const fake = crypto.randomBytes(tokenBuf.length);
-      crypto.timingSafeEqual(tokenBuf, fake);
-    } catch {
-      // ignore
-    }
-    await randomDelay();
-    return "invalid";
-  }
-
-  if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
-    await db
-      .update(newsletterSubscribers)
-      .set({ unsubscribeTokenHash: null })
-      .where(eq(newsletterSubscribers.id, subscriber.id));
-    await randomDelay();
-    return "already_unsubscribed";
-  }
-
-  return "pending_unsubscribe";
+  await confirmNewsletterSubscriptionAction(token);
 }
 
 export async function unsubscribeNewsletterSubscriptionAction(token: string): Promise<NewsletterUnsubscribeStatus> {
   const tokenHash = hashNewsletterToken(token);
   const signedSubscriberId = verifySignedUnsubscribeToken(token);
-  const [subscriber] = await db.select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt }).from(newsletterSubscribers).where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : or(eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash))).limit(1);
+  const [subscriber] = await db
+    .select({ id: newsletterSubscribers.id, status: newsletterSubscribers.status, unsubscribedAt: newsletterSubscribers.unsubscribedAt })
+    .from(newsletterSubscribers)
+    .where(signedSubscriberId ? eq(newsletterSubscribers.id, signedSubscriberId) : eq(newsletterSubscribers.unsubscribeTokenHash, tokenHash))
+    .limit(1);
 
   if (!subscriber) {
-    try {
-      const tokenBuf = Buffer.from(tokenHash, "hex");
-      const fake = crypto.randomBytes(tokenBuf.length);
-      crypto.timingSafeEqual(tokenBuf, fake);
-    } catch {
-      // ignore
-    }
-    await randomDelay();
     return "invalid";
   }
 
   if (subscriber.status === "UNSUBSCRIBED" || subscriber.unsubscribedAt) {
-    await db
-      .update(newsletterSubscribers)
-      .set({ unsubscribeTokenHash: null })
-      .where(eq(newsletterSubscribers.id, subscriber.id));
-    await randomDelay();
     return "already_unsubscribed";
   }
 
@@ -373,4 +390,11 @@ export async function unsubscribeNewsletterSubscriptionAction(token: string): Pr
     .where(eq(newsletterSubscribers.id, subscriber.id));
 
   return "unsubscribed";
+}
+
+export async function unsubscribeNewsletterSubscriptionFormAction(formData: FormData): Promise<void> {
+  const token = formData.get("token") as string | null;
+  if (!token) return;
+
+  await unsubscribeNewsletterSubscriptionAction(token);
 }

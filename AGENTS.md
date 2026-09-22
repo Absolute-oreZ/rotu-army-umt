@@ -39,6 +39,7 @@ Common commands:
 npm run dev
 npm run build
 npm run lint
+npm run typecheck    # tsc --noEmit
 npm run db:generate   # generate Drizzle migrations
 npm run db:migrate    # apply migrations
 npm run db:seed       # seed database; requires ALLOW_SEED=1 in the shell, refuses production and non-local NEXT_PUBLIC_SITE_URL, truncates every table
@@ -597,12 +598,11 @@ Important modeling notes:
 
 ---
 
-## Finance Identifier Migration (account_number → text)
+## Finance Identifiers (text-only)
 
-- Numeric `account_number` and `duitnow_id` columns supplemented with text columns (`account_number_text`, `duitnow_id_text`) in `cadet_accounts` and `treasury_accounts`
-- Migration 0022 backfills text columns from numeric
-- Application code switched to use text columns exclusively
-- After production verification, numeric columns will be dropped
+- `cadet_accounts` and `treasury_accounts` store identifiers as text only: `account_number_text` (NOT NULL) and `duitnow_id_text` (nullable)
+- The numeric `account_number`/`duitnow_id` columns no longer exist; migration history is a single squashed `0000` migration with text-only columns
+- No backfill is needed (no production data); identifiers are never converted through JavaScript `Number()`
 
 ---
 
@@ -610,11 +610,13 @@ Important modeling notes:
 
 - SENDING lease with 2-minute TTL and 30-second heartbeat (`lib/newsletter-campaigns.ts`)
 - Idempotency keys on `newsletter_campaign_deliveries` (unique index)
-- Cumulative sent/failed counts (not overwritten per cron run)
-- Chunked worker: batches of 50 with retries (max 3)
+- Resend batch requests carry a request-level `Idempotency-Key` header (`newsletter-batch-<campaignId>-<first-delivery-key>`) so provider-accepted batches survive worker crashes without duplicate sends
+- Cumulative sent/failed counts (not overwritten per cron run); `recipientCount` accumulates across chunked invocations
+- Chunked worker: batches of 50 with retries (max 3); provider errors are logged server-side and return generic `Newsletter delivery failed.` to clients
+- Campaign HTML is re-sanitized (`sanitizeHtmlForEmail`) immediately before send, protecting against legacy unsanitized rows
 - Attachment verification with Resend batch API
 - Edit blocked for SENT and SENDING campaigns
-- Cron processes scheduled + stuck campaigns
+- Cron processes scheduled + stuck + failed campaigns
 
 ---
 

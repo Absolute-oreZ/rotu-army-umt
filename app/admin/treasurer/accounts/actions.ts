@@ -21,11 +21,9 @@ export type AccountDetails = {
   intakeId: number;
   intakeNo: string;
   bankName: string;
-  accountNumber: number | null;
   accountNumberText: string;
   qrCodePath: string | null;
   qrCodeUrl: string | null;
-  duitNowId: number | null;
   duitNowIdText: string | null;
   treasurerName: string;
   createdAt: string;
@@ -49,10 +47,8 @@ export async function getAccountDetails(accountId: number): Promise<{ data: Acco
       intakeId: treasuryAccounts.intakeId,
       intakeNo: intakes.intakeNo,
       bankName: treasuryAccounts.bankName,
-      accountNumber: treasuryAccounts.accountNumber,
       accountNumberText: treasuryAccounts.accountNumberText,
       qrCodePath: treasuryAccounts.qrCodePath,
-      duitNowId: treasuryAccounts.duitNowId,
       duitNowIdText: treasuryAccounts.duitNowIdText,
       treasurerName: members.name,
       createdAt: treasuryAccounts.createdAt,
@@ -227,10 +223,6 @@ export async function updateTreasuryAccount(formData: FormData) {
     return { error: "Valid DuitNow ID is required." };
   }
 
-  // Store only text columns (numeric columns will be dropped after migration)
-  const accountNumber = null;
-  const duitNowId = null;
-
   const rawQr = formData.get("qrCode");
   const qrFile = rawQr instanceof File && rawQr.size > 0 ? rawQr : null;
   const removeQr = formData.get("removeQrCode") === "true";
@@ -269,9 +261,7 @@ export async function updateTreasuryAccount(formData: FormData) {
   try {
     await db.update(treasuryAccounts).set({
       bankName: bankName as (typeof bankEnum.enumValues)[number],
-      accountNumber,
       accountNumberText,
-      duitNowId,
       duitNowIdText,
       ...(uploadedQrPath !== null
         ? { qrCodePath: uploadedQrPath }

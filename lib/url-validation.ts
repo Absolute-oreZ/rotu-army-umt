@@ -30,9 +30,15 @@ export function validateUrl(
     return { success: false, error: "URL cannot be empty" };
   }
 
-  // Reject javascript: and data: schemes immediately (before URL parsing)
   const lower = trimmed.toLowerCase();
-  if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) {
+
+  // Reject dangerous schemes immediately (before URL parsing)
+  if (
+    lower.startsWith("javascript:") ||
+    lower.startsWith("data:") ||
+    lower.startsWith("vbscript:") ||
+    lower.startsWith("//")
+  ) {
     return { success: false, error: "Dangerous URL scheme not allowed" };
   }
 

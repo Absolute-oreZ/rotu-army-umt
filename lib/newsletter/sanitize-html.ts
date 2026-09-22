@@ -77,18 +77,33 @@ const DANGEROUS_ATTR_PATTERNS = [
   /^expression\s*\(/i, // CSS expression()
 ];
 
+function normalizeUrlValue(value: string): string {
+  return value.toLowerCase().replace(/[\s\u0000-\u001f\u007f]+/g, "");
+}
+
+function isDangerousUrlValue(value: string): boolean {
+  const stripped = normalizeUrlValue(value);
+  return (
+    stripped.includes("javascript:") ||
+    stripped.includes("vbscript:") ||
+    stripped.includes("data:") ||
+    stripped.startsWith("//")
+  );
+}
+
 function isSafeAttribute(name: string, value: string): boolean {
   const lowerName = name.toLowerCase();
-  const lowerValue = value.toLowerCase().trim();
 
   // Block dangerous attribute names
   for (const pattern of DANGEROUS_ATTR_PATTERNS) {
     if (pattern.test(lowerName)) return false;
   }
 
-  // Block dangerous attribute values
+  // Block dangerous attribute values, including whitespace-obfuscated payloads
+  const lowerValue = value.toLowerCase().trim();
+  const stripped = normalizeUrlValue(value);
   for (const pattern of DANGEROUS_ATTR_PATTERNS) {
-    if (pattern.test(lowerValue)) return false;
+    if (pattern.test(lowerValue) || pattern.test(stripped)) return false;
   }
 
   return true;
@@ -99,8 +114,8 @@ function isAllowedScheme(url: string, allowedSchemes: string[]): boolean {
     const parsed = new URL(url);
     return allowedSchemes.some((scheme) => parsed.protocol === scheme);
   } catch {
-    // Relative URLs are allowed
-    return !url.trim().startsWith("javascript:") && !url.trim().startsWith("data:");
+    // Relative URLs are allowed unless they hide a dangerous scheme or are scheme-relative
+    return !isDangerousUrlValue(url);
   }
 }
 

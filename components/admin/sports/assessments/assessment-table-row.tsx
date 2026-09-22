@@ -14,6 +14,7 @@ import { cn, formatDuration, parseDuration } from "@/lib/utils";
 import type { AssessmentStandard } from "@/lib/assessment/types";
 import { CadetProfileCell } from "@/components/admin/sports/cadet-profile-cell";
 import {
+  getInitialAssessmentValues,
   itemPlaceholder,
   sanitizeItemValue,
   type AssessmentItemColumn,
@@ -58,9 +59,6 @@ export function AssessmentTableRow({
   onSaved,
 }: AssessmentTableRowProps) {
   const router = useRouter();
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const itemColumns: AssessmentItemColumn[] =
     recordType === "UKA"
@@ -75,6 +73,14 @@ export function AssessmentTableRow({
           { key: "swimming", label: "Swimming", unit: "metres" },
           { key: "floating", label: "Floating", unit: "seconds" },
         ];
+
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    isEditing ? getInitialAssessmentValues(row.items, itemColumns) : {},
+  );
+  const [error, setError] = useState<string | null>(() =>
+    isEditing ? null : null,
+  );
+  const [isPending, startTransition] = useTransition();
 
   const filledCount = itemColumns.filter((c) => (values[c.key] ?? "").trim() !== "").length;
 

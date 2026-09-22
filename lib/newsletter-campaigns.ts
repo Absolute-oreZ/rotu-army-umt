@@ -4,6 +4,7 @@ import { and, eq, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { newsletterCampaignAttachments, newsletterCampaignDeliveries, newsletterCampaigns, newsletterCampaignTranslations, newsletterSubscribers } from "@/db/schema";
 import { createSignedUnsubscribeToken } from "@/lib/newsletter";
+import { sanitizeHtmlForEmail } from "@/lib/newsletter/sanitize-html";
 import { escapeHtml } from "@/lib/utils";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { signedStorageUrl } from "@/lib/supabase/storage";
@@ -219,7 +220,7 @@ export async function deliverNewsletterCampaign(campaignId: number, senderAdminU
             from: DEFAULT_FROM_EMAIL, 
             to: [delivery.email], 
             subject: variant.subject, 
-            html: addFooter(variant.contentHtml, unsubscribeUrl), 
+            html: addFooter(sanitizeHtmlForEmail(variant.contentHtml), unsubscribeUrl), 
             text: `${variant.contentText ?? variant.contentHtml}\n\nUnsubscribe: ${unsubscribeUrl}`, 
             ...(attachments.length ? { 
               attachments: attachments.map(({ filename, contentType, path }) => ({ filename, content_type: contentType, path: path! })) 
@@ -233,22 +234,23 @@ export async function deliverNewsletterCampaign(campaignId: number, senderAdminU
         
         for (let retry = 0; retry < MAX_RETRIES && !batchSuccess; retry++) {
           try {
-            const response = await fetch(RESEND_BATCH_URL, { 
-              method: "POST", 
-              headers: { 
-                Authorization: `Bearer ${apiKey}`, 
-                "Content-Type": "application/json" 
-              }, 
-              body: JSON.stringify({ emails }) 
+            const response = await fetch(RESEND_BATCH_URL, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "Idempotency-Key": `newsletter-batch-${campaignId}-${batch[0].idempotencyKey}`,
+              },
+              body: JSON.stringify({ emails })
             });
-            
+
             if (!response.ok) {
               const errorText = await response.text();
               throw new Error(`Resend returned ${response.status}: ${errorText}`);
             }
-            
+
             const result = await response.json() as { data?: Array<{ id?: string }> };
-            
+
             // Collect bulk updates instead of individual updates
             const now = new Date();
             for (let deliveryIndex = 0; deliveryIndex < batch.length; deliveryIndex++) {
@@ -309,7 +311,7 @@ export async function deliverNewsletterCampaign(campaignId: number, senderAdminU
       .set({ 
         status: remaining.count === 0 ? "SENT" : "FAILED", 
         sentAt: remaining.count === 0 ? new Date() : null, 
-        recipientCount: sentCount, 
+        recipientCount: campaign.recipientCount + sentCount, 
         scheduledAt: null,
         sendingLeaseId: null,
         sendingLeaseExpiresAt: null,
@@ -324,6 +326,7 @@ export async function deliverNewsletterCampaign(campaignId: number, senderAdminU
       ...(remaining.count === 0 ? {} : { error: "Some deliveries failed. Retry the campaign to send failed recipients." }) 
     };
   } catch (error) {
+    console.error("newsletter campaign delivery failed", campaignId, error);
     await db.update(newsletterCampaigns)
       .set({ 
         status: "FAILED",
@@ -331,7 +334,7 @@ export async function deliverNewsletterCampaign(campaignId: number, senderAdminU
         sendingLeaseExpiresAt: null,
       })
       .where(eq(newsletterCampaigns.id, campaignId));
-    return { success: false, sentCount: 0, failedCount: 0, totalRecipients: 0, error: error instanceof Error ? error.message : "Newsletter delivery failed." };
+    return { success: false, sentCount: 0, failedCount: 0, totalRecipients: 0, error: "Newsletter delivery failed." };
   }
 }
 
@@ -451,7 +454,7 @@ export async function retryFailedDeliveries(campaignId: number, senderAdminUserI
             from: DEFAULT_FROM_EMAIL, 
             to: [delivery.email], 
             subject: variant.subject, 
-            html: addFooter(variant.contentHtml, unsubscribeUrl), 
+            html: addFooter(sanitizeHtmlForEmail(variant.contentHtml), unsubscribeUrl), 
             text: `${variant.contentText ?? variant.contentHtml}\n\nUnsubscribe: ${unsubscribeUrl}`, 
             ...(attachments.length ? { 
               attachments: attachments.map(({ filename, contentType, path }) => ({ filename, content_type: contentType, path: path! })) 
@@ -462,25 +465,26 @@ export async function retryFailedDeliveries(campaignId: number, senderAdminUserI
         
         let batchSuccess = false;
         let lastError: Error | null = null;
-        
+
         for (let retry = 0; retry < MAX_RETRIES && !batchSuccess; retry++) {
           try {
-            const response = await fetch(RESEND_BATCH_URL, { 
-              method: "POST", 
-              headers: { 
-                Authorization: `Bearer ${apiKey}`, 
-                "Content-Type": "application/json" 
-              }, 
-              body: JSON.stringify({ emails }) 
+            const response = await fetch(RESEND_BATCH_URL, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "Idempotency-Key": `newsletter-batch-${campaignId}-${batch[0].idempotencyKey}`,
+              },
+              body: JSON.stringify({ emails })
             });
-            
+
             if (!response.ok) {
               const errorText = await response.text();
               throw new Error(`Resend returned ${response.status}: ${errorText}`);
             }
-            
+
             const result = await response.json() as { data?: Array<{ id?: string }> };
-            
+
             await bulkUpdateDeliveries(batch.map((delivery, deliveryIndex) => ({
               id: delivery.id,
               status: "SENT",
@@ -539,6 +543,7 @@ export async function retryFailedDeliveries(campaignId: number, senderAdminUserI
       ...(remaining.count === 0 ? {} : { error: "Some deliveries failed. Retry the campaign to send failed recipients." }) 
     };
   } catch (error) {
+    console.error("newsletter campaign retry failed", campaignId, error);
     await db.update(newsletterCampaigns)
       .set({ 
         status: "FAILED",
@@ -547,6 +552,6 @@ export async function retryFailedDeliveries(campaignId: number, senderAdminUserI
         retryCount: previousAttempts + 1,
       })
       .where(eq(newsletterCampaigns.id, campaignId));
-    return { success: false, sentCount: 0, failedCount: 0, totalRecipients: 0, error: error instanceof Error ? error.message : "Newsletter delivery failed." };
+    return { success: false, sentCount: 0, failedCount: 0, totalRecipients: 0, error: "Newsletter delivery failed." };
   }
 }

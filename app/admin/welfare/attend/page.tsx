@@ -83,8 +83,8 @@ export default async function AttendPage({
   const orderBy = buildSortOrderBy(state.sortRules, ATTEND_SORT_FIELD_MAP);
   if (orderBy.length === 0) {
     orderBy.push(desc(attendRecords.recordDate));
-    orderBy.push(desc(attendRecords.id));
   }
+  orderBy.push(desc(attendRecords.id));
 
   const [countRow, recordRows] = await Promise.all([
     db

@@ -1,4 +1,4 @@
-import { eq, and, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { rateLimitEntries } from "@/db/schema";
 
@@ -19,8 +19,10 @@ const DEFAULT_CONFIG: RateLimitConfig = {
 };
 
 /**
- * Checks and increments rate limit for an identifier + action.
- * Uses a sliding window with fixed buckets for simplicity.
+ * Atomically checks and increments a rate limit counter for an identifier + action.
+ *
+ * Uses an upsert so that concurrent requests do not bypass maxRequests by reading
+ * the same count before either update is applied.
  */
 export async function checkRateLimit(
   identifier: string,
@@ -32,51 +34,41 @@ export async function checkRateLimit(
   const windowStart = new Date(now.getTime() - windowMs);
   const expiresAt = new Date(now.getTime() + windowMs);
 
-  // Try to find existing entry in current window
-  const [existing] = await db
-    .select()
-    .from(rateLimitEntries)
-    .where(
-      and(
-        eq(rateLimitEntries.identifier, identifier),
-        eq(rateLimitEntries.action, action),
-        sql`${rateLimitEntries.windowStart} >= ${windowStart.toISOString()}`,
-      ),
-    )
-    .limit(1);
+  const [row] = await db
+    .insert(rateLimitEntries)
+    .values({
+      identifier,
+      action,
+      count: 1,
+      windowStart,
+      expiresAt,
+    })
+    .onConflictDoUpdate({
+      target: [rateLimitEntries.identifier, rateLimitEntries.action],
+      set: {
+        count: sql`${rateLimitEntries.count} + 1`,
+        expiresAt,
+      },
+    })
+    .returning({ count: rateLimitEntries.count, windowStart: rateLimitEntries.windowStart });
 
-  if (existing) {
-    const newCount = existing.count + 1;
-    const allowed = newCount <= maxRequests;
-    const remaining = Math.max(0, maxRequests - newCount);
-
-    if (allowed) {
-      await db
-        .update(rateLimitEntries)
-        .set({ count: newCount })
-        .where(eq(rateLimitEntries.id, existing.id));
-    }
-
+  if (!row) {
+    // Should only happen if the unique constraint is changed; fail closed.
     return {
-      allowed,
-      remaining,
-      resetTime: new Date(existing.windowStart.getTime() + windowMs).getTime(),
+      allowed: false,
+      remaining: 0,
+      resetTime: expiresAt.getTime(),
     };
   }
 
-  // Create new entry
-  await db.insert(rateLimitEntries).values({
-    identifier,
-    action,
-    count: 1,
-    windowStart: now,
-    expiresAt,
-  });
+  const count = row.count;
+  const allowed = count <= maxRequests;
+  const remaining = Math.max(0, maxRequests - count);
 
   return {
-    allowed: true,
-    remaining: maxRequests - 1,
-    resetTime: expiresAt.getTime(),
+    allowed,
+    remaining,
+    resetTime: new Date(row.windowStart.getTime() + windowMs).getTime(),
   };
 }
 

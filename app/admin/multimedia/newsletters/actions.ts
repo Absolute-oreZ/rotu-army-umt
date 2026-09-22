@@ -31,21 +31,6 @@ import { sanitizeHtml } from "@/lib/newsletter/sanitize-html";
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENT_TOTAL_BYTES = 5 * 1024 * 1024;
 
-export type CampaignRow = {
-  id: number;
-  subject: string;
-  previewText: string | null;
-  contentHtml: string;
-  contentText: string | null;
-  status: "DRAFT" | "SENT" | "SCHEDULED" | "SENDING" | "FAILED";
-  scheduledAt: string | null;
-  sentAt: string | null;
-  recipientCount: number;
-  sentByAdminUserId: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export async function getNewsletterCampaigns(
   searchParams?: Record<string, string | string[] | undefined>
 ) {
@@ -61,6 +46,7 @@ export async function getNewsletterCampaigns(
 
   const orderBy = buildSortOrderBy(state.sortRules, NEWSLETTERS_SORT_FIELD_MAP);
   orderBy.push(desc(newsletterCampaigns.createdAt));
+  orderBy.push(desc(newsletterCampaigns.id));
 
   const [countRow, rows] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(newsletterCampaigns).where(where),
@@ -69,8 +55,6 @@ export async function getNewsletterCampaigns(
         id: newsletterCampaigns.id,
         subject: newsletterCampaigns.subject,
         previewText: newsletterCampaigns.previewText,
-        contentHtml: newsletterCampaigns.contentHtml,
-        contentText: newsletterCampaigns.contentText,
         status: newsletterCampaigns.status,
         scheduledAt: newsletterCampaigns.scheduledAt,
         sentAt: newsletterCampaigns.sentAt,

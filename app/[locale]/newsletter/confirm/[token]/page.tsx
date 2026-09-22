@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { confirmNewsletterSubscription } from "@/lib/newsletter";
+import { getNewsletterConfirmationStatus, confirmNewsletterSubscriptionFormAction } from "@/lib/newsletter";
 import { NewsletterStatusPage } from "@/components/public/newsletter-status-page";
 
 export async function generateMetadata({
@@ -31,7 +31,9 @@ export default async function NewsletterConfirmationPage({
 
   const dictionary = await getDictionary(locale);
   const newsletter = dictionary.newsletter;
-  const result = await confirmNewsletterSubscription(token);
+
+  const status = await getNewsletterConfirmationStatus(token);
+  const result = status.status;
 
   const contentByStatus = {
     confirmed: {
@@ -60,7 +62,7 @@ export default async function NewsletterConfirmationPage({
 
   return (
     <NewsletterStatusPage
-      actionHref={`/${locale}/newsletter/confirm/${token}`}
+      actionHref={content.showForm ? `/${locale}/newsletter/confirm/${token}` : undefined}
       actionLabel={content.showForm ? "Confirm subscription" : newsletter.backToSiteLabel}
       eyebrow={newsletter.confirmationPageEyebrow}
       imageSrc="/images/subscribe-newsletter.png"
@@ -69,6 +71,8 @@ export default async function NewsletterConfirmationPage({
       statusTitle={content.statusTitle}
       title={newsletter.confirmationPageTitle}
       showForm={content.showForm}
+      formAction={content.showForm ? confirmNewsletterSubscriptionFormAction : undefined}
+      formToken={content.showForm ? token : null}
     />
   );
 }

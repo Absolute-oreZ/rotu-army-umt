@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { unsubscribeNewsletterSubscription } from "@/lib/newsletter";
+import { getNewsletterUnsubscribeStatus, unsubscribeNewsletterSubscriptionFormAction } from "@/lib/newsletter";
 import { NewsletterStatusPage } from "@/components/public/newsletter-status-page";
 
 export async function generateMetadata({
@@ -31,7 +31,9 @@ export default async function NewsletterUnsubscribePage({
 
   const dictionary = await getDictionary(locale);
   const newsletter = dictionary.newsletter;
-  const result = await unsubscribeNewsletterSubscription(token);
+
+  const status = await getNewsletterUnsubscribeStatus(token);
+  const result = status.status;
 
   const contentByStatus = {
     already_unsubscribed: {
@@ -60,7 +62,7 @@ export default async function NewsletterUnsubscribePage({
 
   return (
     <NewsletterStatusPage
-      actionHref={`/${locale}/newsletter/unsubscribe/${token}`}
+      actionHref={content.showForm ? `/${locale}/newsletter/unsubscribe/${token}` : undefined}
       actionLabel={content.showForm ? "Unsubscribe" : newsletter.backToSiteLabel}
       eyebrow={newsletter.unsubscribePageEyebrow}
       imageSrc="/images/unsubscribe-newsletter.png"
@@ -69,6 +71,8 @@ export default async function NewsletterUnsubscribePage({
       statusTitle={content.statusTitle}
       title={newsletter.unsubscribePageTitle}
       showForm={content.showForm}
+      formAction={content.showForm ? unsubscribeNewsletterSubscriptionFormAction : undefined}
+      formToken={content.showForm ? token : null}
     />
   );
 }

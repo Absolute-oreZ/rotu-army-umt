@@ -104,3 +104,18 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] P10: `bulkUpdateDeliveries` set-based SQL with chunking; retry worker uses bulk updates; `FAILED` campaigns allowed into the sending lease; cron processes failed campaigns via `getFailedNewsletterCampaignIds`.
 - [x] Robots: `/cadet/` and `/auth/` disallowed in `app/robots.ts`.
 - [x] Dead code cleanup: `generateThumbnail` stub, numeric finance-identifier locals in actions, unused imports; tsc and eslint pass with zero errors/warnings.
+- [x] Finance identifier migration finalized: numeric `account_number`/`duitnow_id` columns dropped from `cadetAccounts` and `treasuryAccounts` in `db/schema.ts`; migration history squashed into a single `0000` migration containing text-only columns; `backfill-finance-identifiers.ts`/`switch-finance-identifiers.ts` removed (no production data exists, so no backfill is required); seed data uses string identifiers; `db:generate` reports no schema drift.
+- [x] Treasurer Accounts/Collections runtime queries use text columns only; numeric `AccountDetails` fields removed.
+- [x] Treasurer Payments: no implicit initial collection selection — initial entry shows no selection; explicit `collectionId` loads only when accessible; invalid/inaccessible IDs select nothing.
+- [x] Welfare Attend: details sheet removed; inline row editing with Save/Cancel is the only edit path.
+- [x] Sports Assessments: edit state preloads current row values (`0` stays `0`, `null` stays blank) via `getInitialAssessmentValues`.
+- [x] Newsletter HTML safety: sanitizer hardening (whitespace-obfuscated `javascript:`/`data:` payloads and scheme-relative URLs rejected), sanitize-on-read for admin preview/edit, and sanitize-before-send (`sanitizeHtmlForEmail`) on both deliver and retry paths.
+- [x] Newsletter delivery: Resend batch `Idempotency-Key` header (`newsletter-batch-<campaignId>-<first-delivery-key>`) added on both send paths; `recipientCount` accumulates across chunked invocations; raw provider error text replaced with generic `Newsletter delivery failed.` (details logged server-side only).
+- [x] Cron auth: real `crypto.timingSafeEqual` with byte-length comparison in `app/api/cron/newsletters/route.ts`; `NEWSLETTER_UNSUBSCRIBE_SECRET` no longer falls back to `CRON_SECRET`.
+- [x] Newsletter confirm/unsubscribe: GET is read-only status preview; mutation happens only via Server Action form posts.
+- [x] Auth callbacks: admin `not-authorized` and cadet `member-not-found`/`not-a-cadet` rejections now sign out the session before redirecting; Supabase Auth users are never deleted on rejection.
+- [x] Rate limiter: atomic `INSERT ... ON CONFLICT DO UPDATE` with `count+1` in `lib/rate-limit.ts`; unique-violation and fallback paths fail closed.
+- [x] URL validation: scheme-relative URLs (`//evil.example`) rejected by `validateUrl`; relative-path helper cannot produce external redirects.
+- [x] Stable pagination: PK tiebreaker appended unconditionally to Attend, Religious Activities, Academic Courses (cadet + course queries), and newsletter list ordering; all other shared data-table pages verified to already include one.
+- [x] Newsletter list payload: `getNewsletterCampaigns` slimmed to metadata (heavy `contentHtml`/`contentText` only in details/send paths); unused `CampaignRow` type removed from actions.
+- [x] Added canonical `typecheck` script (`tsc --noEmit`) to `package.json`.

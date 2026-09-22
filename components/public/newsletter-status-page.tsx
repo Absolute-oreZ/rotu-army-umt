@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 interface NewsletterStatusPageProps {
-  actionHref: string;
+  actionHref?: string;
   actionLabel: string;
   eyebrow: string;
   imageSrc: string;
@@ -11,6 +11,8 @@ interface NewsletterStatusPageProps {
   statusTitle: string;
   title: string;
   showForm?: boolean;
+  formAction?: (formData: FormData) => void | Promise<void>;
+  formToken?: string | null;
 }
 
 export function NewsletterStatusPage({
@@ -23,6 +25,8 @@ export function NewsletterStatusPage({
   statusTitle,
   title,
   showForm = false,
+  formAction,
+  formToken,
 }: NewsletterStatusPageProps) {
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
@@ -60,17 +64,27 @@ export function NewsletterStatusPage({
 
               <div className="mt-8 flex flex-wrap gap-3">
                 {showForm ? (
-                  <form action={actionHref} method="POST">
-                    <button
-                      type="submit"
+                  formAction && formToken ? (
+                    <form action={formAction}>
+                      <input type="hidden" name="token" value={formToken} />
+                      <button
+                        type="submit"
+                        className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-[0.24em] text-background transition-colors hover:bg-foreground/90"
+                      >
+                        {actionLabel}
+                      </button>
+                    </form>
+                  ) : (
+                    <Link
+                      href={actionHref ?? "#"}
                       className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-[0.24em] text-background transition-colors hover:bg-foreground/90"
                     >
                       {actionLabel}
-                    </button>
-                  </form>
+                    </Link>
+                  )
                 ) : (
                   <Link
-                    href={actionHref}
+                    href={actionHref ?? "#"}
                     className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-xs font-bold uppercase tracking-[0.24em] text-background transition-colors hover:bg-foreground/90"
                   >
                     {actionLabel}

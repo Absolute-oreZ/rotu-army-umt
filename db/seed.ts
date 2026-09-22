@@ -932,11 +932,11 @@ async function seed() {
   for (const account of DEFAULT_TREASURY_ACCOUNTS) {
     const [row] = await sql<[{ id: number }]>`
       insert into treasury_accounts (
-        intake_id, treasurer_id, bank_name, account_number, qr_code_path, duitnow_id
+        intake_id, treasurer_id, bank_name, account_number_text, qr_code_path, duitnow_id_text
       )
       values (
-        ${intakeIds[0]}, ${adminUserRow.id}, ${account.bankName}, ${account.accountNumber},
-        ${account.qrCodePath}, ${account.duitNowId}
+        ${intakeIds[0]}, ${adminUserRow.id}, ${account.bankName}, ${account.accountNumberText},
+        ${account.qrCodePath}, ${account.duitNowIdText}
       )
       returning id
     `;

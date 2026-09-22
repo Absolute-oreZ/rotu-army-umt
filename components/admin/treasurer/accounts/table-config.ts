@@ -10,7 +10,7 @@ export const ACCOUNTS_SORT_FIELD_MAP = {
   intakeNo: intakes.intakeNo,
   treasurerName: members.name,
   bankName: treasuryAccounts.bankName,
-  accountNumber: treasuryAccounts.accountNumber,
+  accountNumber: treasuryAccounts.accountNumberText,
 } as const;
 
 export function formatBank(bank: string) {

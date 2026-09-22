@@ -61,8 +61,8 @@ export default async function ReligiousActivitiesPage({
   const orderBy = buildSortOrderBy(state.sortRules, RELIGIOUS_ACTIVITIES_SORT_FIELD_MAP);
   if (orderBy.length === 0) {
     orderBy.push(desc(religiousActivities.recordDate));
-    orderBy.push(desc(religiousActivities.id));
   }
+  orderBy.push(desc(religiousActivities.id));
 
   const [countRow, rows] = await Promise.all([
     db

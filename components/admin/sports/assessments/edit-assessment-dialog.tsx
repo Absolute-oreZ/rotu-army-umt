@@ -17,7 +17,12 @@ import { saveApfaAssessment, saveUkaAssessment } from "@/app/admin/sports/assess
 import { formatRank } from "@/components/admin/secretary/cadets/table-config";
 import { parseDuration } from "@/lib/utils";
 import type { AssessmentStandard } from "@/lib/assessment/types";
-import { getAssessmentItems, itemPlaceholder, sanitizeItemValue } from "./table-config";
+import {
+  getAssessmentItems,
+  getInitialAssessmentValues,
+  itemPlaceholder,
+  sanitizeItemValue,
+} from "./table-config";
 import type { AssessmentRow } from "./assessments-table";
 
 type StandardsByGender = {
@@ -43,8 +48,12 @@ export function EditAssessmentDialog({
   onOpenChange,
 }: EditAssessmentDialogProps) {
   const itemColumns = getAssessmentItems(recordType);
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    row.assessmentId !== null ? getInitialAssessmentValues(row.items, itemColumns) : {},
+  );
+  const [error, setError] = useState<string | null>(() =>
+    row.assessmentId !== null ? null : null,
+  );
   const [isPending, startTransition] = useTransition();
 
   const filledCount = itemColumns.filter((c) => (values[c.key] ?? "").trim() !== "").length;

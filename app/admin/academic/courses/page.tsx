@@ -106,6 +106,7 @@ export default async function CoursesPage(props: {
   if (cadetOrderBy.length === 0) {
     cadetOrderBy.push(asc(members.name));
   }
+  cadetOrderBy.push(asc(cadets.id));
 
   const cadetOffset = (cadetState.page - 1) * cadetState.pageSize;
 
@@ -173,6 +174,7 @@ export default async function CoursesPage(props: {
   if (coursesOrderBy.length === 0) {
     coursesOrderBy.push(asc(studyPrograms.name));
   }
+  coursesOrderBy.push(asc(studyPrograms.id));
 
   const coursesOffset = (coursesState.page - 1) * coursesState.pageSize;
 

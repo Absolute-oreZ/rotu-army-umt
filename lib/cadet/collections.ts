@@ -21,9 +21,9 @@ export async function getPublishedCollectionBySlug(
       isReceiptRequired: collections.isReceiptRequired,
       status: collections.status,
       bankName: treasuryAccounts.bankName,
-      accountNumber: treasuryAccounts.accountNumber,
+      accountNumber: treasuryAccounts.accountNumberText,
       qrCodePath: treasuryAccounts.qrCodePath,
-      duitNowId: treasuryAccounts.duitNowId,
+      duitNowId: treasuryAccounts.duitNowIdText,
     })
     .from(collections)
     .innerJoin(treasuryAccounts, eq(treasuryAccounts.id, collections.paymentAccountId))

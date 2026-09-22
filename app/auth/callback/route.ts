@@ -138,6 +138,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  await supabase.auth.signOut();
   return NextResponse.redirect(
     new URL("/admin/login?error=not-authorized", requestUrl.origin),
   );

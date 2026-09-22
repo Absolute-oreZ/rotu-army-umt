@@ -10,6 +10,7 @@
     "db:seed": "tsx db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "env:check": "tsx scripts/check-env.ts",
+    "typecheck": "tsc --noEmit",
     "start": "next start",
     "lint": "eslint"
   },

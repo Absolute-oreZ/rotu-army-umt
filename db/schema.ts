@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  bigint,
   boolean,
   check,
   date,
@@ -486,9 +485,7 @@ export const cadetAccounts = pgTable(
       .notNull()
       .references(() => members.id, { onDelete: "cascade" }),
     bankName: bankEnum("bank_name").notNull(),
-    accountNumber: bigint("account_number", { mode: "number" }),
     accountNumberText: text("account_number_text").notNull(),
-    duitNowId: bigint("duitnow_id", { mode: "number" }),
     duitNowIdText: text("duitnow_id_text"),
     qrCodePath: text("qr_code_path"),
     ...timestamps,
@@ -984,10 +981,8 @@ export const treasuryAccounts = pgTable(
       .notNull()
       .references(() => adminUsers.id, { onDelete: "cascade" }),
     bankName: bankEnum("bank_name").notNull(),
-    accountNumber: bigint("account_number", { mode: "number" }),
     accountNumberText: text("account_number_text").notNull(),
     qrCodePath: text("qr_code_path"),
-    duitNowId: bigint("duitnow_id", { mode: "number" }),
     duitNowIdText: text("duitnow_id_text"),
     ...timestamps,
   },

@@ -56,12 +56,14 @@ export async function GET(request: NextRequest) {
     .limit(1);
 
   if (!member) {
+    await supabase.auth.signOut();
     return NextResponse.redirect(
       new URL("/cadet/login?error=member-not-found", requestUrl.origin),
     );
   }
 
   if (member.role !== "CADET") {
+    await supabase.auth.signOut();
     return NextResponse.redirect(
       new URL("/cadet/login?error=not-a-cadet", requestUrl.origin),
     );
@@ -74,6 +76,7 @@ export async function GET(request: NextRequest) {
     .limit(1);
 
   if (!cadet) {
+    await supabase.auth.signOut();
     return NextResponse.redirect(
       new URL("/cadet/login?error=member-not-found", requestUrl.origin),
     );

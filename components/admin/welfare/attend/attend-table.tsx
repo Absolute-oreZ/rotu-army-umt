@@ -1,7 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { CalendarXIcon, EyeIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  CalendarXIcon,
+  CheckIcon,
+  Loader2Icon,
+  PencilIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -11,6 +19,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CopyableValue } from "@/components/admin/data-table/copyable-value";
 import { TableToolbar } from "@/components/admin/data-table/table-toolbar";
@@ -22,6 +31,7 @@ import { isTableStateDefault, type IntakeOption } from "@/lib/admin/table-search
 import { Empty } from "@/components/ui/empty";
 import { CadetProfileCell } from "@/components/admin/sports/cadet-profile-cell";
 import { formatRank } from "@/components/admin/secretary/cadets/table-config";
+import { updateAttendRecord } from "@/app/admin/welfare/attend/actions";
 import { cn } from "@/lib/utils";
 import { buildAttendTableConfig } from "./table-config";
 
@@ -60,8 +70,6 @@ type AttendTableProps = {
   isIntakeScoped: boolean;
   sourceFilterOptions: { value: string; label: string }[];
   intakeFilterOptions: IntakeOption[];
-  onView: (record: AttendRecordRow) => void;
-  onEdit: (record: AttendRecordRow) => void;
   onDelete: (record: AttendRecordRow) => void;
 };
 
@@ -72,10 +80,10 @@ export function AttendTable({
   isIntakeScoped,
   sourceFilterOptions,
   intakeFilterOptions,
-  onView,
-  onEdit,
   onDelete,
 }: AttendTableProps) {
+  const [editingId, setEditingId] = useState<number | null>(null);
+
   const config = useMemo(
     () => buildAttendTableConfig(sourceFilterOptions, intakeFilterOptions),
     [sourceFilterOptions, intakeFilterOptions],
@@ -154,8 +162,10 @@ export function AttendTable({
                 key={record.id}
                 record={record}
                 isIntakeScoped={isIntakeScoped}
-                onView={onView}
-                onEdit={onEdit}
+                sourceOptions={sourceFilterOptions}
+                isEditing={editingId === record.id}
+                onStartEdit={() => setEditingId(record.id)}
+                onCancelEdit={() => setEditingId(null)}
                 onDelete={onDelete}
               />
             ))}
@@ -177,18 +187,72 @@ export function AttendTable({
 function AttendRecordRowView({
   record,
   isIntakeScoped,
-  onView,
-  onEdit,
+  sourceOptions,
+  isEditing,
+  onStartEdit,
+  onCancelEdit,
   onDelete,
 }: {
   record: AttendRecordRow;
   isIntakeScoped: boolean;
-  onView: (record: AttendRecordRow) => void;
-  onEdit: (record: AttendRecordRow) => void;
+  sourceOptions: { value: string; label: string }[];
+  isEditing: boolean;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
   onDelete: (record: AttendRecordRow) => void;
 }) {
+  const router = useRouter();
+  const [recordDate, setRecordDate] = useState(record.recordDate);
+  const [attendType, setAttendType] = useState<"B" | "C">(record.attendType);
+  const [source, setSource] = useState(record.source);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const formValid = recordDate.trim() !== "" && source.trim() !== "";
+
+  function handleSave() {
+    if (!formValid || isPending) return;
+    setError(null);
+
+    const fd = new FormData();
+    fd.set("recordId", String(record.id));
+    fd.set("recordDate", recordDate.trim());
+    fd.set("attendType", attendType);
+    fd.set("source", source.trim());
+
+    startTransition(async () => {
+      const result = await updateAttendRecord(fd);
+      if (result.success) {
+        router.refresh();
+        onCancelEdit();
+      } else {
+        setError(result.error ?? "Failed to save attend record.");
+      }
+    });
+  }
+
+  function handleCancel() {
+    setRecordDate(record.recordDate);
+    setAttendType(record.attendType);
+    setSource(record.source);
+    setError(null);
+    onCancelEdit();
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) {
+    if (event.key === "Enter" && formValid && !isPending) {
+      event.preventDefault();
+      handleSave();
+      return;
+    }
+    if (event.key === "Escape" && !isPending) {
+      event.preventDefault();
+      handleCancel();
+    }
+  }
+
   return (
-    <TableRow>
+    <TableRow className={cn(isEditing && "bg-muted/40")}>
       <TableCell>
         <CadetProfileCell name={record.name} avatarPath={record.avatarPath} />
       </TableCell>
@@ -204,66 +268,139 @@ function AttendRecordRowView({
         </CopyableValue>
       </TableCell>
       {!isIntakeScoped && <TableCell>{record.intakeNo}</TableCell>}
-      <TableCell className="tabular-nums">{formatRecordDate(record.recordDate)}</TableCell>
-      <TableCell>
-        <span
-          className={cn(
-            "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
-            TYPE_BADGE_STYLES[record.attendType],
-          )}
-        >
-          {record.attendType}
-        </span>
-      </TableCell>
-      <TableCell>
-        <CopyableValue value={record.source}>{record.source}</CopyableValue>
-      </TableCell>
-      <TableCell className="pr-5">
-        <div className="flex items-center justify-end gap-1">
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="hover:text-emerald-600"
-                onClick={() => onView(record)}
-                aria-label={`View attend record for ${record.name}`}
+      
+      {isEditing ? (
+        <>
+          <TableCell>
+            <Input
+              type="date"
+              value={recordDate}
+              onChange={(e) => setRecordDate(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isPending}
+              className="h-8 w-36 px-2 text-xs"
+              autoFocus
+            />
+          </TableCell>
+          <TableCell>
+            <select
+              value={attendType}
+              onChange={(e) => setAttendType(e.target.value as "B" | "C")}
+              onKeyDown={handleKeyDown}
+              disabled={isPending}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </TableCell>
+          <TableCell>
+            <div className="space-y-1">
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isPending}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <EyeIcon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">View</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="hover:text-sky-600"
-                onClick={() => onEdit(record)}
-                aria-label={`Edit attend record for ${record.name}`}
-              >
-                <PencilIcon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Edit</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="hover:text-red-600"
-                onClick={() => onDelete(record)}
-                aria-label={`Delete attend record for ${record.name}`}
-              >
-                <Trash2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Delete</TooltipContent>
-          </Tooltip>
-        </div>
-      </TableCell>
+                {sourceOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {error && <p className="text-[11px] text-destructive">{error}</p>}
+            </div>
+          </TableCell>
+          <TableCell className="pr-5">
+            <div className="flex items-center justify-end gap-1">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="hover:text-emerald-600"
+                    onClick={handleSave}
+                    disabled={!formValid || isPending}
+                    aria-label={`Save attend record for ${record.name}`}
+                  >
+                    {isPending ? (
+                      <Loader2Icon className="size-3.5 animate-spin" />
+                    ) : (
+                      <CheckIcon className="size-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Save</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="hover:text-muted-foreground"
+                    onClick={handleCancel}
+                    disabled={isPending}
+                    aria-label={`Cancel editing attend record for ${record.name}`}
+                  >
+                    <XIcon className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Cancel</TooltipContent>
+              </Tooltip>
+            </div>
+          </TableCell>
+        </>
+      ) : (
+        <>
+          <TableCell className="tabular-nums">{formatRecordDate(record.recordDate)}</TableCell>
+          <TableCell>
+            <span
+              className={cn(
+                "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
+                TYPE_BADGE_STYLES[record.attendType],
+              )}
+            >
+              {record.attendType}
+            </span>
+          </TableCell>
+          <TableCell>
+            <CopyableValue value={record.source}>{record.source}</CopyableValue>
+          </TableCell>
+          <TableCell className="pr-5">
+            <div className="flex items-center justify-end gap-1">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="hover:text-sky-600"
+                    onClick={onStartEdit}
+                    aria-label={`Edit attend record for ${record.name}`}
+                  >
+                    <PencilIcon className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Edit</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="hover:text-red-600"
+                    onClick={() => onDelete(record)}
+                    aria-label={`Delete attend record for ${record.name}`}
+                  >
+                    <Trash2Icon className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Delete</TooltipContent>
+              </Tooltip>
+            </div>
+          </TableCell>
+        </>
+      )}
     </TableRow>
   );
 }

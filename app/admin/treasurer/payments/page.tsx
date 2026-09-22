@@ -116,16 +116,13 @@ export default async function PaymentsPage({
     .orderBy(desc(collections.createdAt));
 
   // Determine effective collection and validate intake ownership
-  let effectiveCollectionId = collectionId ?? (intakeCollections.length > 0 ? intakeCollections[0].id : null);
+  let effectiveCollectionId: number | null = null;
   let collectionIntakeId: number | null = null;
 
-  if (effectiveCollectionId !== null) {
-    const selectedCollection = intakeCollections.find((c) => c.id === effectiveCollectionId);
-    if (!selectedCollection) {
-      // Collection not found or not in accessible intakes - fall back to first accessible
-      effectiveCollectionId = intakeCollections.length > 0 ? intakeCollections[0].id : null;
-      collectionIntakeId = effectiveCollectionId ? intakeCollections[0].intakeId : null;
-    } else {
+  if (collectionId !== null) {
+    const selectedCollection = intakeCollections.find((c) => c.id === collectionId);
+    if (selectedCollection) {
+      effectiveCollectionId = selectedCollection.id;
       collectionIntakeId = selectedCollection.intakeId;
     }
   }
