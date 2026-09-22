@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getNewsletterUnsubscribeStatus, unsubscribeNewsletterSubscriptionFormAction } from "@/lib/newsletter";
+import { getNewsletterUnsubscribeStatus, unsubscribeNewsletterSubscriptionFormAction } from "@/lib/newsletter/core";
 import { NewsletterStatusPage } from "@/components/public/newsletter-status-page";
 
 export async function generateMetadata({

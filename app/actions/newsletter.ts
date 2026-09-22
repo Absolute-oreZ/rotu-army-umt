@@ -10,7 +10,7 @@ import {
   isValidNewsletterEmail,
   normalizeNewsletterEmail,
   sendNewsletterConfirmationEmail,
-} from "@/lib/newsletter";
+} from "@/lib/newsletter/core";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { headers } from "next/headers";

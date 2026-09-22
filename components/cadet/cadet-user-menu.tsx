@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/seperator";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { signOutCadet } from "@/app/cadet/actions";
 import type { CurrentCadet } from "@/lib/auth/cadet";

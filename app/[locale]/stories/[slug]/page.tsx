@@ -7,7 +7,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getPublishedStoryDetail, getSimilarStories } from "@/lib/public/content";
 import { StoryPhotoCarousel } from "@/components/public/story-photo-carousel";
 import { VideoPreview } from "@/components/public/video-preview";
-import { formatDateRange } from "@/lib/utils";
+import { formatDateRange } from "@/lib/time/date";
 import { TagLink } from "@/components/public/tag-link";
 import { SimilarStories } from "@/components/public/similar-stories";
 import { MetaRow } from "@/components/public/story-meta-row";

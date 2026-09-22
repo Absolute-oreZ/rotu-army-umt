@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { CurrentCadet } from "@/lib/auth/cadet";
 import { CadetSidebar } from "@/components/cadet/cadet-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/seperator";
+import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
