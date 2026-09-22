@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, SearchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 export type SearchableSelectOption = {
   value: string;
@@ -95,13 +96,13 @@ export function SearchableSelect({
           <div className="border-b border-border p-2">
             <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2">
               <SearchIcon className="size-3.5 text-muted-foreground" />
-              <input
+              <Input
                 ref={searchRef}
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="h-7 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                className="h-7 w-full border-0 bg-transparent px-0 text-sm shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0"
               />
             </div>
           </div>

@@ -10,6 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { provisionSessionAction } from "@/app/admin/academic/results/actions";
 import { Loader2Icon, SparklesIcon } from "lucide-react";
 
@@ -95,23 +98,14 @@ export function ProvisionSessionDialog({
             )}
 
             {intakes.length > 1 ? (
-              <div className="space-y-1.5">
-                <label htmlFor="provision-intake" className="text-sm font-medium text-foreground">
-                  Intake
-                </label>
-                <select
-                  id="provision-intake"
-                  value={intakeId}
-                  onChange={(e) => setIntakeId(parseInt(e.target.value, 10))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {intakes.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      Intake {i.intakeNo} (Started {i.startYear})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Field label="Intake" required>
+                <Select value={String(intakeId)} onValueChange={(value) => setIntakeId(Number(value))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {intakes.map((i) => <SelectItem key={i.id} value={String(i.id)}>Intake {i.intakeNo} (Started {i.startYear})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
             ) : (
               selectedIntake && (
                 <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
@@ -124,36 +118,16 @@ export function ProvisionSessionDialog({
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label htmlFor="calendar-year" className="text-sm font-medium text-foreground">
-                  Calendar Year
-                </label>
-                <input
-                  id="calendar-year"
-                  type="number"
-                  min={2020}
-                  max={2040}
-                  required
-                  value={calendarYear}
-                  onChange={(e) => setCalendarYear(parseInt(e.target.value, 10) || currentYear)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
+              <Field label="Calendar Year" required>
+                <Input type="number" min={2020} max={2040} value={calendarYear} onChange={(e) => setCalendarYear(parseInt(e.target.value, 10) || currentYear)} required />
+              </Field>
 
-              <div className="space-y-1.5">
-                <label htmlFor="session-number" className="text-sm font-medium text-foreground">
-                  Session Number
-                </label>
-                <select
-                  id="session-number"
-                  value={sessionNumber}
-                  onChange={(e) => setSessionNumber(parseInt(e.target.value, 10) || 1)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value={1}>Session 1 (Oct)</option>
-                  <option value={2}>Session 2 (Apr)</option>
-                </select>
-              </div>
+              <Field label="Session Number" required>
+                <Select value={String(sessionNumber)} onValueChange={(value) => setSessionNumber(Number(value))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="1">Session 1 (Oct)</SelectItem><SelectItem value="2">Session 2 (Apr)</SelectItem></SelectContent>
+                </Select>
+              </Field>
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">

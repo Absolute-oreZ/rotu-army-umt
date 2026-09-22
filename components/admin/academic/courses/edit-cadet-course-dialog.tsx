@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateCadetCourseAction } from "@/app/admin/academic/courses/actions";
 import { Loader2Icon } from "lucide-react";
 
@@ -89,25 +91,18 @@ export function EditCadetCourseDialog({
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label htmlFor="course-select" className="text-sm font-medium text-foreground">
-                Study Program / Course
-              </label>
-              <select
-                id="course-select"
-                value={selectedProgramId}
-                onChange={(e) => setSelectedProgramId(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">— Unassigned —</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name} ({course.completionYear} Years
-                    {!course.isSupported ? " • Unsupported" : ""})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Field label="Study Program / Course">
+              <Select value={selectedProgramId} onValueChange={setSelectedProgramId}>
+                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={String(course.id)}>
+                      {course.name} ({course.completionYear} Years{!course.isSupported ? " • Unsupported" : ""})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
             {selectedCourse && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs space-y-1">

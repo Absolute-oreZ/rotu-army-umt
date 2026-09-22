@@ -10,6 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateCourseAction } from "@/app/admin/academic/courses/actions";
 import { Loader2Icon } from "lucide-react";
 
@@ -80,48 +83,23 @@ export function EditCourseDialog({
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label htmlFor="edit-course-name" className="text-sm font-medium text-foreground">
-                Course Name <span className="text-destructive">*</span>
-              </label>
-              <input
-                id="edit-course-name"
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm uppercase ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
+            <Field label="Course Name" required>
+              <Input value={name} onChange={(e) => setName(e.target.value)} className="uppercase" required />
+            </Field>
 
-            <div className="space-y-1.5">
-              <label htmlFor="edit-course-duration" className="text-sm font-medium text-foreground">
-                Completion Duration (Years) <span className="text-destructive">*</span>
-              </label>
-              <input
-                id="edit-course-duration"
-                type="number"
-                min={1}
-                max={8}
-                required
-                value={completionYear}
-                onChange={(e) => setCompletionYear(parseInt(e.target.value, 10) || 3)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
+            <Field label="Completion Duration (Years)" required>
+              <Input type="number" min={1} max={8} value={completionYear} onChange={(e) => setCompletionYear(parseInt(e.target.value, 10) || 3)} required />
+            </Field>
 
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                id="edit-course-supported"
-                type="checkbox"
-                checked={isSupported}
-                onChange={(e) => setIsSupported(e.target.checked)}
-                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-              />
-              <label htmlFor="edit-course-supported" className="text-sm font-medium text-foreground cursor-pointer">
-                Supported Degree Program
-              </label>
-            </div>
+            <Field label="Supported Status" required>
+              <Select value={String(isSupported)} onValueChange={(value) => setIsSupported(value === "true")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Supported</SelectItem>
+                  <SelectItem value="false">Unsupported</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </div>
 
           <DialogFooter>

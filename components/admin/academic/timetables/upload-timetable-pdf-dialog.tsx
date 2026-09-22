@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { uploadTimetablePdfAction } from "@/app/admin/academic/timetables/actions";
-import { FileUpIcon, Loader2Icon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
+import { Field } from "@/components/ui/field";
+import { DocumentFileField } from "@/components/ui/document-file-field";
 
 type UploadTimetablePdfDialogProps = {
   row: {
@@ -35,29 +37,8 @@ export function UploadTimetablePdfDialog({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!row) return null;
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
-
-    if (selected.type !== "application/pdf" && !selected.name.toLowerCase().endsWith(".pdf")) {
-      setError("Please select a valid PDF file.");
-      setFile(null);
-      return;
-    }
-
-    if (selected.size > 5 * 1024 * 1024) {
-      setError("File size exceeds 5MB limit.");
-      setFile(null);
-      return;
-    }
-
-    setError(null);
-    setFile(selected);
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -107,56 +88,9 @@ export function UploadTimetablePdfDialog({
               </div>
             )}
 
-            <div className="space-y-2">
-              <label
-                htmlFor="timetable-pdf-file"
-                className="text-sm font-medium text-foreground block"
-              >
-                Timetable PDF Document (PDF) <span className="text-destructive">*</span>
-              </label>
-
-              <div className="rounded-lg border-2 border-dashed border-border p-6 text-center hover:border-primary/50 transition-colors">
-                <input
-                  ref={fileInputRef}
-                  id="timetable-pdf-file"
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  required
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    <FileUpIcon className="h-5 w-5" />
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Browse PDF File
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Maximum file size: 5MB (PDF only)
-                  </p>
-                </div>
-              </div>
-
-              {file && (
-                <div className="rounded-md border border-border bg-muted/40 p-2.5 flex items-center justify-between text-xs">
-                  <span className="font-mono text-foreground truncate max-w-[260px]">
-                    {file.name}
-                  </span>
-                  <span className="text-muted-foreground shrink-0">
-                    {(file.size / (1024 * 1024)).toFixed(2)} MB
-                  </span>
-                </div>
-              )}
-            </div>
+            <Field label="Timetable PDF Document (PDF)" required>
+              <DocumentFileField file={file} onChange={(nextFile, nextError) => { setFile(nextFile); setError(nextError ?? null); }} error={error} />
+            </Field>
           </div>
 
           <DialogFooter>
