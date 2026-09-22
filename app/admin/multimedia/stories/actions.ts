@@ -25,8 +25,8 @@ import {
   takeString,
   takeNumber,
   takeFile,
-  getAllowedImageExtension,
 } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 import { locales } from "@/lib/i18n/config";
 import { slugify } from "@/lib/slugify";
 import { parseMalaysiaDateTimeLocal } from "@/lib/time/malaysia";

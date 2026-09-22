@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { SingleFileField } from "@/components/ui/single-file-field";
 import { storageUrl } from "@/lib/supabase/storage-public";
-import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 import { getSeeMoreLinkDetails, updateSeeMoreLink } from "@/app/admin/multimedia/portfolio/actions";
 import { SeeMoreRow } from "./table-config";
 import { STATUS_OPTIONS } from "./table-config";

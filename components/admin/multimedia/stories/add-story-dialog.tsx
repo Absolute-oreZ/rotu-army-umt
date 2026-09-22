@@ -28,11 +28,13 @@ import {
 } from "@/app/admin/multimedia/stories/actions";
 import { MAX_VIDEO_BYTES, formatMegabytes } from "@/lib/storage/files";
 import { slugify } from "@/lib/slugify";
-import { digitsOnly, getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { digitsOnly } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 import { Field } from "@/components/ui/field";
 import { Stepper } from "@/components/ui/stepper";
 import { locales } from "@/lib/i18n/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { readImageDimensions } from "@/lib/client/image";
 import { formatMalaysiaDateTimeLocal } from "@/lib/time/malaysia";
 import { StoryTagSelector } from "@/components/admin/multimedia/stories/story-tag-selector";
 import type { AvailableStoryTag } from "@/app/admin/multimedia/stories/actions";
@@ -41,22 +43,6 @@ type StoryDialogProps = {
   trigger?: React.ReactNode;
   availableTags: AvailableStoryTag[];
 };
-
-function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new window.Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Unable to read image dimensions."));
-    };
-    image.src = url;
-  });
-}
 
 export function StoryDialog({ trigger, availableTags }: StoryDialogProps) {
   const [isPending, startTransition] = useTransition();

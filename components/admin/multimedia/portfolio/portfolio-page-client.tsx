@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { SingleFileField } from "@/components/ui/single-file-field";
-import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 import { storageUrl } from "@/lib/supabase/storage-public";
 import { reorderFAQs, reorderSeeMoreLinks, reorderTestimonials, setFAQStatus, setSeeMoreLinkStatus, setTestimonialStatus, updateWebappContent } from "@/app/admin/multimedia/portfolio/actions";
 import type { RawSearchParams } from "@/lib/admin/table-search-params";

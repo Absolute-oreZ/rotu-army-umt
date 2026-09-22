@@ -20,9 +20,9 @@ import {
   buildNewslettersTableConfig,
   NEWSLETTERS_SORT_FIELD_MAP,
 } from "@/components/admin/multimedia/newsletters/table-config";
-import { deliverNewsletterCampaign } from "@/lib/newsletter-campaigns";
+import { deliverNewsletterCampaign } from "@/lib/newsletter/campaigns";
 import { locales, type Locale } from "@/lib/i18n/config";
-import { createNewsletterTokens, sendNewsletterConfirmationEmail } from "@/lib/newsletter";
+import { createNewsletterTokens, sendNewsletterConfirmationEmail } from "@/lib/newsletter/core";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { deleteFromStorage, saveUpload } from "@/lib/supabase/storage";

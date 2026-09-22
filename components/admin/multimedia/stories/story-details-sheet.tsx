@@ -26,7 +26,7 @@ import {
 import { SingleFileField } from "@/components/ui/single-file-field";
 import { MultiFileField, type MultiFileFieldItem } from "@/components/ui/multi-file-field";
 import { storageUrl } from "@/lib/supabase/storage-public";
-import { getAllowedImageExtension } from "@/lib/admin/form-helpers";
+import { getAllowedImageExtension } from "@/lib/storage/files";
 import {
   getStoryDetails,
   updateStory,
@@ -39,22 +39,7 @@ import { locales } from "@/lib/i18n/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StoryTagSelector } from "@/components/admin/multimedia/stories/story-tag-selector";
 import type { AvailableStoryTag } from "@/app/admin/multimedia/stories/actions";
-
-function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new window.Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Unable to read image dimensions."));
-    };
-    image.src = url;
-  });
-}
+import { readImageDimensions } from "@/lib/client/image";
 
 export function StoryDetailsSheet({
   storyId,
