@@ -4,13 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { getPublicEnv } from "@/lib/env/public";
 import { getServerEnv } from "@/lib/env/server";
-import type { Database } from "@/lib/supabase/database.types";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   const { supabasePublishableKey, supabaseUrl } = getPublicEnv();
 
-  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
+  return createServerClient(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -30,7 +29,7 @@ export async function createSupabaseServerClient() {
 export function createSupabaseAdminClient() {
   const { supabaseSecretKey, supabaseUrl } = getServerEnv();
 
-  return createClient<Database>(supabaseUrl, supabaseSecretKey, {
+  return createClient(supabaseUrl, supabaseSecretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
