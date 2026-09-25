@@ -4,10 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useLayoutEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from "react";
 import {
   themeCookieMaxAge,
@@ -25,6 +24,14 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+const themeListeners = new Set<() => void>();
+
+function emitThemeChange() {
+  for (const listener of themeListeners) {
+    listener();
+  }
+}
+
 function getSystemTheme(): ResolvedTheme {
   if (
     typeof window !== "undefined" &&
@@ -34,17 +41,6 @@ function getSystemTheme(): ResolvedTheme {
   }
 
   return "light";
-}
-
-function resolveTheme(theme: Theme): ResolvedTheme {
-  return theme === "system" ? getSystemTheme() : theme;
-}
-
-function applyTheme(theme: Theme) {
-  const resolvedTheme = resolveTheme(theme);
-
-  document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
-  document.documentElement.style.colorScheme = resolvedTheme;
 }
 
 function getStoredTheme(): Theme {
@@ -71,6 +67,29 @@ function persistTheme(theme: Theme) {
   document.cookie = `${themeStorageKey}=${theme}; Max-Age=${themeCookieMaxAge}; Path=/; SameSite=Lax`;
 }
 
+function applyResolvedTheme(resolvedTheme: ResolvedTheme) {
+  document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
+  document.documentElement.style.colorScheme = resolvedTheme;
+}
+
+function subscribeToStoredTheme(onStoreChange: () => void) {
+  themeListeners.add(onStoreChange);
+
+  return () => {
+    themeListeners.delete(onStoreChange);
+  };
+}
+
+function subscribeToSystemTheme(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  mediaQuery.addEventListener("change", onStoreChange);
+
+  return () => {
+    mediaQuery.removeEventListener("change", onStoreChange);
+  };
+}
+
 export function ThemeProvider({
   children,
   initialTheme = "system",
@@ -78,42 +97,29 @@ export function ThemeProvider({
   children: React.ReactNode;
   initialTheme?: Theme;
 }>) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return initialTheme;
-    return getStoredTheme();
-  });
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
-    resolveTheme(typeof window === "undefined" ? initialTheme : getStoredTheme()),
+  const getServerTheme = useCallback(() => initialTheme, [initialTheme]);
+  const getServerSystemTheme = useCallback(() => "light" as ResolvedTheme, []);
+
+  const theme = useSyncExternalStore(
+    subscribeToStoredTheme,
+    getStoredTheme,
+    getServerTheme,
   );
+  const systemTheme = useSyncExternalStore(
+    subscribeToSystemTheme,
+    getSystemTheme,
+    getServerSystemTheme,
+  );
+  const resolvedTheme: ResolvedTheme = theme === "system" ? systemTheme : theme;
 
   const setTheme = useCallback((nextTheme: Theme) => {
     persistTheme(nextTheme);
-    applyTheme(nextTheme);
-    setThemeState(nextTheme);
-    setResolvedTheme(resolveTheme(nextTheme));
+    emitThemeChange();
   }, []);
 
   useLayoutEffect(() => {
-    persistTheme(theme);
-    applyTheme(theme);
-  }, [theme]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    function handleSystemThemeChange() {
-      if (theme === "system") {
-        applyTheme("system");
-        setResolvedTheme(resolveTheme("system"));
-      }
-    }
-
-    mediaQuery.addEventListener("change", handleSystemThemeChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleSystemThemeChange);
-    };
-  }, [theme]);
+    applyResolvedTheme(resolvedTheme);
+  }, [resolvedTheme]);
 
   const value = useMemo(
     () => ({
@@ -124,9 +130,7 @@ export function ThemeProvider({
     [resolvedTheme, setTheme, theme],
   );
 
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
