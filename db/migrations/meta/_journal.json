@@ -8,6 +8,48 @@
       "when": 1790086741890,
       "tag": "0000_certain_outlaw_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790304171429,
+      "tag": "0001_tired_rockslide",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790314255943,
+      "tag": "0002_tan_lady_ursula",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790314370902,
+      "tag": "0003_pink_mister_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790314489325,
+      "tag": "0004_abnormal_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790319223124,
+      "tag": "0005_giant_reptil",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790346476268,
+      "tag": "0006_premium_bucky",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "best_cadets_intake_id_unique_idx" ON "best_cadets" USING btree ("intake_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "best_cadets_award_year_unique_idx" ON "best_cadets" USING btree ((extract(year from "award_date")::integer));

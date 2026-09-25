@@ -810,6 +810,43 @@ export const eventsToTags = pgTable(
   ],
 );
 
+export const bestCadets = pgTable(
+  "best_cadets",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id").references(() => members.id, { onDelete: "set null" }),
+    displayName: varchar("display_name", { length: 180 }).notNull(),
+    awardDate: date("award_date").notNull(),
+    intakeId: integer("intake_id").references(() => intakes.id, { onDelete: "set null" }),
+    intakeNoSnapshot: varchar("intake_no_snapshot", { length: 60 }),
+    portraitPath: text("portrait_path").notNull(),
+    relatedStoryId: integer("related_story_id").references(() => events.id, { onDelete: "set null" }),
+    status: publicationStatusEnum("status").default("DRAFT").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("best_cadets_award_date_idx").on(table.awardDate),
+    index("best_cadets_status_idx").on(table.status),
+    uniqueIndex("best_cadets_intake_id_unique_idx").on(table.intakeId),
+    uniqueIndex("best_cadets_award_year_unique_idx").on(sql`(extract(year from ${table.awardDate})::integer)`),
+  ],
+);
+
+export const bestCadetTranslations = pgTable(
+  "best_cadet_translations",
+  {
+    id: serial("id").primaryKey(),
+    bestCadetId: integer("best_cadet_id").notNull().references(() => bestCadets.id, { onDelete: "cascade" }),
+    locale: localeEnum("locale").notNull(),
+    summary: text("summary").notNull(),
+    quote: text("quote"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("best_cadet_translations_cadet_locale_idx").on(table.bestCadetId, table.locale),
+  ],
+);
+
 export const eventDisplayPhotos = pgTable(
   "event_display_photos",
   {
@@ -907,45 +944,13 @@ export const seeMoreLinks = pgTable(
   ],
 );
 
-export const testimonials = pgTable(
-  "testimonials",
-  {
-    id: serial("id").primaryKey(),
-    memberId: integer("member_id")
-      .notNull()
-      .references(() => members.id, { onDelete: "cascade" }),
-    status: publicationStatusEnum("status").default("PUBLISHED").notNull(),
-    sortOrder: integer("sort_order").default(0).notNull(),
-    ...timestamps,
-  },
-  (table) => [index("testimonials_sort_order_idx").on(table.sortOrder)],
-);
-
-export const testimonialTranslations = pgTable(
-  "testimonial_translations",
-  {
-    id: serial("id").primaryKey(),
-    testimonialId: integer("testimonial_id")
-      .notNull()
-      .references(() => testimonials.id, { onDelete: "cascade" }),
-    locale: localeEnum("locale").notNull(),
-    content: text("content").notNull(),
-    ...timestamps,
-  },
-  (table) => [
-    uniqueIndex("testimonial_translations_testimonial_locale_idx").on(
-      table.testimonialId,
-      table.locale,
-    ),
-  ],
-);
-
 export const contactReasons = pgTable(
   "contact_reasons",
   {
     id: serial("id").primaryKey(),
     iconKey: varchar("icon_key", { length: 60 }).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
+
     ...timestamps,
   },
 );

@@ -95,44 +95,6 @@ export const DEFAULT_ADMIN = {
   role: "OFFICER",
 } as const;
 
-export const DEFAULT_TESTIMONIAL_ARMY_NOS = [4001, 4002, 4003];
-
-export const DEFAULT_TESTIMONIAL_ENTRIES = [
-  {
-    authorName: "Ahmad Fauzi",
-    authorRank: "SJN Cadet",
-    authorImagePath: "images/testimonials/testimonial-1.jpg",
-    translations: {
-      en: "Joining ROTU was the best decision of my university life. It taught me discipline and leadership like nowhere else.",
-      ms: "Menyertai ROTU adalah keputusan terbaik dalam kehidupan universiti saya. Ia mengajar saya disiplin dan kepimpinan yang tidak dapat diperolehi di tempat lain.",
-      zh: "加入 ROTU 是我大学生活最正确的决定。它教会了我其他地方无法学到的纪律和领导力。",
-      ta: "ROTU-வில் சேர்ந்தது எனது பல்கலைக்கழக வாழ்க்கையின் சிறந்த முடிவாகும். இது எனக்கு வேறு எங்கும் கிடைக்காத ஒழுக்கத்தையும் தலைமைத்துவத்தையும் கற்றுக்கொடுத்தது.",
-    },
-  },
-  {
-    authorName: "Siti Aminah",
-    authorRank: "KPL Cadet",
-    authorImagePath: "images/testimonials/testimonial-2.jpg",
-    translations: {
-      en: "The physical challenges were tough, but the camaraderie and support from my peers made every moment worth it.",
-      ms: "Cabaran fizikal memang sukar, tetapi semangat setiakawan dan sokongan daripada rakan sebaya menjadikan setiap saat berbaloi.",
-      zh: "体能挑战虽然艰辛，但来自同伴的友谊和支持让每一刻都变得非常有意义。",
-      ta: "உடல் ரீதியான சவால்கள் கடினமாக இருந்தன, ஆனால் எனது தோழமையின் ஆதரவு ஒவ்வொரு தருணத்தையும் அர்த்தமுள்ளதாக்கியது.",
-    },
-  },
-  {
-    authorName: "Wei Lun",
-    authorRank: "SJN Cadet",
-    authorImagePath: "images/testimonials/testimonial-3.jpg",
-    translations: {
-      en: "I've grown so much as a person. The training prepares you for the real world, not just military service.",
-      ms: "Saya telah berkembang pesat sebagai seorang insan. Latihan ini menyediakan anda untuk dunia sebenar, bukan sekadar perkhidmatan tentera.",
-      zh: "我在个人成长方面取得了巨大进步。这里的训练不仅是为了军队，更是为了应对现实世界的挑战。",
-      ta: "ஒரு மனிதனாக நான் மிகவும் வளர்ந்திருக்கிறேன். இந்தப் பயிற்சி இராணுவ சேவைக்கு மட்டுமல்ல, நிஜ உலகிற்கு நம்மைத் தயார்படுத்துகிறது.",
-    },
-  },
-] as const;
-
 export const DEFAULT_FAQ_ENTRIES = [
   {
     en: {

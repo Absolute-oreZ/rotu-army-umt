@@ -4,8 +4,6 @@ import { db } from "@/db";
 import {
   webappContents,
   seeMoreLinks,
-  testimonials,
-  testimonialTranslations,
   frequentlyAskedQuestions,
   frequentlyAskedQuestionTranslations,
   members,
@@ -21,6 +19,8 @@ import {
   eventTags,
   eventTagTranslations,
   eventsToTags,
+  bestCadets,
+  bestCadetTranslations,
   contactReasons,
   contactReasonTranslations,
 } from "@/db/schema";
@@ -56,15 +56,18 @@ export type HomePageContent = {
     instructorCount: number;
     officerCount: number;
   };
-  testimonials: PublicTestimonial[];
+  bestCadets: PublicBestCadet[];
 };
 
-export type PublicTestimonial = {
+export type PublicBestCadet = {
   id: number;
-  authorName: string;
-  authorRank: string;
-  authorImagePath: string | null;
-  content: string;
+  displayName: string;
+  awardYear: number;
+  intakeNo: string | null;
+  portraitPath: string;
+  summary: string;
+  quote: string | null;
+  relatedStorySlug: string | null;
 };
 
 export type PublicIntake = {
@@ -216,7 +219,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
     cadetCountRows,
     faqRows,
     linksRows,
-    testimonialRows,
+    bestCadetRows,
   ] = await Promise.all([
     db.select({ heroImagePath: webappContents.heroImagePath }).from(webappContents).limit(1),
     db
@@ -263,21 +266,27 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
       .orderBy(seeMoreLinks.sortOrder),
     db
       .select({
-        id: testimonials.id,
-        authorName: members.displayName,
-        authorRank: members.rank,
-        authorImagePath: members.blueBgPhotoPath,
-        content: testimonialTranslations.content,
-        locale: testimonialTranslations.locale,
+        id: bestCadets.id,
+        displayName: bestCadets.displayName,
+        awardDate: bestCadets.awardDate,
+        intakeNo: bestCadets.intakeNoSnapshot,
+        portraitPath: bestCadets.portraitPath,
+        relatedStorySlug: events.slug,
+        summary: bestCadetTranslations.summary,
+        quote: bestCadetTranslations.quote,
+        locale: bestCadetTranslations.locale,
       })
-      .from(testimonials)
-      .innerJoin(members, eq(testimonials.memberId, members.id))
+      .from(bestCadets)
+      .leftJoin(events, and(eq(events.id, bestCadets.relatedStoryId), eq(events.status, "PUBLISHED")))
       .leftJoin(
-        testimonialTranslations,
-        eq(testimonialTranslations.testimonialId, testimonials.id),
+        bestCadetTranslations,
+        and(
+          eq(bestCadetTranslations.bestCadetId, bestCadets.id),
+          inArray(bestCadetTranslations.locale, [locale, "en"]),
+        ),
       )
-      .where(eq(testimonials.status, "PUBLISHED"))
-      .orderBy(testimonials.sortOrder),
+      .where(eq(bestCadets.status, "PUBLISHED"))
+      .orderBy(desc(bestCadets.awardDate), desc(bestCadets.id)),
   ]);
 
   const resolvedStats = {
@@ -288,28 +297,34 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
     officerCount: Number(officerCountRows[0]?.value ?? 0) || FALLBACK_STATS.officerCount,
   };
 
-  const testimonialMap = new Map<number, PublicTestimonial>();
+  const bestCadetMap = new Map<number, PublicBestCadet>();
 
-  for (const row of testimonialRows) {
-    if (!row.content) continue;
+  for (const row of bestCadetRows) {
+    if (!row.summary || !row.portraitPath) continue;
 
-    const existing = testimonialMap.get(row.id);
+    const existing = bestCadetMap.get(row.id);
 
     if (row.locale === locale) {
-      testimonialMap.set(row.id, {
+      bestCadetMap.set(row.id, {
         id: row.id,
-        authorName: row.authorName,
-        authorRank: row.authorRank,
-        authorImagePath: row.authorImagePath,
-        content: row.content,
+        displayName: row.displayName,
+        awardYear: new Date(`${row.awardDate}T00:00:00Z`).getUTCFullYear(),
+        intakeNo: row.intakeNo,
+        portraitPath: row.portraitPath,
+        summary: row.summary,
+        quote: row.quote,
+        relatedStorySlug: row.relatedStorySlug,
       });
-    } else if (row.locale === "en" && (!existing || existing.content === "")) {
-      testimonialMap.set(row.id, {
+    } else if (row.locale === "en" && !existing) {
+      bestCadetMap.set(row.id, {
         id: row.id,
-        authorName: row.authorName,
-        authorRank: row.authorRank,
-        authorImagePath: row.authorImagePath,
-        content: row.content,
+        displayName: row.displayName,
+        awardYear: new Date(`${row.awardDate}T00:00:00Z`).getUTCFullYear(),
+        intakeNo: row.intakeNo,
+        portraitPath: row.portraitPath,
+        summary: row.summary,
+        quote: row.quote,
+        relatedStorySlug: row.relatedStorySlug,
       });
     }
   }
@@ -319,7 +334,7 @@ export async function getHomePageContent(locale: Locale): Promise<HomePageConten
     heroImagePath: singletonContent[0]?.heroImagePath ?? null,
     seeAlsoLinks: linksRows.length > 0 ? linksRows : FALLBACK_SEE_ALSO_LINKS,
     stats: resolvedStats,
-    testimonials: Array.from(testimonialMap.values()),
+    bestCadets: Array.from(bestCadetMap.values()),
   };
 }
 

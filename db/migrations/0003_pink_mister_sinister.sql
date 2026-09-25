@@ -1,0 +1,1 @@
+ALTER TABLE "best_cadets" ADD COLUMN "public_consent_confirmed_at" timestamp with time zone;

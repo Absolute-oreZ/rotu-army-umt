@@ -33,8 +33,6 @@ import {
   DEFAULT_HERO_IMAGE_PATH,
   DEFAULT_INSTAGRAM_URL,
   DEFAULT_SEE_MORE_LINKS,
-  DEFAULT_TESTIMONIAL_ENTRIES,
-  DEFAULT_TESTIMONIAL_ARMY_NOS,
   DEFAULT_GOOGLE_MAP_LOCATION_URL,
   DEFAULT_OFFICIAL_EMAIL,
   DEFAULT_CONTACT_REASONS,
@@ -142,11 +140,12 @@ const sql = postgres(databaseUrl, {
 async function seed() {
   await announceSeedTarget(databaseUrl);
 
+  // Best Cadet is a historical honours record; do not seed invented recipients or award details.
   await sql`
     TRUNCATE TABLE
       platoons,
-      testimonial_translations,
-      testimonials,
+      best_cadet_translations,
+      best_cadets,
       officers_and_instructors,
       cadets,
       members,
@@ -680,47 +679,6 @@ async function seed() {
         ${oi.yearOfExperience}
       )
     `;
-  }
-
-  for (let i = 0; i < DEFAULT_TESTIMONIAL_ENTRIES.length; i += 1) {
-    const testimonial = DEFAULT_TESTIMONIAL_ENTRIES[i];
-    const armyNo = DEFAULT_TESTIMONIAL_ARMY_NOS[i];
-
-    const [memberRow] = await sql<[{ id: number }]>`
-      select id from members
-      where army_no = ${armyNo}
-    `;
-
-    if (!memberRow) continue;
-
-    const [testimonialRow] = await sql<[{ id: number }]>`
-      insert into testimonials (
-        member_id,
-        status,
-        sort_order
-      )
-      values (
-        ${memberRow.id},
-        'PUBLISHED',
-        ${i + 1}
-      )
-      returning id
-    `;
-
-    for (const locale of ["en", "ms", "zh", "ta"] as const) {
-      await sql`
-        insert into testimonial_translations (
-          testimonial_id,
-          locale,
-          content
-        )
-        values (
-          ${testimonialRow.id},
-          ${locale},
-          ${testimonial.translations[locale]}
-        )
-      `;
-    }
   }
 
   const tagIdMap = new Map<string, number>();
