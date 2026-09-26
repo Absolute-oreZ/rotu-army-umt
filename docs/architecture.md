@@ -575,6 +575,17 @@ Design patterns:
 
 This supports early public page delivery while admin-managed content modules are still in progress.
 
+### 9.1 Public Data and Public AI Boundary
+Publication status — not a stored consent flag — is the public-data boundary. There is no `publicConsent` column, consent table, consent enum, or consent workflow in `db/schema.ts`.
+
+- Public routes read only the public read models in `lib/public/content.ts` (`getHomePageContent`, `getPublishedIntakeList`, `getPublishedIntakeDetail`, `getPublishedStoriesByYear`, `getPublishedStoryDetail`, `getSimilarStories`, `getPublishedStoriesByTag`, `getContactPageContent`).
+- Public projections apply publication status filters (`intakes.status`, `events.status`, `bestCadets.status` all require `PUBLISHED`).
+- Public cadet projections filter `cadets.isActive = true` and `members.role = "CADET"`; inactive cadets never reach public output.
+- Any future public AI / RAG layer must consume the same public read model or another explicit public projection. It must not query `members`, `cadets`, admin tables, or private storage objects.
+- Private cadet fields (army number, emails, phone, address, birthdate, IC), academic results, health metrics, attendance, payments, religious activities, accommodations, and bank details are AI-ineligible.
+- Newsletter subscription consent (double opt-in, unsubscribe) is unrelated to public cadet data and stays in `lib/newsletter/*` and `lib/rate-limit.ts`.
+- Historical migration files under `db/migrations` referencing the dropped `best_cadets.public_consent_confirmed_at` column are retained as migration history and are not a current requirement.
+
 ## 10. Runtime, Build, and Operations
 - Package manager: `npm`.
 - Scripts:

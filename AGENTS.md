@@ -289,6 +289,32 @@ Multimedia role can manage the following via admin CMS:
 
 Use real provided assets when available. The user has logos, colors, information, photos, and other ROTU assets, but do not invent missing assets. Current placeholder images (`default-hero-image.jpg`, `join-the-ranks-step-*.svg`) are real ROTU assets and should be kept as-is.
 
+### Public Cadet Data
+
+Public cadet information is managed and approved offline, face-to-face, by ROTU officers. Once information is intentionally published through the public website, it is considered public application content. The application does not store or evaluate a per-cadet publication-consent flag.
+
+Cadet information may be displayed publicly only when it is intentionally published through an approved public website workflow.
+
+Public AI may only use information already exposed through the public website or explicitly approved public knowledge sources. It must read from the public content projection, never from private tables or private storage.
+
+Private cadet information must never be exposed through public routes or public AI.
+
+Inactive cadets (`isActive = false`) are excluded from public cadet content.
+
+Currently published public fields:
+- Intake detail pages: cadet `displayName`, `displayPhotoPath`, `quote`
+- Best Cadet honours: recipient name, dedicated portrait, award date/year, inferred intake, localized summaries and optional quotes
+- Cadet portal (authenticated): own data only
+
+Never published publicly:
+- Army number, emails, phone, address, birthdate, IC
+- Academic results, health metrics, attendance, payments
+- Religious activities, accommodations, bank details
+
+To remove a cadet from public pages, unpublish or delete the published content (or deactivate the cadet) — the public read models revalidate on the normal publication workflow.
+
+Newsletter subscription consent is a separate concern and remains governed by the newsletter subscription/unsubscribe workflow (double opt-in, one-click unsubscribe in every email).
+
 ---
 
 ## Intake/Application Flow
@@ -627,38 +653,6 @@ Important modeling notes:
 - Respects intake scope for scoped roles (WELFARE, SECRETARY, etc.)
 - Full access for OFFICER, INSTRUCTOR, MULTIMEDIA
 - Debounced client-side search input with results dropdown
-
----
-
-## Cadet Public Data Consent
-
-**Reference**: `docs/consent/CADET_PUBLIC_DATA_CONSENT.md`
-
-### Key Principles
-- All public cadet data exposure requires explicit consent
-- Inactive cadets (`isActive = false`) are NEVER displayed publicly
-- Administrative status changes do NOT affect public consent
-- Newsletter unsubscribe is permanent unless cadet explicitly re-subscribes
-
-### Currently Exposed Data (with consent)
-- Intake detail pages: cadet `displayName`, `displayPhotoPath`, `quote`
-- Best Cadet honours: recipient name, dedicated portrait, award date/year, inferred intake, localized summaries and optional quotes; no separate consent timestamp or checkbox is stored.
-- Cadet portal (authenticated): own data only
-
-### Never Exposed Publicly
-- Army number, emails, phone, address, birthdate, IC
-- Academic results, health metrics, attendance, payments
-- Religious activities, accommodations, bank details
-
-### Consent Collection
-- Intake onboarding: explicit checkbox for name/photo/quote display
-- Best Cadet honours are published through the Multimedia portfolio; no separate consent timestamp or checkbox is required.
-- Newsletter: double opt-in, one-click unsubscribe in every email
-
-### Consent Revocation
-- Cadet requests via contact form/email
-- Admin sets `publicConsent = false` (add field to `cadets` table if needed)
-- Automatic removal from public queries within cache TTL
 
 ---
 

@@ -292,11 +292,12 @@ System data model shall include at minimum:
 2. Database schema shall remain source of truth in Drizzle.
 3. New server mutations shall use Server Actions or route handlers.
 
-### 5.6 Consent and Data Display
-1. System shall document the approved basis for public cadet data display before expanding exposure.
-2. Public cadet data display shall require explicit consent for: display names, photos, quotes.
-3. Inactive cadet data shall not be exposed publicly without explicit consent review.
-4. Administrative status changes shall not implicitly re-enable marketing consent (newsletter unsubscribe remains respected).
+### 5.6 Public Data Publication
+1. Public cadet information shall only be exposed through approved public application content.
+2. Public AI shall only retrieve information that is already available through approved public content or explicitly approved public knowledge sources.
+3. Private cadet information shall not be exposed through public routes or public AI.
+4. Inactive cadets (`isActive = false`) shall not be exposed through public cadet content.
+5. Newsletter consent and unsubscribe handling remain separate requirements.
 
 ## 6. External Interface Requirements
 

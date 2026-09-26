@@ -93,6 +93,7 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Seed script safety guard (Task 1.4).
 - [X] Delete migrated sources from the public bucket after production verification.
 - [X] Set canonical env vars in Vercel (Production and Preview), remove old `SPORTS_*`/`WELFARE_*` names, and run the migration copy once more after deploy.
+- [x] Removed public cadet consent as an application-level requirement: deleted `docs/consent/`, replaced the AGENTS.md consent section with publication-based public-data rules, rewrote SRS §5.6 as Public Data Publication, and documented the public/public-AI boundary in `docs/architecture.md` §9.1. No schema change, no public-query change, historical migrations untouched.
 
 - [ ] Build Officer and Instructor bento dashboard.
 - [ ] Add route-level error boundaries for admin surfaces.
