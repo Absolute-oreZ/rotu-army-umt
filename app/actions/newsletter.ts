@@ -21,26 +21,15 @@ export async function subscribeToNewsletter(formData: FormData) {
   const clientIp = getClientIp(requestHeaders);
 
   // Rate limiting: max 5 requests per IP per 15 minutes
-  const rateLimitResult = await checkRateLimit(clientIp, "newsletter_subscribe", {
-    maxRequests: 5,
-    windowMs: 15 * 60 * 1000,
-  });
+  const rateLimitResult = await checkRateLimit(
+    clientIp,
+    "newsletter_subscribe",
+    {
+      maxRequests: 5,
+      windowMs: 15 * 60 * 1000,
+    },
+  );
 
-  if (!rateLimitResult.allowed) {
-    return { error: "Too many subscription attempts. Please try again later." };
-  }
-
-  // Honeypot check
-  if (typeof formData.get("website") === "string" && String(formData.get("website")).trim()) {
-    return { error: "Unable to subscribe at this time." };
-  }
-
-  // Turnstile verification
-  const turnstileToken = formData.get("cf-turnstile-response");
-  const turnstileResult = await verifyTurnstileToken(typeof turnstileToken === "string" ? turnstileToken : null);
-  if (!turnstileResult.success) {
-    return { error: "Security check failed. Please try again." };
-  }
   const rawEmail = formData.get("email");
   const rawLocale = formData.get("locale");
   const preferredLocale: Locale =
@@ -52,16 +41,39 @@ export async function subscribeToNewsletter(formData: FormData) {
       : "en";
 
   const dictionary = await getDictionary(preferredLocale);
-  const { contactPage: d, newsletter: newsletterCopy } = dictionary;
+  const copy = dictionary.contactPage.newsletter;
 
-  const email = typeof rawEmail === "string" ? normalizeNewsletterEmail(rawEmail) : "";
+  if (!rateLimitResult.allowed) {
+    return { error: copy.errorRateLimited };
+  }
+
+  // Honeypot check
+  if (
+    typeof formData.get("website") === "string" &&
+    String(formData.get("website")).trim()
+  ) {
+    return { error: copy.errorUnavailable };
+  }
+
+  // Turnstile verification
+  const turnstileToken = formData.get("cf-turnstile-response");
+  const turnstileResult = await verifyTurnstileToken(
+    typeof turnstileToken === "string" ? turnstileToken : null,
+  );
+  if (!turnstileResult.success) {
+    return { error: copy.errorSecurityFailed };
+  }
+
+  const newsletterCopy = dictionary.newsletter;
+  const email =
+    typeof rawEmail === "string" ? normalizeNewsletterEmail(rawEmail) : "";
 
   if (!email) {
-    return { error: d.newsletterRequiredError };
+    return { error: copy.errorRequired };
   }
 
   if (!isValidNewsletterEmail(email)) {
-    return { error: d.newsletterInvalidEmailError };
+    return { error: copy.errorInvalidEmail };
   }
 
   let insertedSubscriberId: string | null = null;
@@ -89,11 +101,22 @@ export async function subscribeToNewsletter(formData: FormData) {
     ).toString();
 
     if (existingSubscriber?.status === "ACTIVE") {
-      return { error: d.newsletterDuplicateError };
+      return { error: copy.errorDuplicate };
     }
 
-    const previousSubscriber = existingSubscriber ? await db.select().from(newsletterSubscribers).where(eq(newsletterSubscribers.id, existingSubscriber.id)).limit(1).then((rows) => rows[0]) : null;
-    if (previousSubscriber?.status === "PENDING" && previousSubscriber.updatedAt.getTime() > Date.now() - 15 * 60 * 1000) return { error: d.newsletterSendFailedError };
+    const previousSubscriber = existingSubscriber
+      ? await db
+          .select()
+          .from(newsletterSubscribers)
+          .where(eq(newsletterSubscribers.id, existingSubscriber.id))
+          .limit(1)
+          .then((rows) => rows[0])
+      : null;
+    if (
+      previousSubscriber?.status === "PENDING" &&
+      previousSubscriber.updatedAt.getTime() > Date.now() - 15 * 60 * 1000
+    )
+      return { error: copy.errorSendFailed };
     if (existingSubscriber) {
       await db
         .update(newsletterSubscribers)
@@ -137,18 +160,27 @@ export async function subscribeToNewsletter(formData: FormData) {
         await db
           .delete(newsletterSubscribers)
           .where(eq(newsletterSubscribers.id, insertedSubscriberId));
-      }
-      else if (previousSubscriber) {
-        await db.update(newsletterSubscribers).set({ status: previousSubscriber.status, confirmedAt: previousSubscriber.confirmedAt, confirmationTokenHash: previousSubscriber.confirmationTokenHash, unsubscribeTokenHash: previousSubscriber.unsubscribeTokenHash, unsubscribedAt: previousSubscriber.unsubscribedAt, preferredLocale: previousSubscriber.preferredLocale }).where(eq(newsletterSubscribers.id, previousSubscriber.id));
+      } else if (previousSubscriber) {
+        await db
+          .update(newsletterSubscribers)
+          .set({
+            status: previousSubscriber.status,
+            confirmedAt: previousSubscriber.confirmedAt,
+            confirmationTokenHash: previousSubscriber.confirmationTokenHash,
+            unsubscribeTokenHash: previousSubscriber.unsubscribeTokenHash,
+            unsubscribedAt: previousSubscriber.unsubscribedAt,
+            preferredLocale: previousSubscriber.preferredLocale,
+          })
+          .where(eq(newsletterSubscribers.id, previousSubscriber.id));
       }
 
-      return { error: d.newsletterSendFailedError };
+      return { error: copy.errorSendFailed };
     }
 
     return { success: true };
   } catch (error) {
     console.error("Newsletter subscription error:", error);
 
-    return { error: d.newsletterErrorMessage };
+    return { error: copy.errorUnexpected };
   }
 }

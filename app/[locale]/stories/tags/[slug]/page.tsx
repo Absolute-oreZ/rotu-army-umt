@@ -14,7 +14,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { locale, slug } = await params as { locale: Locale; slug: string };
+  const { locale, slug } = (await params) as { locale: Locale; slug: string };
 
   if (!isLocale(locale)) notFound();
 
@@ -54,7 +54,7 @@ export default async function StoryTagPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale, slug } = await params as { locale: Locale; slug: string };
+  const { locale, slug } = (await params) as { locale: Locale; slug: string };
 
   if (!isLocale(locale)) notFound();
 
@@ -71,7 +71,10 @@ export default async function StoryTagPage({
 
   if (archive.stories.years.length === 0) {
     return (
-      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center">
+      <main
+        id="main-content"
+        className="flex min-h-[calc(100dvh-4rem)] items-center justify-center"
+      >
         <Empty
           title={dictionary.storyTagPage.emptyTitle}
           description={dictionary.storyTagPage.emptyDescription}
@@ -92,9 +95,9 @@ export default async function StoryTagPage({
   }
 
   return (
-    <main className="h-[calc(100dvh-4rem)] overflow-hidden bg-background text-foreground">
-      <section className="flex h-full flex-col overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 overflow-hidden">
+    <main id="main-content" className="flex-1 bg-background text-foreground">
+      <section className="px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10">
           <div className="flex items-center justify-between gap-4">
             <Link
               href={`/${locale}/stories`}
@@ -117,10 +120,11 @@ export default async function StoryTagPage({
             </p>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div>
             <StoriesBrowser
               locale={locale}
               stories={archive.stories}
+              markers={dictionary.recordMarkers}
             />
           </div>
         </div>

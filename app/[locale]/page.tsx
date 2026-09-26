@@ -10,13 +10,14 @@ import {
 import { SeeAlso } from "@/components/public/see-also";
 import { ScrollReveal } from "@/components/public/scroll-reveal";
 import { JoinTheRanks } from "@/components/public/join-the-ranks";
-import { Testimonials } from "@/components/public/testimonials";
+import { BestCadetSection } from "@/components/public/best-cadets/best-cadet-section";
 import { HeroImage } from "@/components/public/hero-image";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getHomePageContent } from "@/lib/public/content";
 import { StatCard } from "@/components/public/stat-card";
 import { storageUrl } from "@/lib/supabase/storage-public";
+import { isJoinTheRankEnabled } from "@/lib/env/public";
 
 export async function generateMetadata({
   params,
@@ -55,11 +56,23 @@ export default async function HomePage({
   
   const dictionary = await getDictionary(locale);
   const content = await getHomePageContent(locale);
-  const heroImageSrc = content.heroImagePath ? storageUrl(content.heroImagePath) : null;
+  const heroImageSrc = content.heroImagePath ? storageUrl(content.heroImagePath) : "/images/default-hero-image.jpg";
 
   return (
-    <main className="flex-1 overflow-y-auto bg-background text-foreground">
-      <section className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden">
+    <main id="main-content" className="flex-1 bg-background text-foreground">
+      <section className="px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-12 lg:gap-14">
+          <div className="lg:col-span-5">
+            <p className="record-label">{dictionary.recordMarkers.home}</p>
+            <h1 className="mt-5 max-w-xl text-5xl font-semibold leading-[0.96] tracking-tight sm:text-7xl">{dictionary.home.title}</h1>
+            <p className="mt-7 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">{dictionary.home.intro}</p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link href={`/${locale}/intakes`} className="inline-flex min-h-11 items-center justify-center gap-2 bg-primary px-5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">{dictionary.home.primaryCta}<ArrowRight className="size-4" aria-hidden="true" /></Link>
+              <Link href={`/${locale}/contact`} className="inline-flex min-h-11 items-center justify-center border border-border px-5 text-sm font-semibold hover:bg-muted">{dictionary.home.secondaryCta}</Link>
+            </div>
+          </div>
+          <div className="lg:col-span-7">
+            <div className="relative aspect-[5/4] overflow-hidden border border-border bg-muted">
         {heroImageSrc ? (
           <HeroImage
             src={heroImageSrc}
@@ -67,38 +80,13 @@ export default async function HomePage({
             alt={dictionary.home.heroImageAlt}
           />
         ) : null}
-        <div className="absolute inset-0 bg-white/42 dark:bg-black/58" />
-        <div className="absolute inset-0 bg-linear-to-r from-background/74 via-background/35 to-transparent dark:from-background/82 dark:via-background/56 dark:to-transparent" />
-        <div className="absolute inset-0 bg-linear-to-t from-background/66 to-transparent dark:from-background/74" />
-
-        <div className="relative mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-7xl flex-col justify-center px-4 py-20 sm:px-6 lg:px-8">
-          <ScrollReveal>
-            <h1 className="max-w-4xl text-4xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
-              {dictionary.home.title}
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              {dictionary.home.intro}
-            </p>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`/${locale}/intakes`}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                {dictionary.home.primaryCta}
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-              <Link
-                href={`/${locale}/contact`}
-                className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-background/75 px-4 text-sm font-semibold transition-colors hover:bg-muted"
-              >
-                {dictionary.home.secondaryCta}
-              </Link>
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-primary" />
             </div>
-          </ScrollReveal>
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-border px-4 py-14 sm:px-6 lg:px-8">
+      <section className="border-y border-border px-5 py-14 sm:px-8 lg:px-12">
         <div className="mx-auto w-full max-w-7xl">
           <ScrollReveal>
             <h2 className="text-3xl font-semibold sm:text-4xl">
@@ -107,7 +95,7 @@ export default async function HomePage({
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               {dictionary.home.statsIntro}
             </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid grid-cols-2 divide-x divide-y divide-border border-y border-border sm:grid-cols-4 sm:divide-y-0">
               <StatCard
                 label={dictionary.home.intakeCountLabel}
                 value={content.stats.intakeCount}
@@ -156,18 +144,18 @@ export default async function HomePage({
         </div>
       </section>
 
-      <JoinTheRanks
+      {isJoinTheRankEnabled() ? <JoinTheRanks
         title={dictionary.home.joinTheRanks.title}
         intro={dictionary.home.joinTheRanks.intro}
         steps={dictionary.home.joinTheRanks.steps}
-      />
+        stepAlt={dictionary.home.joinTheRanks.stepAlt}
+      /> : null}
 
-      <Testimonials
-              title={dictionary.home.testimonials.title}
-              intro={dictionary.home.testimonials.intro}
-              testimonials={content.testimonials}
-              dictionary={dictionary.common}
-            />
+      <BestCadetSection
+        cadets={content.bestCadets}
+        locale={locale}
+        dictionary={dictionary.home.bestCadets}
+      />
 
       <section className="border-t border-border py-14 sm:py-16">
         <div className="px-4 sm:px-6 lg:px-8">

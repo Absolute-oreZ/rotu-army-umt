@@ -276,7 +276,7 @@ The landing page is complete with sufficient content. Other public content is de
 
 Multimedia role can manage the following via admin CMS:
 
-- **`webapp_contents`**: Hero text, statistics, FAQs, testimonials, see-more links, social media links, map embed (contact page).
+- **`webapp_contents`**: Hero text, statistics, FAQs, see-more links, social media links, map embed (contact page). Best Cadet honours are managed in their dedicated portfolio records.
 - **Stories**: Full CRUD (create, read, update, delete) for event/story content.
 - **Newsletters**: Subscriber management and email campaigns.
 - **Application deadline**: Configurable seasonal intake deadline.
@@ -444,7 +444,7 @@ Each admin user has exactly one role.
   - stories/stories (full CRUD)
   - Newsletters
   - Public content management:
-    - `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed)
+    - `webapp_contents` (hero text, stats, FAQs, see-more links, social links, map embed), Best Cadet honours
     - Application deadline configuration
   - Public content/media areas as approved
 
@@ -642,7 +642,7 @@ Important modeling notes:
 
 ### Currently Exposed Data (with consent)
 - Intake detail pages: cadet `displayName`, `displayPhotoPath`, `quote`
-- Landing page testimonials: `authorName`, `authorRank`, `authorImagePath`, `content`
+- Best Cadet honours: recipient name, dedicated portrait, award date/year, inferred intake, localized summaries and optional quotes; no separate consent timestamp or checkbox is stored.
 - Cadet portal (authenticated): own data only
 
 ### Never Exposed Publicly
@@ -652,7 +652,7 @@ Important modeling notes:
 
 ### Consent Collection
 - Intake onboarding: explicit checkbox for name/photo/quote display
-- Testimonials: cadet reviews and approves before publishing
+- Best Cadet honours are published through the Multimedia portfolio; no separate consent timestamp or checkbox is required.
 - Newsletter: double opt-in, one-click unsubscribe in every email
 
 ### Consent Revocation

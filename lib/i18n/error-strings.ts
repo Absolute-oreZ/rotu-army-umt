@@ -12,16 +12,16 @@ export const errorStrings: Record<Locale, ErrorStrings> = {
     title: "Something went wrong",
     description: "An unexpected error occurred. Please try again.",
     tryAgain: "Try again",
-    goHome: "Go home",
+    goHome: "Back to home",
   },
   ms: {
-    title: "Ada masalah berlaku",
+    title: "Sesuatu tidak kena",
     description: "Ralat tidak dijangka berlaku. Sila cuba lagi.",
     tryAgain: "Cuba lagi",
     goHome: "Kembali ke laman utama",
   },
   zh: {
-    title: "出现错误",
+    title: "出现问题",
     description: "发生意外错误，请重试。",
     tryAgain: "重试",
     goHome: "返回首页",
@@ -30,6 +30,6 @@ export const errorStrings: Record<Locale, ErrorStrings> = {
     title: "ஏதோ தவறு நடந்துள்ளது",
     description: "எதிர்பாராத பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.",
     tryAgain: "மீண்டும் முயற்சிக்கவும்",
-    goHome: "முகப்புக்கு செல்ல",
+    goHome: "முகப்புப் பக்கத்திற்குத் திரும்பு",
   },
 };

@@ -29,7 +29,7 @@ export function NewsletterStatusPage({
   formToken,
 }: NewsletterStatusPageProps) {
   return (
-    <main className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
+    <main id="main-content" className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-4xl items-center px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <section className="w-full overflow-hidden rounded-4xl border border-border bg-card/70 shadow-sm backdrop-blur">
           <div className="grid grid-cols-1 sm:grid-cols-2">

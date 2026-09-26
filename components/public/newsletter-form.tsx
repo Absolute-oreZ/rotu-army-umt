@@ -7,34 +7,14 @@ import { cn } from "@/lib/utils";
 import { Mail, ChevronDown } from "lucide-react";
 import Script from "next/script";
 import { getTurnstileSiteKey } from "@/lib/turnstile-client";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 interface NewsletterFormProps {
   locale: Locale;
-  subtitle: string;
-  description: string;
-  emailLabel: string;
-  emailPlaceholder: string;
-  loadingLabel: string;
-  localeLabel: string;
-  localeOptions: Record<Locale, string>;
-  subscribeButton: string;
-  errorMessage: string;
-  successMessage: string;
+  copy: Dictionary["contactPage"]["newsletter"];
 }
 
-export function NewsletterForm({
-  locale,
-  subtitle,
-  description,
-  emailLabel,
-  emailPlaceholder,
-  loadingLabel,
-  localeLabel,
-  localeOptions,
-  subscribeButton,
-  errorMessage,
-  successMessage,
-}: NewsletterFormProps) {
+export function NewsletterForm({ locale, copy }: NewsletterFormProps) {
   const [email, setEmail] = useState("");
   const [selectedLocale, setSelectedLocale] = useState(locale);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -71,14 +51,14 @@ export function NewsletterForm({
   }, [turnstileSiteKey]);
 
   const options = [
-    { value: "en", label: localeOptions.en },
-    { value: "ms", label: localeOptions.ms },
-    { value: "zh", label: localeOptions.zh },
-    { value: "ta", label: localeOptions.ta },
+    { value: "en", label: copy.languageOptions.en },
+    { value: "ms", label: copy.languageOptions.ms },
+    { value: "zh", label: copy.languageOptions.zh },
+    { value: "ta", label: copy.languageOptions.ta },
   ] as const;
 
   const selectedLabel =
-    options.find((o) => o.value === selectedLocale)?.label ?? localeOptions.en;
+    options.find((o) => o.value === selectedLocale)?.label ?? copy.languageOptions.en;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,8 +104,8 @@ export function NewsletterForm({
       setMessage({
         type: "error",
         text: turnstileReady
-          ? "Security check failed. Please try again."
-          : "Security check not ready. Please wait a moment and try again.",
+          ? copy.errorSecurityFailed
+          : copy.errorSecurityNotReady,
       });
       return;
     }
@@ -139,10 +119,10 @@ export function NewsletterForm({
       const result = await subscribeToNewsletter(formData);
 
       if (result.success) {
-        setMessage({ type: "success", text: successMessage });
+        setMessage({ type: "success", text: copy.success });
         setEmail("");
       } else {
-        setMessage({ type: "error", text: result.error || errorMessage });
+        setMessage({ type: "error", text: result.error || copy.errorUnexpected });
       }
 
       if (turnstileSiteKey && typeof window !== "undefined" && window.turnstile) {
@@ -167,10 +147,10 @@ export function NewsletterForm({
         </div>
         <div className="min-w-0 flex flex-col gap-0.5">
           <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
-            {subtitle}
+            {copy.subtitle}
           </h3>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {description}
+            {copy.description}
           </p>
         </div>
       </div>
@@ -180,22 +160,24 @@ export function NewsletterForm({
           <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {emailLabel}
+              {copy.emailLabel}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={emailPlaceholder}
+              placeholder={copy.emailPlaceholder}
               required
               className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
+          {turnstileSiteKey ? <div ref={turnstileContainerRef} className="min-h-[72px] overflow-visible" /> : null}
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
             <div className="relative flex-1 min-w-0" ref={dropdownRef}>
               <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                {localeLabel}
+                {copy.languageLabel}
               </label>
 
               <button
@@ -234,14 +216,12 @@ export function NewsletterForm({
                 .
               </label>
 
-              {turnstileSiteKey ? <div ref={turnstileContainerRef} /> : null}
-
               <button
                 type="submit"
                 disabled={isPending}
                 className="h-9 sm:w-35 flex items-center justify-center rounded-lg bg-foreground px-4 text-xs font-bold uppercase tracking-widest text-background transition-all hover:bg-foreground/90 active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
               >
-                {isPending ? loadingLabel : subscribeButton}
+                {isPending ? copy.loadingLabel : copy.submitLabel}
               </button>
             </div>
           </div>

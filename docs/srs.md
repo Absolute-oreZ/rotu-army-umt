@@ -61,7 +61,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 
 ### 3.3 Public Pages
 #### 3.3.1 Landing Page
-1. System shall render localized hero, statistics, FAQ, testimonials, and related links.
+1. System shall render localized hero, statistics, FAQs, Best Cadet honours, and related links.
 2. System shall read content from DB-backed services with fallback values when data is unavailable.
 
 #### 3.3.2 Intakes List Page
@@ -127,7 +127,7 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 1. System shall provide role-aware module access:
    - Secretary: rank holders (cadet admin users only), intakes (global), cadets (cadet management), admin invitations (cadets only).
    - Treasurer: account management (bank/QR), collection creation and management, payment ledger, expenses.
-   - Multimedia: portfolio, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, testimonials, see-more links, social links, map embed), application deadline configuration.
+   - Multimedia: portfolio, Best Cadet honours, stories (full CRUD), newsletters, `webapp_contents` (hero text, stats, FAQs, see-more links, social links, map embed), application deadline configuration.
    - Sports: metrics (cadet health metric records), UKA records, APFA records, assessments (per-cadet UKA/APFA result entry).
    - Welfare: attend (cadet absence records, Attend B/C with env-based sources (`NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`)), accommodations (gender-scoped for intake-scoped admins), religious activities (env-based types (`NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`), photo gallery).
    - Academic: results, timetables.
@@ -245,7 +245,7 @@ System data model shall include at minimum:
 - Officers and instructors.
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.
-- Homepage managed content (FAQ, see-more links, testimonials, webapp_contents).
+- Homepage managed content (FAQ, see-more links, Best Cadet honours, webapp_contents).
 - Treasury accounts, collections, collection payments (Treasurer module).
 - Cadet accounts (one-to-one by memberId: bank name, account number, DuitNow ID, QR code path) for pre-filling claim bank details.
 - Claims (reimbursement claims: title, amount, description, receipt path, QR code path, status, intake-scoped).
@@ -320,7 +320,7 @@ System data model shall include at minimum:
 - Public shell/header with language switcher and theme toggle.
 - Admin auth skeleton and server RBAC helpers.
 - Baseline schema and migration structure (6 migrations).
-- Landing page with hero, stats, FAQ, testimonials, see-more links.
+- Landing page with hero, stats, FAQs, Best Cadet honours, see-more links.
 - Intakes list and detail pages.
 - Stories list, detail, and tag pages.
 - Contact page with newsletter subscription.

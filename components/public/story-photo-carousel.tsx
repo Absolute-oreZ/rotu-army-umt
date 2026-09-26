@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { storageUrl } from "@/lib/supabase/storage-public";
 import type { PublicStoryDisplayPhoto } from "@/lib/public/content";
+import { fillTemplate } from "@/lib/i18n/format";
 
 const GAP = 12;
 const VELOCITY_THRESHOLD = 500;
@@ -15,6 +16,8 @@ type Props = {
   photos: PublicStoryDisplayPhoto[];
   alt: string;
   className?: string;
+  label: string;
+  goToPhoto: string;
 };
 
 function CarouselPhoto({
@@ -59,7 +62,7 @@ function CarouselPhoto({
   );
 }
 
-export function StoryPhotoCarousel({ photos, alt, className }: Props) {
+export function StoryPhotoCarousel({ photos, alt, className, label, goToPhoto }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -101,6 +104,8 @@ export function StoryPhotoCarousel({ photos, alt, className }: Props) {
   return (
     <div
       ref={containerRef}
+      role="group"
+      aria-label={label}
       className={cn("rounded-2xl border border-border bg-background", className)}
       style={{ padding: containerPadding }}
     >
@@ -152,7 +157,8 @@ export function StoryPhotoCarousel({ photos, alt, className }: Props) {
                   key={i}
                   type="button"
                   onClick={() => setPosition(i)}
-                  aria-label={`Go to photo ${i + 1}`}
+                  aria-label={fillTemplate(goToPhoto, { number: i + 1 })}
+                  aria-current={i === position}
                   className="flex items-center justify-center p-2"
                 >
                   <div

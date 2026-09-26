@@ -27,9 +27,7 @@ export async function generateMetadata({
   }
 
   const title = intake.displayName;
-  const description =
-    intake.summary ??
-    dictionary.intakesPage.description;
+  const description = intake.summary ?? dictionary.intakesPage.description;
 
   return {
     title,
@@ -114,7 +112,7 @@ export default async function IntakeDetailPage({
   const summary = intake.summary ?? dictionary.intakesPage.description;
 
   return (
-    <main className="bg-background text-foreground">
+    <main id="main-content" className="bg-background text-foreground">
       <IntakeDetailClient
         dictionary={{
           ...dictionary.intakesPage,

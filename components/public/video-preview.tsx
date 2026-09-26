@@ -6,9 +6,10 @@ import { Play, X } from "lucide-react";
 type Props = {
   url: string;
   label: string;
+  closeLabel: string;
 };
 
-export function VideoPreview({ url, label }: Props) {
+export function VideoPreview({ url, label, closeLabel }: Props) {
   const [open, setOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -43,7 +44,6 @@ export function VideoPreview({ url, label }: Props) {
         </div>
         <div className="px-4 py-3">
           <p className="text-sm font-semibold">{label}</p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{url}</p>
         </div>
       </button>
 
@@ -59,6 +59,7 @@ export function VideoPreview({ url, label }: Props) {
             <button
               type="button"
               onClick={handleClose}
+              aria-label={closeLabel}
               className="absolute right-2 top-2 sm:right-3 sm:top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80 active:scale-95"
             >
               <X className="h-4 w-4" />

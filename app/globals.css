@@ -207,6 +207,74 @@ html[lang="ta"] {
   }
 }
 
+/* Public surface: Operational Field Record palette. Scoped so admin/cadet
+   surfaces keep their existing tokens. */
+.public-site {
+  --background: #f4f2ea;
+  --foreground: #172016;
+  --card: #fbfaf6;
+  --card-foreground: #172016;
+  --popover: #ffffff;
+  --popover-foreground: #172016;
+  --primary: #305020;
+  --primary-foreground: #fbfaf6;
+  --secondary: #e8eadf;
+  --secondary-foreground: #172016;
+  --muted: #ebeae1;
+  --muted-foreground: #596357;
+  --accent: #4a175f;
+  --accent-foreground: #fffaff;
+  --border: #c9c6ba;
+  --input: #ffffff;
+  --ring: #8a3b00;
+  --radius: 0.25rem;
+}
+
+.dark .public-site {
+  --background: #10140f;
+  --foreground: #f2f1e8;
+  --card: #171d16;
+  --card-foreground: #f2f1e8;
+  --popover: #20291f;
+  --popover-foreground: #f2f1e8;
+  --primary: #9bc58f;
+  --primary-foreground: #10140f;
+  --secondary: #293528;
+  --secondary-foreground: #f2f1e8;
+  --muted: #20291f;
+  --muted-foreground: #bac2b5;
+  --accent: #d4a7dd;
+  --accent-foreground: #201124;
+  --border: #3a4636;
+  --input: #20291f;
+  --ring: #ff9a52;
+}
+
+@layer components {
+  .public-site .record-label {
+    @apply font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  .public-site .record-rule {
+    border-top: 1px solid var(--border);
+  }
+
+  .public-site .record-link {
+    @apply underline decoration-primary/50 underline-offset-4 transition-colors hover:decoration-primary;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-site *,
+  .public-site *::before,
+  .public-site *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 @layer components{
   .card-spotlight {
     position: relative;

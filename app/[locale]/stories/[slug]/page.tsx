@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, MapPin, Users } from "lucide-react";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getPublishedStoryDetail, getSimilarStories } from "@/lib/public/content";
+import {
+  getPublishedStoryDetail,
+  getSimilarStories,
+} from "@/lib/public/content";
 import { StoryPhotoCarousel } from "@/components/public/story-photo-carousel";
 import { VideoPreview } from "@/components/public/video-preview";
 import { formatDateRange } from "@/lib/time/date";
@@ -18,7 +21,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { locale, slug } = await params as { locale: Locale; slug: string };
+  const { locale, slug } = (await params) as { locale: Locale; slug: string };
 
   if (!isLocale(locale)) notFound();
 
@@ -33,7 +36,9 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `/${locale}/stories/${slug}`,
-      languages: Object.fromEntries(locales.map((l) => [l, `/${l}/stories/${slug}`])),
+      languages: Object.fromEntries(
+        locales.map((l) => [l, `/${l}/stories/${slug}`]),
+      ),
     },
     openGraph: {
       title,
@@ -51,7 +56,10 @@ export default async function StoryDetailPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale: rawLocale, slug } = await params as { locale: Locale; slug: string };
+  const { locale: rawLocale, slug } = (await params) as {
+    locale: Locale;
+    slug: string;
+  };
 
   if (!isLocale(rawLocale)) notFound();
 
@@ -71,7 +79,10 @@ export default async function StoryDetailPage({
   const similarStories = await getSimilarStories(locale, story.id);
 
   return (
-    <main className="min-h-[calc(100dvh-4rem)] bg-background text-foreground">
+    <main
+      id="main-content"
+      className="min-h-[calc(100dvh-4rem)] bg-background text-foreground"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between pt-4 sm:pt-6">
           <Link
@@ -89,9 +100,16 @@ export default async function StoryDetailPage({
         <div className="grid grid-cols-1 gap-8 pt-8 pb-16 sm:gap-10 sm:pt-10 lg:grid-cols-[1fr_20rem] lg:gap-12 xl:grid-cols-[1fr_22rem]">
           <div className="min-w-0 lg:order-1">
             {story.tags.length > 0 && (
-              <div className="mb-4 flex flex-wrap gap-2">
+              <div
+                className="mb-4 flex flex-wrap gap-2"
+                aria-label={d.tagsLabel}
+                role="group"
+              >
                 {story.tags.map((tag) => (
-                  <TagLink key={tag.slug} href={`/${locale}/stories/tags/${tag.slug}`}>
+                  <TagLink
+                    key={tag.slug}
+                    href={`/${locale}/stories/tags/${tag.slug}`}
+                  >
                     {tag.name}
                   </TagLink>
                 ))}
@@ -131,7 +149,11 @@ export default async function StoryDetailPage({
             </div>
 
             {story.videoPath ? (
-              <VideoPreview url={storageUrl(story.videoPath)} label={d.watchVideo} />
+              <VideoPreview
+                url={storageUrl(story.videoPath)}
+                label={d.watchVideo}
+                closeLabel={d.closeVideoLabel}
+              />
             ) : null}
 
             {story.displayPhotos.length > 0 && (
@@ -139,17 +161,19 @@ export default async function StoryDetailPage({
                 photos={story.displayPhotos}
                 alt={story.title}
                 className="w-full"
+                label={d.carousel.label}
+                goToPhoto={d.carousel.goToPhoto}
               />
             )}
           </aside>
         </div>
 
         <SimilarStories
-                  locale={locale}
-                  stories={similarStories}
-                  title={d.similarStoriesLabel}
-                  dictionary={dictionary.common}
-                />
+          locale={locale}
+          stories={similarStories}
+          title={d.similarStoriesLabel}
+          dictionary={dictionary.common}
+        />
       </div>
     </main>
   );

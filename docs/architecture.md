@@ -523,7 +523,7 @@ Primary schema domains in `db/schema.ts`:
 - Stories and metadata:
   - `events`, `event_translations`, `event_tags`, `event_tag_translations`, `events_to_tags`, `event_display_photos`.
 - Homepage-managed content:
-  - `webapp_contents`, `frequently_asked_questions`, `frequently_asked_question_translations`, `see_more_links`, `testimonials`, `testimonial_translations`.
+  - `webapp_contents`, `frequently_asked_questions`, `frequently_asked_question_translations`, `see_more_links`, `best_cadets`, `best_cadet_translations`.
 
 ### 7.1 Intake Application Data Model (Planned)
 - Application status enum: `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `AWAITING_PHYSICAL_ASSESSMENT`, `PASSED`.
@@ -541,7 +541,7 @@ Primary schema domains in `db/schema.ts`:
 
 ### 7.3 CMS Architecture (Planned)
 Multimedia role manages public content via admin dashboard:
-- `webapp_contents`: hero text, stats, FAQs, testimonials, see-more links, social links, map embed.
+- `webapp_contents`: hero text, stats, FAQs, see-more links, social links, map embed. Best Cadet records and four-locale content live in dedicated tables.
 - Stories: full CRUD for event/story content.
 - Newsletters: subscriber management and email campaigns.
 - Application deadline: configurable seasonal intake deadline.

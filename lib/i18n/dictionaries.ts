@@ -13,20 +13,27 @@ export type Dictionary = {
     contact: string;
   };
   common: {
-      language: string;
-      theme: string;
-      light: string;
-      dark: string;
-      menu: string;
-      closeMenu: string;
-      switchToLight: string;
-      switchToDark: string;
-      primaryNavigation: string;
-      previous: string;
-      next: string;
-      viewStory: string;
-      goToTestimonial: string;
-    },
+    skipToContent: string;
+    language: string;
+    theme: string;
+    switchToLight: string;
+    switchToDark: string;
+    menu: string;
+    closeMenu: string;
+    primaryNavigation: string;
+    viewStory: string;
+    externalLink: string;
+  };
+  recordMarkers: {
+    home: string;
+    intakes: string;
+    stories: string;
+    intakesRegister: string;
+    storiesIndex: string;
+    storyYears: string;
+    recordsCountOne: string;
+    recordsCountOther: string;
+  };
   home: {
     title: string;
     intro: string;
@@ -45,15 +52,22 @@ export type Dictionary = {
     seeAlsoTitle: string;
     seeAlsoIntro: string;
     seeAlsoEmpty: string;
-    seeAlsoExplore: string;
-    testimonials: {
+    bestCadets: {
+      eyebrow: string;
       title: string;
       intro: string;
+      registerLabel: string;
+      quoteLabel: string;
+      exploreMore: string;
+      exploreMoreLabel: string;
+      portraitAlt: string;
+      intakeLabel: string;
     };
     joinTheRanks: {
       eyebrow: string;
       title: string;
       intro: string;
+      stepAlt: string;
       steps: {
         title: string;
         description: string;
@@ -67,33 +81,36 @@ export type Dictionary = {
     summaryFallback: string;
     taglineFallback: string;
     viewDetails: string;
-    cardImageAlt: string;
+    coverImageAlt: string;
     emptyTitle: string;
     emptyDescription: string;
     emptyActionLabel: string;
   };
   intakeDetailPage: {
     detailEyebrow: string;
-    startYearLabel: string;
-    galleryTitle: string;
-    galleryIntro: string;
-    patchTitle: string;
-    patchIntro: string;
     cadetsTitle: string;
-    cadetsIntro: string;
     noGalleryPhotos: string;
     noPatchExplanations: string;
     noCadets: string;
     quoteFallback: string;
-    uniformTitle: string;
-    uniformIntro: string;
+    noUniformPhotos: string;
     innerLabel: string;
     tshirtLabel: string;
-    noUniformPhotos: string;
     summaryTab: string;
     patchTab: string;
     uniformTab: string;
-    patchLanguagesTitle: string;
+    patchLabels: {
+      ANIMAL: string;
+      COLOR: string;
+      PHILOSOPHY: string;
+    };
+    alt: {
+      displayPhoto: string;
+      patch: string;
+      cover: string;
+      expanded: string;
+      uniform: string;
+    };
   };
   storiesPage: {
     title: string;
@@ -109,12 +126,13 @@ export type Dictionary = {
     locationLabel: string;
     participantsLabel: string;
     tagsLabel: string;
-    galleryTitle: string;
-    galleryIntro: string;
-    noGalleryPhotos: string;
     watchVideo: string;
-    noPhotos: string;
+    closeVideoLabel: string;
     similarStoriesLabel: string;
+    carousel: {
+      label: string;
+      goToPhoto: string;
+    };
   };
   storyTagPage: {
     backLabel: string;
@@ -128,29 +146,40 @@ export type Dictionary = {
     eyebrow: string;
     title: string;
     description: string;
-    newsletterTitle: string;
-    newsletterSubTitle: string;
-    newsletterDescription: string;
-    newsletterEmailLabel: string;
-    newsletterEmailPlaceholder: string;
-    newsletterLoadingLabel: string;
-    newsletterLocaleLabel: string;
-    newsletterLocaleOptions: {
-      en: string;
-      ms: string;
-      zh: string;
-      ta: string;
+    social: {
+      title: string;
+      tiktokLabel: string;
     };
-    newsletterSubscribeButton: string;
-    newsletterErrorMessage: string;
-    newsletterRequiredError: string;
-    newsletterInvalidEmailError: string;
-    newsletterDuplicateError: string;
-    newsletterSendFailedError: string;
-    newsletterSuccess: string;
-    socialTitle: string;
-    socialTikTokLabel: string;
-    locationTitle: string;
+    location: {
+      title: string;
+      mapTitle: string;
+    };
+    newsletter: {
+      title: string;
+      subtitle: string;
+      description: string;
+      emailLabel: string;
+      emailPlaceholder: string;
+      loadingLabel: string;
+      languageLabel: string;
+      languageOptions: {
+        en: string;
+        ms: string;
+        zh: string;
+        ta: string;
+      };
+      submitLabel: string;
+      success: string;
+      errorUnexpected: string;
+      errorRequired: string;
+      errorInvalidEmail: string;
+      errorDuplicate: string;
+      errorRateLimited: string;
+      errorUnavailable: string;
+      errorSecurityFailed: string;
+      errorSecurityNotReady: string;
+      errorSendFailed: string;
+    };
   };
   newsletter: {
     emailSubject: string;
@@ -166,16 +195,24 @@ export type Dictionary = {
     confirmationPageSuccessDescription: string;
     confirmationPageAlreadyTitle: string;
     confirmationPageAlreadyDescription: string;
+    confirmationPagePendingTitle: string;
+    confirmationPagePendingDescription: string;
     confirmationPageInvalidTitle: string;
     confirmationPageInvalidDescription: string;
+    confirmationPageActionLabel: string;
+    confirmationPageImageAlt: string;
     unsubscribePageEyebrow: string;
     unsubscribePageTitle: string;
     unsubscribePageSuccessTitle: string;
     unsubscribePageSuccessDescription: string;
     unsubscribePageAlreadyTitle: string;
     unsubscribePageAlreadyDescription: string;
+    unsubscribePagePendingTitle: string;
+    unsubscribePagePendingDescription: string;
     unsubscribePageInvalidTitle: string;
     unsubscribePageInvalidDescription: string;
+    unsubscribePageActionLabel: string;
+    unsubscribePageImageAlt: string;
     backToSiteLabel: string;
   };
   notFoundPage: {

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getNewsletterUnsubscribeStatus, unsubscribeNewsletterSubscriptionFormAction } from "@/lib/newsletter/core";
+import {
+  getNewsletterUnsubscribeStatus,
+  unsubscribeNewsletterSubscriptionFormAction,
+} from "@/lib/newsletter/core";
 import { NewsletterStatusPage } from "@/components/public/newsletter-status-page";
 
 export async function generateMetadata({
@@ -9,7 +12,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; token: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params as { locale: Locale; token: string };
+  const { locale } = (await params) as { locale: Locale; token: string };
 
   const dictionary = await getDictionary(locale);
 
@@ -27,7 +30,7 @@ export default async function NewsletterUnsubscribePage({
 }: {
   params: Promise<{ locale: string; token: string }>;
 }) {
-  const { locale, token } = await params as { locale: Locale; token: string };
+  const { locale, token } = (await params) as { locale: Locale; token: string };
 
   const dictionary = await getDictionary(locale);
   const newsletter = dictionary.newsletter;
@@ -42,8 +45,8 @@ export default async function NewsletterUnsubscribePage({
       showForm: false,
     },
     pending_unsubscribe: {
-      statusDescription: "Click the button below to unsubscribe from our newsletter.",
-      statusTitle: "Unsubscribe from newsletter",
+      statusDescription: newsletter.unsubscribePagePendingDescription,
+      statusTitle: newsletter.unsubscribePagePendingTitle,
       showForm: true,
     },
     unsubscribed: {
@@ -62,16 +65,28 @@ export default async function NewsletterUnsubscribePage({
 
   return (
     <NewsletterStatusPage
-      actionHref={content.showForm ? `/${locale}/newsletter/unsubscribe/${token}` : undefined}
-      actionLabel={content.showForm ? "Unsubscribe" : newsletter.backToSiteLabel}
+      actionHref={
+        content.showForm
+          ? `/${locale}/newsletter/unsubscribe/${token}`
+          : `/${locale}`
+      }
+      actionLabel={
+        content.showForm
+          ? newsletter.unsubscribePageActionLabel
+          : newsletter.backToSiteLabel
+      }
       eyebrow={newsletter.unsubscribePageEyebrow}
       imageSrc="/images/unsubscribe-newsletter.png"
-      imageAlt="Newsletter unsubscribe"
+      imageAlt={newsletter.unsubscribePageImageAlt}
       statusDescription={content.statusDescription}
       statusTitle={content.statusTitle}
       title={newsletter.unsubscribePageTitle}
       showForm={content.showForm}
-      formAction={content.showForm ? unsubscribeNewsletterSubscriptionFormAction : undefined}
+      formAction={
+        content.showForm
+          ? unsubscribeNewsletterSubscriptionFormAction
+          : undefined
+      }
       formToken={content.showForm ? token : null}
     />
   );

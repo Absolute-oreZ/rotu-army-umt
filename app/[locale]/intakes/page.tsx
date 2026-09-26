@@ -13,7 +13,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params as { locale: Locale };
+  const { locale } = (await params) as { locale: Locale };
 
   const dictionary = await getDictionary(locale);
 
@@ -22,7 +22,9 @@ export async function generateMetadata({
     description: dictionary.intakesPage.description,
     alternates: {
       canonical: `/${locale}/intakes`,
-      languages: Object.fromEntries(locales.map((item) => [item, `/${item}/intakes`])),
+      languages: Object.fromEntries(
+        locales.map((item) => [item, `/${item}/intakes`]),
+      ),
     },
     openGraph: {
       title: dictionary.intakesPage.title,
@@ -35,8 +37,12 @@ export async function generateMetadata({
   };
 }
 
-export default async function IntakesPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params as { locale: Locale };
+export default async function IntakesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = (await params) as { locale: Locale };
 
   const [dictionary, intakes] = await Promise.all([
     getDictionary(locale),
@@ -45,13 +51,19 @@ export default async function IntakesPage({ params }: { params: Promise<{ locale
 
   if (intakes.length === 0) {
     return (
-      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-background text-foreground">
+      <main
+        id="main-content"
+        className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-background text-foreground"
+      >
         <Empty
           title={dictionary.intakesPage.emptyTitle}
           description={dictionary.intakesPage.emptyDescription}
           icon={<ContactRound />}
           action={
-            <Button variant="link" className="text-muted-foreground border border-border">
+            <Button
+              variant="link"
+              className="text-muted-foreground border border-border"
+            >
               <Link href={`/${locale}`}>
                 {dictionary.intakesPage.emptyActionLabel}
               </Link>
@@ -63,13 +75,23 @@ export default async function IntakesPage({ params }: { params: Promise<{ locale
   }
 
   return (
-    <main className="flex-1 overflow-y-auto bg-background text-foreground">
-      <section className="px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+    <main id="main-content" className="flex-1 bg-background text-foreground">
+      <section className="px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
         <div className="mx-auto w-full max-w-7xl">
+          <header className="mb-14 max-w-3xl">
+            <p className="record-label">{dictionary.recordMarkers.intakes}</p>
+            <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">
+              {dictionary.intakesPage.title}
+            </h1>
+            <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">
+              {dictionary.intakesPage.description}
+            </p>
+          </header>
           <IntakesTimeline
             intakes={intakes}
             locale={locale}
             dictionary={dictionary.intakesPage}
+            registerLabel={dictionary.recordMarkers.intakesRegister}
           />
         </div>
       </section>

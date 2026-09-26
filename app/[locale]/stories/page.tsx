@@ -13,7 +13,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params as { locale: Locale };
+  const { locale } = (await params) as { locale: Locale };
 
   const dictionary = await getDictionary(locale);
 
@@ -42,7 +42,7 @@ export default async function StoriesPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params as { locale: Locale };
+  const { locale } = (await params) as { locale: Locale };
 
   const [dictionary, stories] = await Promise.all([
     getDictionary(locale),
@@ -51,7 +51,10 @@ export default async function StoriesPage({
 
   if (stories.years.length === 0) {
     return (
-      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center">
+      <main
+        id="main-content"
+        className="flex min-h-[calc(100dvh-4rem)] items-center justify-center"
+      >
         <Empty
           title={dictionary.storiesPage.emptyTitle}
           description={dictionary.storiesPage.emptyDescription}
@@ -72,12 +75,22 @@ export default async function StoriesPage({
   }
 
   return (
-    <main className="h-[calc(100dvh-4rem)] overflow-hidden bg-background text-foreground">
-      <section className="flex h-full flex-col overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto h-full w-full max-w-7xl overflow-hidden">
+    <main id="main-content" className="flex-1 bg-background text-foreground">
+      <section className="px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
+        <div className="mx-auto w-full max-w-7xl">
+          <header className="mb-14 max-w-3xl">
+            <p className="record-label">{dictionary.recordMarkers.stories}</p>
+            <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">
+              {dictionary.storiesPage.title}
+            </h1>
+            <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">
+              {dictionary.storiesPage.description}
+            </p>
+          </header>
           <StoriesBrowser
             locale={locale}
             stories={stories}
+            markers={dictionary.recordMarkers}
           />
         </div>
       </section>

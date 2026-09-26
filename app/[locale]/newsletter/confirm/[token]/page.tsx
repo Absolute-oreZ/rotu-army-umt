@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getNewsletterConfirmationStatus, confirmNewsletterSubscriptionFormAction } from "@/lib/newsletter/core";
+import {
+  getNewsletterConfirmationStatus,
+  confirmNewsletterSubscriptionFormAction,
+} from "@/lib/newsletter/core";
 import { NewsletterStatusPage } from "@/components/public/newsletter-status-page";
 
 export async function generateMetadata({
@@ -9,7 +12,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; token: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params as { locale: Locale; token: string };
+  const { locale } = (await params) as { locale: Locale; token: string };
 
   const dictionary = await getDictionary(locale);
 
@@ -27,7 +30,7 @@ export default async function NewsletterConfirmationPage({
 }: {
   params: Promise<{ locale: string; token: string }>;
 }) {
-  const { locale, token } = await params as { locale: Locale; token: string };
+  const { locale, token } = (await params) as { locale: Locale; token: string };
 
   const dictionary = await getDictionary(locale);
   const newsletter = dictionary.newsletter;
@@ -47,8 +50,8 @@ export default async function NewsletterConfirmationPage({
       showForm: false,
     },
     pending_confirmation: {
-      statusDescription: "Click the button below to confirm your subscription.",
-      statusTitle: "Confirm your subscription",
+      statusDescription: newsletter.confirmationPagePendingDescription,
+      statusTitle: newsletter.confirmationPagePendingTitle,
       showForm: true,
     },
     invalid: {
@@ -62,16 +65,26 @@ export default async function NewsletterConfirmationPage({
 
   return (
     <NewsletterStatusPage
-      actionHref={content.showForm ? `/${locale}/newsletter/confirm/${token}` : undefined}
-      actionLabel={content.showForm ? "Confirm subscription" : newsletter.backToSiteLabel}
+      actionHref={
+        content.showForm
+          ? `/${locale}/newsletter/confirm/${token}`
+          : `/${locale}`
+      }
+      actionLabel={
+        content.showForm
+          ? newsletter.confirmationPageActionLabel
+          : newsletter.backToSiteLabel
+      }
       eyebrow={newsletter.confirmationPageEyebrow}
       imageSrc="/images/subscribe-newsletter.png"
-      imageAlt="Newsletter subscription confirmed"
+      imageAlt={newsletter.confirmationPageImageAlt}
       statusDescription={content.statusDescription}
       statusTitle={content.statusTitle}
       title={newsletter.confirmationPageTitle}
       showForm={content.showForm}
-      formAction={content.showForm ? confirmNewsletterSubscriptionFormAction : undefined}
+      formAction={
+        content.showForm ? confirmNewsletterSubscriptionFormAction : undefined
+      }
       formToken={content.showForm ? token : null}
     />
   );

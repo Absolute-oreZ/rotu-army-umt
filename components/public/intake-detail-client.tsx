@@ -12,6 +12,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { storageUrl } from "@/lib/supabase/storage-public";
+import { fillTemplate } from "@/lib/i18n/format";
 
 type IntakeDetailClientProps = {
   dictionary: Dictionary["intakeDetailPage"] &
@@ -51,7 +52,13 @@ export function IntakeDetailClient({
   );
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const [desktopPhotoMap] = useState(
-    () => new Map<number, string>(stackedDisplayPhotos.map((photo, index) => [index + 1, photo.photoPath])),
+    () =>
+      new Map<number, string>(
+        stackedDisplayPhotos.map((photo, index) => [
+          index + 1,
+          photo.photoPath,
+        ]),
+      ),
   );
   const patchImage =
     intake.patchPhotoPath ??
@@ -62,10 +69,7 @@ export function IntakeDetailClient({
   const patchExplanationKeys = ["ANIMAL", "COLOR", "PHILOSOPHY"] as const;
 
   const rotatingHeaderItems = useMemo(
-    () => [
-      intake.displayName,
-      intake.tagLine ?? dictionary.taglineFallback,
-    ],
+    () => [intake.displayName, intake.tagLine ?? dictionary.taglineFallback],
     [dictionary.taglineFallback, intake.displayName, intake.tagLine],
   );
 
@@ -79,9 +83,7 @@ export function IntakeDetailClient({
       setHeaderVisible(false);
 
       window.setTimeout(() => {
-        setHeaderIndex(
-          (current) => (current + 1) % rotatingHeaderItems.length,
-        );
+        setHeaderIndex((current) => (current + 1) % rotatingHeaderItems.length);
         setHeaderVisible(true);
       }, 220);
     }, 5000);
@@ -138,7 +140,10 @@ export function IntakeDetailClient({
                         >
                           <Image
                             src={storageUrl(photo.photoPath)}
-                            alt={`${intake.displayName} display ${index + 1}`}
+                            alt={fillTemplate(dictionary.alt.displayPhoto, {
+                              intake: intake.displayName,
+                              number: index + 1,
+                            })}
                             fill
                             priority={index === 0}
                             sizes="96px"
@@ -213,7 +218,9 @@ export function IntakeDetailClient({
                           {patchImage ? (
                             <Image
                               src={storageUrl(patchImage)}
-                              alt={`${intake.displayName} patch`}
+                              alt={fillTemplate(dictionary.alt.patch, {
+                                intake: intake.displayName,
+                              })}
                               fill
                               sizes="(max-width: 1280px) 100vw, 260px"
                               className="object-cover"
@@ -239,7 +246,7 @@ export function IntakeDetailClient({
                                 className="space-y-1 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
                               >
                                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                                  {key}
+                                  {dictionary.patchLabels[key]}
                                 </p>
 
                                 <p className="text-sm leading-6 text-muted-foreground">
@@ -273,7 +280,10 @@ export function IntakeDetailClient({
                             <div className="relative aspect-4/3">
                               <Image
                                 src={storageUrl(item.src)}
-                                alt={`${intake.displayName} ${item.label}`}
+                                alt={fillTemplate(dictionary.alt.uniform, {
+                                  intake: intake.displayName,
+                                  item: item.label,
+                                })}
                                 fill
                                 sizes="(max-width: 1280px) 100vw, 30vw"
                                 className="object-cover"
@@ -403,7 +413,10 @@ export function IntakeDetailClient({
                       >
                         <Image
                           src={storageUrl(photo.photoPath)}
-                          alt={`${intake.displayName} display ${index + 1}`}
+                          alt={fillTemplate(dictionary.alt.displayPhoto, {
+                            intake: intake.displayName,
+                            number: index + 1,
+                          })}
                           fill
                           priority={index === 0}
                           sizes="(max-width: 640px) 72vw, 0"
@@ -417,7 +430,9 @@ export function IntakeDetailClient({
                 <div className="relative aspect-4/3 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                   <Image
                     src={heroImage}
-                    alt={`${intake.displayName} hero`}
+                    alt={fillTemplate(dictionary.alt.cover, {
+                      intake: intake.displayName,
+                    })}
                     fill
                     priority
                     sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) calc(100vw - 3rem), 80rem"
@@ -472,7 +487,10 @@ export function IntakeDetailClient({
                     <div className="relative aspect-4/3">
                       <Image
                         src={storageUrl(photo.src)}
-                        alt={`${intake.displayName} ${photo.label}`}
+                        alt={fillTemplate(dictionary.alt.uniform, {
+                          intake: intake.displayName,
+                          item: photo.label,
+                        })}
                         fill
                         sizes="(max-width: 640px) calc(100vw - 2rem), calc(50vw - 2rem)"
                         className="object-cover"
@@ -504,7 +522,9 @@ export function IntakeDetailClient({
                     {patchHero ? (
                       <Image
                         src={storageUrl(patchHero)}
-                        alt={`${intake.displayName} patch`}
+                        alt={fillTemplate(dictionary.alt.patch, {
+                          intake: intake.displayName,
+                        })}
                         fill
                         sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) calc(100vw - 3rem), 80rem"
                         className="object-cover"
@@ -519,7 +539,7 @@ export function IntakeDetailClient({
                         className="rounded-2xl border border-border bg-card p-4 shadow-sm"
                       >
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                          {item.key}
+                          {dictionary.patchLabels[item.key]}
                         </p>
 
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -585,24 +605,26 @@ export function IntakeDetailClient({
       </div>
 
       {expandedPhoto ? (
-              <div
-                className="fixed inset-0 z-70 flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm"
-                onClick={() => setExpandedPhoto(null)}
-                role="presentation"
-              >
-                <div className="flex h-[80vh] w-[80vw] max-h-225 max-w-300 items-center justify-center">
-                  <Image
-                    src={storageUrl(expandedPhoto)}
-                    alt={`${intake.displayName} expanded display photo`}
-                    width={1200}
-                    height={900}
-                    sizes="(max-width: 1280px) 80vw, 1200px"
-                    className="max-h-full max-w-full object-contain"
-                    onClick={(event: React.MouseEvent) => event.stopPropagation()}
-                  />
-                </div>
-              </div>
-            ) : null}
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm"
+          onClick={() => setExpandedPhoto(null)}
+          role="presentation"
+        >
+          <div className="flex h-[80vh] w-[80vw] max-h-225 max-w-300 items-center justify-center">
+            <Image
+              src={storageUrl(expandedPhoto)}
+              alt={fillTemplate(dictionary.alt.expanded, {
+                intake: intake.displayName,
+              })}
+              width={1200}
+              height={900}
+              sizes="(max-width: 1280px) 80vw, 1200px"
+              className="max-h-full max-w-full object-contain"
+              onClick={(event: React.MouseEvent) => event.stopPropagation()}
+            />
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

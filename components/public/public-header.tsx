@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 type PublicHeaderProps = {
   locale: Locale;
+  siteName: string;
   dictionary: Pick<Dictionary, "common" | "navigation">;
 };
 
@@ -42,7 +43,7 @@ function switchLocale(pathname: string, nextLocale: Locale) {
   return `/${nextLocale}`;
 }
 
-export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
+export function PublicHeader({ locale, siteName, dictionary }: PublicHeaderProps) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
@@ -63,7 +64,7 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
   });
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/92 backdrop-blur supports-backdrop-filter:bg-background/78">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 supports-backdrop-filter:bg-background/88">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           href={localizedPath(locale, "")}
@@ -80,8 +81,8 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
               priority
             />
           </span>
-          <span className="truncate text-sm font-semibold uppercase tracking-[0.16em] text-foreground">
-            ROTU Army UMT
+          <span className="truncate text-sm font-semibold tracking-[0.12em] text-foreground">
+            {siteName}
           </span>
         </Link>
 
@@ -105,15 +106,13 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
           <LanguageSwitcher
             label={dictionary.common.language}
             locale={locale}
             pathname={pathname}
           />
-          <ThemeToggle
-            onToggle={() => setTheme(isDark ? "light" : "dark")}
-          />
+          <ThemeToggle onToggle={() => setTheme(isDark ? "light" : "dark")} label={isDark ? dictionary.common.switchToLight : dictionary.common.switchToDark} />
         </div>
 
         <Button
@@ -161,9 +160,7 @@ export function PublicHeader({ locale, dictionary }: PublicHeaderProps) {
                 locale={locale}
                 pathname={pathname}
               />
-              <ThemeToggle
-                onToggle={() => setTheme(isDark ? "light" : "dark")}
-              />
+              <ThemeToggle onToggle={() => setTheme(isDark ? "light" : "dark")} label={isDark ? dictionary.common.switchToLight : dictionary.common.switchToDark} />
             </div>
           </div>
         </div>
@@ -207,16 +204,18 @@ function LanguageSwitcher({
 
 function ThemeToggle({
   onToggle,
+  label,
 }: {
   onToggle: () => void;
+  label: string;
 }) {
   return (
     <Button
       type="button"
       variant="outline"
       size="icon-lg"
-      aria-label="Toggle theme"
-      title="Toggle theme"
+      aria-label={label}
+      title={label}
       onClick={onToggle}
     >
       <Sun className="hidden dark:block" />

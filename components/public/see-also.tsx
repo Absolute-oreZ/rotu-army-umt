@@ -1,76 +1,16 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import FlowingMenu from "./flowing-menu";
+import { ArrowUpRight } from "lucide-react";
 import { storageUrl } from "@/lib/supabase/storage-public";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import FlowingMenu from "./flowing-menu";
 
-interface SeeAlsoItem {
-  title: string;
-  link: string;
-  imagePath: string | null;
-}
-
-interface SeeAlsoProps {
-  items: SeeAlsoItem[];
-  dictionary: Dictionary;
-}
-
-export function SeeAlso({ items, dictionary }: SeeAlsoProps) {
-  if (items.length === 0) {
-    return (
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-          {dictionary.home.seeAlsoEmpty}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full">
-      <div className="hidden lg:block w-full py-8">
-        <div className="min-h-176">
-          <FlowingMenu
-            items={items.map((item) => ({
-              image: item.imagePath ? storageUrl(item.imagePath) : undefined,
-              link: item.link,
-              text: item.title,
-            }))}
-          />
-        </div>
-      </div>
-
-      <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 sm:px-6 lg:px-8 py-8">
-        {items.map((item, idx) => (
-          <Link
-            key={idx}
-            href={item.link}
-            className="group relative overflow-hidden rounded-md border border-border bg-card transition-all"
-          >
-            <div className="flex items-center gap-4 p-4">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md">
-                {item.imagePath ? (
-                  <Image
-                    src={storageUrl(item.imagePath)}
-                    alt={item.title}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
-                ) : null}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold uppercase tracking-wide text-foreground transition-colors">
-                  {item.title}
-                </span>
-                <span className="text-xs text-muted-foreground">{dictionary.home.seeAlsoExplore} &rarr;</span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+export function SeeAlso({ items, dictionary }: { items: Array<{ title: string; link: string; imagePath: string | null }>; dictionary: Dictionary }) {
+  if (!items.length) return <p className="border border-dashed border-border p-4 text-sm text-muted-foreground">{dictionary.home.seeAlsoEmpty}</p>;
+  return <>
+    <div className="hidden min-h-176 w-full lg:block">
+      <FlowingMenu items={items.map((item) => ({ image: item.imagePath ? storageUrl(item.imagePath) : undefined, link: item.link, text: item.title }))} />
     </div>
-  );
+    <div className="grid gap-0 border-y border-border sm:grid-cols-2 lg:hidden">{items.map((item) => <Link key={item.link} href={item.link} target="_blank" rel="noopener noreferrer" className="group flex min-h-28 items-center gap-4 border-b border-border p-4 transition-colors hover:bg-muted"><div className="relative size-14 shrink-0 overflow-hidden border border-border bg-muted">{item.imagePath ? <Image src={storageUrl(item.imagePath)} alt="" fill sizes="56px" className="object-cover" /> : null}</div><span className="flex min-w-0 items-center gap-2 text-sm font-semibold leading-5">{item.title}<span className="sr-only"> ({dictionary.common.externalLink})</span><ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></span></Link>)}</div>
+  </>;
 }
