@@ -1,0 +1,1 @@
+ALTER TABLE "ai_request_logs" ADD COLUMN "failure_reason" varchar(80);

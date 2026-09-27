@@ -1,6 +1,7 @@
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { PublicHeader } from "@/components/public/public-header";
+import { AssistantPanel } from "@/components/public/ai-assistant/assistant-panel";
 
 type PublicShellProps = Readonly<{
   children: React.ReactNode;
@@ -8,10 +9,17 @@ type PublicShellProps = Readonly<{
   locale: Locale;
 }>;
 
-export function PublicShell({ children, dictionary, locale }: PublicShellProps) {
+export function PublicShell({
+  children,
+  dictionary,
+  locale,
+}: PublicShellProps) {
   return (
     <div className="public-site flex min-h-dvh flex-col bg-background text-foreground">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground"
+      >
         {dictionary.common.skipToContent}
       </a>
       <PublicHeader
@@ -23,6 +31,7 @@ export function PublicShell({ children, dictionary, locale }: PublicShellProps) 
         }}
       />
       {children}
+      <AssistantPanel locale={locale} copy={dictionary.aiAssistant} />
     </div>
   );
 }

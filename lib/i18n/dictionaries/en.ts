@@ -25,6 +25,76 @@ const en: Dictionary = {
     viewStory: "View story",
     externalLink: "Opens in a new tab",
   },
+  aiAssistant: {
+    open: "Open Alpha assistant",
+    name: "Alpha",
+    role: "ROTU Army UMT programme assistant",
+    title: "Alpha",
+    greeting:
+      "I'm Alpha, the ROTU Army UMT programme assistant. I answer from published ROTU Army UMT information—the programme guide, published intakes, stories, and FAQs—and show the sources I used.\n\nI can't share anyone's personal details, application status, or results, or tell you whether a specific application was successful. For current deadlines and announcements, check the official notice.",
+    adminGreeting:
+      "I'm Alpha, the ROTU Army UMT admin assistant. Ask for read-only summaries using tools available to your role and the scope shown here. I can't change records.",
+    suggestions: [
+      "How do I join ROTU Army UMT?",
+      "What does the training involve?",
+      "What are the programme benefits?",
+    ],
+    adminSuggestions: {
+      SECRETARY: [
+        "How many cadets are active?",
+        "Show intake information",
+        "Show active cadet counts by intake",
+      ],
+      TREASURER: [
+        "Show collection totals",
+        "How many payment records are there?",
+        "What is the total amount recorded in payments?",
+      ],
+      SPORTS: [
+        "How many UKA sessions are recorded?",
+        "Summarize sports records",
+        "Show active cadet metrics",
+      ],
+      WELFARE: [
+        "Summarize attendance records",
+        "How many absence records are recorded?",
+        "How many cadets are active?",
+      ],
+      ACADEMIC: [
+        "Show academic statistics",
+        "Summarize exam results",
+        "Show the top CGPA rankings",
+      ],
+      OFFICER: [
+        "How many cadets are active?",
+        "Show academic statistics",
+        "Show active cadet counts by intake",
+      ],
+    },
+    newChat: "Start new chat",
+    jumpToLatest: "Jump to latest",
+    unreadCount: "{count} new messages",
+    assistantLabel: "Alpha said",
+    scopeAll: "All intakes allowed by your role",
+    scopeAssigned: "Assigned intake #{id}",
+    placeholder: "Type your question…",
+    send: "Send",
+    close: "Close assistant",
+    thinking: "Thinking…",
+    error: "The assistant is temporarily unavailable. Please try again later.",
+    turnLimit:
+      "You've reached the six-question limit. Start a new chat to ask more.",
+    sourceTitle: "Sources",
+    crossLanguage:
+      "I also checked relevant information in other supported languages.",
+    sourceTypes: {
+      official_web: "Official source",
+      official_cms_faq: "Published FAQ",
+      official_cms_intake: "Published intake",
+      official_cms_story: "Published story",
+      curated_public_knowledge: "Programme guide",
+    },
+  },
   recordMarkers: {
     home: "About Us / field record 01",
     intakes: "Public record / intakes",
@@ -37,7 +107,8 @@ const en: Dictionary = {
   },
   home: {
     title: "ROTU Army UMT",
-    intro: "A disciplined university training community built around leadership, service, resilience, and field experience.",
+    intro:
+      "A disciplined university training community built around leadership, service, resilience, and field experience.",
     primaryCta: "Explore intakes",
     secondaryCta: "Contact us",
     heroImageAlt: "ROTU Army UMT members on a training field",
@@ -100,7 +171,8 @@ const en: Dictionary = {
     description:
       "Explore ROTU Army UMT intakes, each with its own identity, training character, and intake story.",
     intakeNoLabel: "Intake",
-    summaryFallback: "A detailed summary for this intake will be published soon.",
+    summaryFallback:
+      "A detailed summary for this intake will be published soon.",
     taglineFallback: "Training cycle information in progress.",
     viewDetails: "View details",
     coverImageAlt: "Cover photo of {intake}",
@@ -202,7 +274,8 @@ const en: Dictionary = {
       errorRequired: "Enter your email address to subscribe.",
       errorInvalidEmail:
         "Enter a valid email address, for example name@example.com.",
-      errorDuplicate: "This email address is already subscribed to our newsletter.",
+      errorDuplicate:
+        "This email address is already subscribed to our newsletter.",
       errorRateLimited:
         "Too many subscription attempts. Please wait a few minutes and try again.",
       errorUnavailable:
@@ -217,10 +290,12 @@ const en: Dictionary = {
   newsletter: {
     emailSubject: "Confirm your ROTU Army UMT subscription",
     emailGreeting: "Hello from ROTU Army UMT,",
-    emailIntro: "Thank you for joining our newsletter. Confirm your subscription to start receiving official updates and announcements.",
+    emailIntro:
+      "Thank you for joining our newsletter. Confirm your subscription to start receiving official updates and announcements.",
     emailButton: "Confirm subscription",
     emailFallback: "If the button does not work, copy this link:",
-    emailFooter: "If you did not request this subscription, you can ignore this email.",
+    emailFooter:
+      "If you did not request this subscription, you can ignore this email.",
     emailUnsubscribeLabel: "Unsubscribe",
     confirmationPageEyebrow: "Newsletter",
     confirmationPageTitle: "Confirm your subscription",
@@ -259,7 +334,8 @@ const en: Dictionary = {
   notFoundPage: {
     eyebrow: "404",
     title: "Page not found",
-    description: "The page you are looking for does not exist or has been moved.",
+    description:
+      "The page you are looking for does not exist or has been moved.",
     backHomeLabel: "Back to home",
     imageAlt: "Page not found illustration",
   },

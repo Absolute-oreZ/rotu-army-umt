@@ -43,7 +43,8 @@ export type AdminModule =
   | "religion"
   | "courses"
   | "results"
-  | "timetables";
+  | "timetables"
+  | "ai-knowledge";
 
 export const ADMIN_DEFAULT_ROUTES = {
   OFFICER: "/admin",
@@ -69,9 +70,9 @@ export const ROLE_ROUTE_SEGMENTS: Record<
 };
 
 const roleModules = {
-  OFFICER: ["dashboard"],
-  INSTRUCTOR: ["dashboard"],
-  SECRETARY: ["rank-holders", "intakes", "cadets"],
+  OFFICER: ["dashboard", "ai-knowledge"],
+  INSTRUCTOR: ["dashboard", "ai-knowledge"],
+  SECRETARY: ["rank-holders", "intakes", "cadets", "ai-knowledge"],
   TREASURER: ["accounts", "collections", "payments", "expenses", "claims"],
   MULTIMEDIA: ["portfolio", "stories", "newsletters"],
   SPORTS: ["metrics", "uka", "apfa", "assessments"],
@@ -86,11 +87,15 @@ export function isAdminRole(value: string): value is AdminRole {
 }
 
 export function isFullAccessAdminRole(role: AdminRole) {
-  return FULL_ACCESS_ADMIN_ROLES.includes(role as (typeof FULL_ACCESS_ADMIN_ROLES)[number]);
+  return FULL_ACCESS_ADMIN_ROLES.includes(
+    role as (typeof FULL_ACCESS_ADMIN_ROLES)[number],
+  );
 }
 
 export function isIntakeScopedRole(role: AdminRole) {
-  return INTAKE_SCOPED_ROLES.includes(role as (typeof INTAKE_SCOPED_ROLES)[number]);
+  return INTAKE_SCOPED_ROLES.includes(
+    role as (typeof INTAKE_SCOPED_ROLES)[number],
+  );
 }
 
 export function getDefaultAdminRoute(role: AdminRole) {

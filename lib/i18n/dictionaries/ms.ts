@@ -25,6 +25,77 @@ const ms: Dictionary = {
     viewStory: "Lihat cerita",
     externalLink: "Terbuka dalam tab baharu",
   },
+  aiAssistant: {
+    open: "Buka pembantu Alpha",
+    name: "Alpha",
+    role: "Pembantu program ROTU Army UMT",
+    title: "Alpha",
+    greeting:
+      "Saya Alpha, pembantu program ROTU Army UMT. Saya menjawab berdasarkan maklumat ROTU Army UMT yang diterbitkan—panduan program, ambilan, cerita dan soalan lazim—serta memaparkan sumber yang digunakan.\n\nSaya tidak dapat berkongsi maklumat peribadi, status permohonan atau keputusan sesiapa, atau menentukan kejayaan sesuatu permohonan. Semak notis rasmi untuk tarikh akhir dan pengumuman terkini.",
+    adminGreeting:
+      "Saya Alpha, pembantu pentadbir ROTU Army UMT. Minta ringkasan baca sahaja menggunakan alat yang tersedia untuk peranan dan skop yang dipaparkan. Saya tidak boleh mengubah rekod.",
+    suggestions: [
+      "Bagaimanakah cara menyertai ROTU Army UMT?",
+      "Apakah yang melibatkan latihan?",
+      "Apakah manfaat program ini?",
+    ],
+    adminSuggestions: {
+      SECRETARY: [
+        "Berapa orang kadet yang aktif?",
+        "Tunjukkan maklumat ambilan",
+        "Ringkaskan rekod kadet",
+      ],
+      TREASURER: [
+        "Tunjukkan jumlah kutipan",
+        "Ringkaskan status bayaran",
+        "Senaraikan akaun perbendaharaan",
+      ],
+      SPORTS: [
+        "Tunjukkan ringkasan penilaian terkini",
+        "Ringkaskan rekod sukan",
+        "Tunjukkan metrik kadet aktif",
+      ],
+      WELFARE: [
+        "Ringkaskan rekod kehadiran",
+        "Tunjukkan ringkasan aktiviti kebajikan",
+        "Berapa orang kadet yang aktif?",
+      ],
+      ACADEMIC: [
+        "Tunjukkan statistik akademik",
+        "Ringkaskan keputusan peperiksaan",
+        "Tunjukkan maklumat jadual waktu",
+      ],
+      OFFICER: [
+        "Berapa orang kadet yang aktif?",
+        "Tunjukkan statistik akademik",
+        "Ringkaskan aktiviti terkini",
+      ],
+    },
+    newChat: "Mulakan sembang baharu",
+    jumpToLatest: "Pergi ke mesej terkini",
+    unreadCount: "{count} mesej baharu",
+    assistantLabel: "Alpha berkata",
+    scopeAll: "Semua ambilan yang dibenarkan untuk peranan anda",
+    scopeAssigned: "Ambilan yang ditetapkan #{id}",
+    placeholder: "Taip soalan anda…",
+    send: "Hantar",
+    close: "Tutup pembantu",
+    thinking: "Sedang berfikir…",
+    error:
+      "Pembantu tidak tersedia buat sementara waktu. Sila cuba lagi kemudian.",
+    turnLimit:
+      "Anda telah mencapai had enam soalan untuk sesi ini. Mulakan sembang baharu untuk meneruskan.",
+    sourceTitle: "Sumber",
+    crossLanguage:
+      "Saya turut menyemak maklumat berkaitan dalam bahasa lain yang disokong.",
+    sourceTypes: {
+      official_web: "Sumber rasmi",
+      official_cms_faq: "Soalan lazim diterbitkan",
+      official_cms_intake: "Ambilan diterbitkan",
+      official_cms_story: "Cerita diterbitkan",
+      curated_public_knowledge: "Panduan program",
+    },
+  },
   recordMarkers: {
     home: "Tentang Kami / rekod medan 01",
     intakes: "Rekod awam / ambilan",
@@ -37,7 +108,8 @@ const ms: Dictionary = {
   },
   home: {
     title: "ROTU Army UMT",
-    intro: "Komuniti latihan universiti berdisiplin yang dibina atas kepimpinan, khidmat, ketahanan, dan pengalaman lapangan.",
+    intro:
+      "Komuniti latihan universiti berdisiplin yang dibina atas kepimpinan, khidmat, ketahanan, dan pengalaman lapangan.",
     primaryCta: "Lihat ambilan",
     secondaryCta: "Hubungi kami",
     heroImageAlt: "Ahli ROTU Army UMT di medan latihan",
@@ -48,8 +120,10 @@ const ms: Dictionary = {
     instructorCountLabel: "Jurulatih",
     cadetCountLabel: "Kadet",
     faqTitle: "Soalan lazim",
-    faqIntro: "Jawapan penting untuk pelajar yang ingin menyertai ROTU/PALAPES.",
-    faqEmpty: "Tiada soalan telah diterbitkan lagi. Sila kembali sebentar lagi.",
+    faqIntro:
+      "Jawapan penting untuk pelajar yang ingin menyertai ROTU/PALAPES.",
+    faqEmpty:
+      "Tiada soalan telah diterbitkan lagi. Sila kembali sebentar lagi.",
     seeAlsoTitle: "Lihat juga",
     seeAlsoIntro: "Rujukan berkaitan Angkatan Tentera Malaysia.",
     seeAlsoEmpty: "Tiada pautan berkaitan telah diterbitkan lagi.",
@@ -100,7 +174,8 @@ const ms: Dictionary = {
     description:
       "Terokai ambilan ROTU Army UMT yang mempunyai identiti, karakter latihan, dan kisah tersendiri.",
     intakeNoLabel: "Ambilan",
-    summaryFallback: "Ringkasan terperinci ambilan ini akan diterbitkan tidak lama lagi.",
+    summaryFallback:
+      "Ringkasan terperinci ambilan ini akan diterbitkan tidak lama lagi.",
     taglineFallback: "Maklumat kitaran latihan sedang dikemas kini.",
     viewDetails: "Lihat butiran",
     coverImageAlt: "Gambar utama ambilan {intake}",
@@ -198,7 +273,8 @@ const ms: Dictionary = {
         ta: "Bahasa Tamil",
       },
       submitLabel: "Langgan",
-      success: "Hampir selesai — semak peti masuk anda untuk mengesahkan langganan.",
+      success:
+        "Hampir selesai — semak peti masuk anda untuk mengesahkan langganan.",
       errorUnexpected: "Sesuatu tidak kena. Sila cuba lagi.",
       errorRequired: "Masukkan alamat e-mel anda untuk melanggan.",
       errorInvalidEmail:
@@ -218,10 +294,12 @@ const ms: Dictionary = {
   newsletter: {
     emailSubject: "Sahkan langganan ROTU Army UMT anda",
     emailGreeting: "Halo daripada ROTU Army UMT,",
-    emailIntro: "Terima kasih kerana menyertai surat berita kami. Sahkan langganan anda untuk mula menerima kemas kini dan pengumuman rasmi.",
+    emailIntro:
+      "Terima kasih kerana menyertai surat berita kami. Sahkan langganan anda untuk mula menerima kemas kini dan pengumuman rasmi.",
     emailButton: "Sahkan langganan",
     emailFallback: "Jika butang tidak berfungsi, salin pautan ini:",
-    emailFooter: "Jika anda tidak meminta langganan ini, anda boleh abaikan e-mel ini.",
+    emailFooter:
+      "Jika anda tidak meminta langganan ini, anda boleh abaikan e-mel ini.",
     emailUnsubscribeLabel: "Nyahlanggan",
     confirmationPageEyebrow: "Surat berita",
     confirmationPageTitle: "Sahkan langganan anda",

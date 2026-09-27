@@ -24,6 +24,50 @@ const zh: Dictionary = {
     viewStory: "查看故事",
     externalLink: "在新标签页中打开",
   },
+  aiAssistant: {
+    open: "打开 Alpha 助手",
+    name: "Alpha",
+    role: "ROTU Army UMT 项目助手",
+    title: "Alpha",
+    greeting:
+      "我是 Alpha，ROTU Army UMT 项目助手。我根据已发布的 ROTU Army UMT 信息作答，包括项目指南、已发布的届别、故事和常见问题，并显示所用来源。\n\n我不能分享任何人的个人资料、申请状态或成绩，也不能判断某项申请是否成功。有关最新截止日期和公告，请查看官方通知。",
+    adminGreeting:
+      "我是 Alpha，ROTU Army UMT 管理助手。您可以使用适用于您角色且符合此处所示范围的工具请求只读摘要。我无法修改记录。",
+    suggestions: [
+      "如何加入 ROTU Army UMT？",
+      "训练内容包括什么？",
+      "参加该项目有什么益处？",
+    ],
+    adminSuggestions: {
+      SECRETARY: ["有多少名活跃学员？", "显示届别信息", "总结学员记录"],
+      TREASURER: ["显示收款总额", "总结付款状态", "列出财务账户"],
+      SPORTS: ["显示近期评估摘要", "总结体育记录", "显示活跃学员指标"],
+      WELFARE: ["总结出勤记录", "显示福利活动摘要", "有多少名活跃学员？"],
+      ACADEMIC: ["显示学业统计", "总结考试成绩", "显示课程表信息"],
+      OFFICER: ["有多少名活跃学员？", "显示学业统计", "总结近期活动"],
+    },
+    newChat: "开始新对话",
+    jumpToLatest: "跳至最新消息",
+    unreadCount: "{count} 条新消息",
+    assistantLabel: "Alpha 说",
+    scopeAll: "您角色获准访问的所有届别",
+    scopeAssigned: "指定届别 #{id}",
+    placeholder: "输入问题…",
+    send: "发送",
+    close: "关闭助手",
+    thinking: "正在思考…",
+    error: "助手暂时无法使用，请稍后再试。",
+    turnLimit: "本次对话已达到六个问题的上限。请开始新对话以继续。",
+    sourceTitle: "资料来源",
+    crossLanguage: "我也检索了其他支持语言中的相关资料。",
+    sourceTypes: {
+      official_web: "官方来源",
+      official_cms_faq: "已发布常见问题",
+      official_cms_intake: "已发布届别",
+      official_cms_story: "已发布故事",
+      curated_public_knowledge: "项目指南",
+    },
+  },
   recordMarkers: {
     home: "关于我们 / 野外记录 01",
     intakes: "公开记录 / 入队批次",
@@ -66,8 +110,7 @@ const zh: Dictionary = {
     joinTheRanks: {
       eyebrow: "简明流程",
       title: "加入我们",
-      intro:
-        "您的领导力与纪律之旅由此开始。请按照以下步骤加入 ROTU Army UMT。",
+      intro: "您的领导力与纪律之旅由此开始。请按照以下步骤加入 ROTU Army UMT。",
       stepAlt: "第 {number} 步插图：{title}",
       steps: [
         {
@@ -130,7 +173,8 @@ const zh: Dictionary = {
   },
   storiesPage: {
     title: "我们的故事",
-    description: "按年份浏览已发布的 ROTU Army UMT 故事记录，打开即可阅读全文。",
+    description:
+      "按年份浏览已发布的 ROTU Army UMT 故事记录，打开即可阅读全文。",
     emptyTitle: "暂无已发布故事",
     emptyDescription: "团队发布后，故事将在此处显示。",
     emptyActionLabel: "返回首页",
@@ -225,7 +269,8 @@ const zh: Dictionary = {
     unsubscribePageEyebrow: "电子通讯",
     unsubscribePageTitle: "取消电子通讯订阅",
     unsubscribePageSuccessTitle: "已取消订阅",
-    unsubscribePageSuccessDescription: "您将不再收到来自 ROTU Army UMT 的通讯更新。",
+    unsubscribePageSuccessDescription:
+      "您将不再收到来自 ROTU Army UMT 的通讯更新。",
     unsubscribePageAlreadyTitle: "您已经取消订阅",
     unsubscribePageAlreadyDescription: "此取消订阅链接已经使用过。",
     unsubscribePagePendingTitle: "取消电子通讯订阅",

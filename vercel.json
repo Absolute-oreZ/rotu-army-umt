@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/newsletters",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/ai-index",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

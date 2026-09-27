@@ -103,7 +103,16 @@ Updated implementation direction: public pages should be built against reusable 
 - [ ] Create application confirmation email template.
 - [ ] Create application status update email template.
 - [ ] Audit per-page canonical URLs and hreflang alternates across all public routes.
-- [ ] Develop Retrieval-Augmented Generation (RAG).
+- [x] Establish separate public/admin AI boundaries, OpenRouter provider abstraction, locale-aware public RAG schema and structural indexing pipeline.
+- [x] Add Secretary global Public AI Knowledge CMS with four locale versions, draft/publish/archive/restore, version history, and safe Markdown preview.
+- [x] Add public localized AI route/UI, citation pages, retrieval over published knowledge plus existing public content projections, policy refusals, and DB-backed rate limiting.
+- [x] Add the Admin AI route/UI with existing server RBAC, explicit read-only tools, server-derived intake scope, sensitive-query refusal, and metadata-only execution audit.
+- [x] Close AI scope: remove the internal Admin RAG/CMS and record forward migration 0010; make both assistants use structured output and server-validated citations; enforce all AI_LIMITS; queue public indexing; add metadata telemetry, scoped search/ranking tools, UI turn caps, and security fixtures.
+- [x] Add multilingual retrieval fixtures, retrieval evaluation command, and policy/chunker checks.
+- [X] Apply forward migration 0010 and seed/index the public corpus in a configured non-production Supabase environment; migrations 0007–0009 are already applied.
+- [X] Verify official-web search citation annotations with a live provider and run multilingual retrieval/security evaluation.
+- [X] Human-verify the seed corpus's age-range and BMI assertions against authoritative ROTU sources before public rollout.
+- [X] Complete production rate-limit/provider-outage checks and staged rollout.
 
 ## Phase 2 Hardening
 
@@ -136,3 +145,22 @@ Updated implementation direction: public pages should be built against reusable 
 - [x] Stable pagination: PK tiebreaker appended unconditionally to Attend, Religious Activities, Academic Courses (cadet + course queries), and newsletter list ordering; all other shared data-table pages verified to already include one.
 - [x] Newsletter list payload: `getNewsletterCampaigns` slimmed to metadata (heavy `contentHtml`/`contentText` only in details/send paths); unused `CampaignRow` type removed from actions.
 - [x] Added canonical `typecheck` script (`tsc --noEmit`) to `package.json`.
+
+## Full Repository Redemption Plan
+
+- [x] Pin Next.js to patched 16.3.6 and apply compatible npm audit fixes; four moderate development-tooling advisories remain documented by `npm audit` (legacy Drizzle Kit dependency chain).
+- [x] Add CI AI environment mapping, explicit typecheck, tests, high-severity dependency audit, and build gates.
+- [x] Add server-bounded AI request-body parsing and validate bounded public/admin conversation history.
+- [x] Pass recent conversation context to both assistants while keeping public retrieval and Admin tool selection tied to the latest request.
+- [x] Buffer assistant answers until structured-output validation and enforce official-web evidence for current-information responses.
+- [x] Bound provider attempts and per-attempt timeout within the AI route runtime; classify streamed failures into safe messages.
+- [x] Enforce the Markdown chunk hard token ceiling, including unbroken long lines and CJK input.
+- [x] Narrow public AI website projections to published FAQs, intakes, and stories with hard query limits; include story summaries, locations, and tags in relevance matching.
+- [x] Align the Admin AI execution limit with its actual single deterministic tool selection and centrally allowlist model-facing result fields.
+- [x] Escape `%`, `_`, and `\\` in bounded Admin AI name searches; remove Multimedia suggestions while no Multimedia read tools exist.
+- [x] Add bounded indexing retries with explicit completion/failure/retry/skip counts and safe failure categories.
+- [x] Prevent duplicate publish claims, enforce one published version per document locale, and make seed lookup/order and 24-locale consistency checks deterministic.
+- [x] Retain only 90 days of AI request/tool metadata and run cleanup from the authenticated AI cron.
+- [x] Align architecture/SRS with server-side history limits, buffered structured answers, current-web evidence policy, and the current security behavior.
+- [x] Review fixes: keep web-grounded current answers (an accepted official-web citation satisfies grounding on its own), classify scope on the latest question only, reject non-object admin chat bodies with 400, reject bare/dotted relative Markdown links, dedupe locale fan-out in public retrieval, split the streaming timeout from the non-streaming budget, align `maxRequestBytes` with the worst-case conversation payload, add a duplicate-archiving pre-step to migration 0012, isolate cron housekeeping failures, and gate the Admin AI panel by capability.
+- [ ] Remaining redemption-plan phases: apply and verify migration 0012 in a configured database, add CMS provenance, complete the multilingual adversarial/RBAC/performance matrix, confirm deployment-specific proxy/cron settings, and run the exact release-candidate CI/production smoke gate.

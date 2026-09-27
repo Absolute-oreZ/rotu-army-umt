@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   date,
   index,
   integer,
@@ -68,6 +69,38 @@ export const publicationStatusEnum = pgEnum("publication_status", [
   "ARCHIVED",
 ]);
 
+export const aiDocumentStatusEnum = pgEnum("ai_document_status", [
+  "DRAFT",
+  "PUBLISHED",
+  "ARCHIVED",
+]);
+
+export const aiIndexStatusEnum = pgEnum("ai_index_status", [
+  "UNINDEXED",
+  "INDEXING",
+  "INDEXED",
+  "FAILED",
+  "STALE",
+]);
+
+const vector1024 = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return "vector(1024)";
+  },
+  toDriver(value) {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value) {
+    return value.slice(1, -1).split(",").map(Number);
+  },
+});
+
+const tsvector = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
+
 export const claimStatusEnum = pgEnum("claim_status", [
   "PENDING",
   "FULFILLED",
@@ -83,7 +116,10 @@ export const bmiClassificationEnum = pgEnum("bmi_classification", [
   "OBESE",
 ]);
 
-export const assessmentResultEnum = pgEnum("assessment_result", ["PASS", "FAIL"]);
+export const assessmentResultEnum = pgEnum("assessment_result", [
+  "PASS",
+  "FAIL",
+]);
 
 export const attendTypeEnum = pgEnum("attend_type", ["B", "C"]);
 
@@ -134,12 +170,7 @@ export const religionEnum = pgEnum("religion", [
   "OTHER",
 ]);
 
-export const raceEnum = pgEnum("race", [
-  "MALAY",
-  "CHINESE",
-  "INDIAN",
-  "OTHER",
-]);
+export const raceEnum = pgEnum("race", ["MALAY", "CHINESE", "INDIAN", "OTHER"]);
 
 export const bankEnum = pgEnum("bank", [
   "MAYBANK",
@@ -164,10 +195,14 @@ export const collectionPurposeEnum = pgEnum("collection_purpose", [
   "OTHERS",
 ]);
 
-
 const timestamps = {
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 };
 
 export const adminUsers = pgTable(
@@ -175,7 +210,9 @@ export const adminUsers = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     authUserId: uuid("auth_user_id").notNull(),
-    memberId: integer("member_id").notNull().references(() => members.id),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
     email: varchar("email", { length: 320 }).notNull(),
     role: adminRoleEnum("role").notNull(),
     intakeId: integer("intake_id").references(() => intakes.id),
@@ -205,10 +242,14 @@ export const adminRoleAuditLogs = pgTable(
     targetMemberName: text("target_member_name").notNull(),
     oldRole: adminRoleEnum("old_role"),
     newRole: adminRoleEnum("new_role"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
-    index("admin_role_audit_logs_changed_by_idx").on(table.changedByAdminUserId),
+    index("admin_role_audit_logs_changed_by_idx").on(
+      table.changedByAdminUserId,
+    ),
     index("admin_role_audit_logs_created_at_idx").on(table.createdAt),
   ],
 );
@@ -217,17 +258,19 @@ export const adminInvitations = pgTable(
   "admin_invitations",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    memberId: integer("member_id").notNull().references(() => members.id),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
     email: varchar("email", { length: 320 }).notNull(),
     role: adminRoleEnum("role").notNull(),
     intakeId: integer("intake_id").references(() => intakes.id),
     invitedByAuthUserId: uuid("invited_by_auth_user_id").notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [
-    index("admin_invitations_email_idx").on(table.email),
-  ],
+  (table) => [index("admin_invitations_email_idx").on(table.email)],
 );
 
 export const intakes = pgTable(
@@ -399,7 +442,9 @@ export const members = pgTable(
   (table) => [
     uniqueIndex("members_army_no_idx").on(table.armyNo),
     uniqueIndex("members_personal_email_idx").on(table.personalEmail),
-    uniqueIndex("members_edu_email_idx").on(table.eduEmail).where(sql`${table.eduEmail} is not null`),
+    uniqueIndex("members_edu_email_idx")
+      .on(table.eduEmail)
+      .where(sql`${table.eduEmail} is not null`),
     index("members_role_idx").on(table.role),
     index("members_name_idx").on(table.name),
   ],
@@ -435,13 +480,15 @@ export const cadets = pgTable(
     weight: numeric("weight", { precision: 5, scale: 2 }),
     bmi: numeric("bmi", { precision: 4, scale: 2 }),
     bmiClassification: bmiClassificationEnum("bmi_classification"),
-    studyProgramId: integer("study_program_id")
-      .references(() => studyPrograms.id),
+    studyProgramId: integer("study_program_id").references(
+      () => studyPrograms.id,
+    ),
     intakeId: integer("intake_id")
       .notNull()
       .references(() => intakes.id),
-    platoonId: integer("platoon_id")
-      .references(() => platoons.id, { onDelete: "set null" }),
+    platoonId: integer("platoon_id").references(() => platoons.id, {
+      onDelete: "set null",
+    }),
     memberId: integer("member_id")
       .notNull()
       .references(() => members.id),
@@ -453,7 +500,9 @@ export const cadets = pgTable(
     index("cadets_intake_id_idx").on(table.intakeId),
     index("cadets_platoon_id_idx").on(table.platoonId),
     index("cadets_study_program_id_idx").on(table.studyProgramId),
-    index("cadets_is_active_idx").on(table.isActive).where(sql`${table.isActive} = true`),
+    index("cadets_is_active_idx")
+      .on(table.isActive)
+      .where(sql`${table.isActive} = true`),
   ],
 );
 
@@ -490,9 +539,7 @@ export const cadetAccounts = pgTable(
     qrCodePath: text("qr_code_path"),
     ...timestamps,
   },
-  (table) => [
-    uniqueIndex("cadet_accounts_member_id_idx").on(table.memberId),
-  ],
+  (table) => [uniqueIndex("cadet_accounts_member_id_idx").on(table.memberId)],
 );
 
 export const academicExamResults = pgTable(
@@ -553,7 +600,10 @@ export const academicTimetables = pgTable(
     cadetId: integer("cadet_id")
       .notNull()
       .references(() => cadets.id, { onDelete: "cascade" }),
-    occupiedSlots: jsonb("occupied_slots").$type<string[]>().default([]).notNull(),
+    occupiedSlots: jsonb("occupied_slots")
+      .$type<string[]>()
+      .default([])
+      .notNull(),
     timetablePdfPath: text("timetable_pdf_path"),
     ...timestamps,
   },
@@ -601,9 +651,9 @@ export const newsletterSubscribers = pgTable(
     uniqueIndex("newsletter_subscribers_confirmation_token_hash_idx")
       .on(table.confirmationTokenHash)
       .where(sql`${table.confirmationTokenHash} is not null`),
-    uniqueIndex("newsletter_subscribers_unsubscribe_token_hash_idx").on(
-      table.unsubscribeTokenHash,
-    ).where(sql`${table.unsubscribeTokenHash} is not null`),
+    uniqueIndex("newsletter_subscribers_unsubscribe_token_hash_idx")
+      .on(table.unsubscribeTokenHash)
+      .where(sql`${table.unsubscribeTokenHash} is not null`),
     index("newsletter_subscribers_status_idx").on(table.status),
   ],
 );
@@ -615,7 +665,9 @@ export const rateLimitEntries = pgTable(
     identifier: varchar("identifier", { length: 255 }).notNull(),
     action: varchar("action", { length: 100 }).notNull(),
     count: integer("count").default(1).notNull(),
-    windowStart: timestamp("window_start", { withTimezone: true }).defaultNow().notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [
@@ -627,19 +679,15 @@ export const rateLimitEntries = pgTable(
   ],
 );
 
-export const newsletterCampaignStatusEnum = pgEnum("newsletter_campaign_status", [
-  "DRAFT",
-  "SENT",
-  "SCHEDULED",
-  "SENDING",
-  "FAILED",
-]);
+export const newsletterCampaignStatusEnum = pgEnum(
+  "newsletter_campaign_status",
+  ["DRAFT", "SENT", "SCHEDULED", "SENDING", "FAILED"],
+);
 
-export const newsletterDeliveryStatusEnum = pgEnum("newsletter_delivery_status", [
-  "QUEUED",
-  "SENT",
-  "FAILED",
-]);
+export const newsletterDeliveryStatusEnum = pgEnum(
+  "newsletter_delivery_status",
+  ["QUEUED", "SENT", "FAILED"],
+);
 
 export const newsletterCampaigns = pgTable(
   "newsletter_campaigns",
@@ -653,9 +701,14 @@ export const newsletterCampaigns = pgTable(
     scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     recipientCount: integer("recipient_count").default(0).notNull(),
-    sentByAdminUserId: uuid("sent_by_admin_user_id").references(() => adminUsers.id, { onDelete: "set null" }),
+    sentByAdminUserId: uuid("sent_by_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
     sendingLeaseId: text("sending_lease_id"),
-    sendingLeaseExpiresAt: timestamp("sending_lease_expires_at", { withTimezone: true }),
+    sendingLeaseExpiresAt: timestamp("sending_lease_expires_at", {
+      withTimezone: true,
+    }),
     retryCount: integer("retry_count").default(0).notNull(),
     ...timestamps,
   },
@@ -663,7 +716,9 @@ export const newsletterCampaigns = pgTable(
     index("newsletter_campaigns_status_idx").on(table.status),
     index("newsletter_campaigns_scheduled_at_idx").on(table.scheduledAt),
     index("newsletter_campaigns_sent_by_idx").on(table.sentByAdminUserId),
-    index("newsletter_campaigns_lease_expires_idx").on(table.sendingLeaseExpiresAt),
+    index("newsletter_campaigns_lease_expires_idx").on(
+      table.sendingLeaseExpiresAt,
+    ),
   ],
 );
 
@@ -671,7 +726,9 @@ export const newsletterCampaignTranslations = pgTable(
   "newsletter_campaign_translations",
   {
     id: serial("id").primaryKey(),
-    campaignId: integer("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
+    campaignId: integer("campaign_id")
+      .notNull()
+      .references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
     subject: varchar("subject", { length: 200 }).notNull(),
     previewText: varchar("preview_text", { length: 200 }),
@@ -680,7 +737,10 @@ export const newsletterCampaignTranslations = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("newsletter_campaign_translations_campaign_locale_idx").on(table.campaignId, table.locale),
+    uniqueIndex("newsletter_campaign_translations_campaign_locale_idx").on(
+      table.campaignId,
+      table.locale,
+    ),
     index("newsletter_campaign_translations_campaign_idx").on(table.campaignId),
   ],
 );
@@ -689,22 +749,30 @@ export const newsletterCampaignAttachments = pgTable(
   "newsletter_campaign_attachments",
   {
     id: serial("id").primaryKey(),
-    campaignId: integer("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
+    campaignId: integer("campaign_id")
+      .notNull()
+      .references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
     fileName: varchar("file_name", { length: 255 }).notNull(),
     storagePath: text("storage_path").notNull(),
     contentType: varchar("content_type", { length: 150 }).notNull(),
     fileSize: integer("file_size").notNull(),
     ...timestamps,
   },
-  (table) => [index("newsletter_campaign_attachments_campaign_idx").on(table.campaignId)],
+  (table) => [
+    index("newsletter_campaign_attachments_campaign_idx").on(table.campaignId),
+  ],
 );
 
 export const newsletterCampaignDeliveries = pgTable(
   "newsletter_campaign_deliveries",
   {
     id: serial("id").primaryKey(),
-    campaignId: integer("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
-    subscriberId: uuid("subscriber_id").notNull().references(() => newsletterSubscribers.id, { onDelete: "restrict" }),
+    campaignId: integer("campaign_id")
+      .notNull()
+      .references(() => newsletterCampaigns.id, { onDelete: "cascade" }),
+    subscriberId: uuid("subscriber_id")
+      .notNull()
+      .references(() => newsletterSubscribers.id, { onDelete: "restrict" }),
     email: varchar("email", { length: 320 }).notNull(),
     locale: localeEnum("locale").notNull(),
     status: newsletterDeliveryStatusEnum("status").default("QUEUED").notNull(),
@@ -715,10 +783,20 @@ export const newsletterCampaignDeliveries = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("newsletter_campaign_deliveries_campaign_subscriber_idx").on(table.campaignId, table.subscriberId),
-    uniqueIndex("newsletter_campaign_deliveries_idempotency_key_idx").on(table.idempotencyKey),
-    index("newsletter_campaign_deliveries_campaign_status_idx").on(table.campaignId, table.status),
-    index("newsletter_campaign_deliveries_subscriber_idx").on(table.subscriberId),
+    uniqueIndex("newsletter_campaign_deliveries_campaign_subscriber_idx").on(
+      table.campaignId,
+      table.subscriberId,
+    ),
+    uniqueIndex("newsletter_campaign_deliveries_idempotency_key_idx").on(
+      table.idempotencyKey,
+    ),
+    index("newsletter_campaign_deliveries_campaign_status_idx").on(
+      table.campaignId,
+      table.status,
+    ),
+    index("newsletter_campaign_deliveries_subscriber_idx").on(
+      table.subscriberId,
+    ),
   ],
 );
 
@@ -814,13 +892,19 @@ export const bestCadets = pgTable(
   "best_cadets",
   {
     id: serial("id").primaryKey(),
-    memberId: integer("member_id").references(() => members.id, { onDelete: "set null" }),
+    memberId: integer("member_id").references(() => members.id, {
+      onDelete: "set null",
+    }),
     displayName: varchar("display_name", { length: 180 }).notNull(),
     awardDate: date("award_date").notNull(),
-    intakeId: integer("intake_id").references(() => intakes.id, { onDelete: "set null" }),
+    intakeId: integer("intake_id").references(() => intakes.id, {
+      onDelete: "set null",
+    }),
     intakeNoSnapshot: varchar("intake_no_snapshot", { length: 60 }),
     portraitPath: text("portrait_path").notNull(),
-    relatedStoryId: integer("related_story_id").references(() => events.id, { onDelete: "set null" }),
+    relatedStoryId: integer("related_story_id").references(() => events.id, {
+      onDelete: "set null",
+    }),
     status: publicationStatusEnum("status").default("DRAFT").notNull(),
     ...timestamps,
   },
@@ -828,7 +912,9 @@ export const bestCadets = pgTable(
     index("best_cadets_award_date_idx").on(table.awardDate),
     index("best_cadets_status_idx").on(table.status),
     uniqueIndex("best_cadets_intake_id_unique_idx").on(table.intakeId),
-    uniqueIndex("best_cadets_award_year_unique_idx").on(sql`(extract(year from ${table.awardDate})::integer)`),
+    uniqueIndex("best_cadets_award_year_unique_idx").on(
+      sql`(extract(year from ${table.awardDate})::integer)`,
+    ),
   ],
 );
 
@@ -836,14 +922,19 @@ export const bestCadetTranslations = pgTable(
   "best_cadet_translations",
   {
     id: serial("id").primaryKey(),
-    bestCadetId: integer("best_cadet_id").notNull().references(() => bestCadets.id, { onDelete: "cascade" }),
+    bestCadetId: integer("best_cadet_id")
+      .notNull()
+      .references(() => bestCadets.id, { onDelete: "cascade" }),
     locale: localeEnum("locale").notNull(),
     summary: text("summary").notNull(),
     quote: text("quote"),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("best_cadet_translations_cadet_locale_idx").on(table.bestCadetId, table.locale),
+    uniqueIndex("best_cadet_translations_cadet_locale_idx").on(
+      table.bestCadetId,
+      table.locale,
+    ),
   ],
 );
 
@@ -881,7 +972,10 @@ export const webappContents = pgTable(
   },
   (table) => [
     uniqueIndex("webapp_contents_singleton_key_idx").on(table.singletonKey),
-    check("webapp_contents_singleton_key_check", sql`${table.singletonKey} = true`),
+    check(
+      "webapp_contents_singleton_key_check",
+      sql`${table.singletonKey} = true`,
+    ),
   ],
 );
 
@@ -944,16 +1038,13 @@ export const seeMoreLinks = pgTable(
   ],
 );
 
-export const contactReasons = pgTable(
-  "contact_reasons",
-  {
-    id: serial("id").primaryKey(),
-    iconKey: varchar("icon_key", { length: 60 }).notNull(),
-    sortOrder: integer("sort_order").default(0).notNull(),
+export const contactReasons = pgTable("contact_reasons", {
+  id: serial("id").primaryKey(),
+  iconKey: varchar("icon_key", { length: 60 }).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
 
-    ...timestamps,
-  },
-);
+  ...timestamps,
+});
 
 export const contactReasonTranslations = pgTable(
   "contact_reason_translations",
@@ -1014,8 +1105,10 @@ export const collections = pgTable(
     amount: numeric("amount", { precision: 10, scale: 2 }),
     isFixedAmount: boolean("is_fixed_amount").default(true).notNull(),
     isReceiptRequired: boolean("is_receipt_required").default(true).notNull(),
-    paymentAccountId: integer("payment_account_id")
-      .references(() => treasuryAccounts.id, { onDelete: "set null" }),
+    paymentAccountId: integer("payment_account_id").references(
+      () => treasuryAccounts.id,
+      { onDelete: "set null" },
+    ),
     status: publicationStatusEnum("status").default("DRAFT").notNull(),
     ...timestamps,
   },
@@ -1081,7 +1174,9 @@ export const expenseReceipts = pgTable(
       .notNull()
       .references(() => expenses.id, { onDelete: "cascade" }),
     filePath: text("file_path").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     index("expense_receipts_expense_id_idx").on(table.expenseId),
@@ -1127,7 +1222,10 @@ export const healthRecords = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("health_records_intake_date_idx").on(table.intakeId, table.recordDate),
+    uniqueIndex("health_records_intake_date_idx").on(
+      table.intakeId,
+      table.recordDate,
+    ),
   ],
 );
 
@@ -1291,9 +1389,7 @@ export const accommodations = pgTable(
     address: text("address"),
     ...timestamps,
   },
-  (table) => [
-    uniqueIndex("accommodations_cadet_id_idx").on(table.cadetId),
-  ],
+  (table) => [uniqueIndex("accommodations_cadet_id_idx").on(table.cadetId)],
 );
 
 export const religiousActivities = pgTable(
@@ -1325,5 +1421,194 @@ export const religiousActivityPhotos = pgTable(
     photoPath: text("photo_path").notNull(),
     ...timestamps,
   },
-  (table) => [index("religious_activity_photos_activity_id_idx").on(table.activityId)],
+  (table) => [
+    index("religious_activity_photos_activity_id_idx").on(table.activityId),
+  ],
+);
+
+/** Public knowledge is global CMS content, intentionally outside intake scope. */
+export const aiPublicDocuments = pgTable(
+  "ai_public_documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    slug: varchar("slug", { length: 120 }).notNull(),
+    canonicalTopic: varchar("canonical_topic", { length: 80 }).notNull(),
+    category: varchar("category", { length: 80 }).notNull(),
+    audience: varchar("audience", { length: 80 }).notNull().default("public"),
+    sourceType: varchar("source_type", { length: 40 })
+      .notNull()
+      .default("curated_public_knowledge"),
+    createdBy: uuid("created_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    updatedBy: uuid("updated_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("ai_public_documents_slug_idx").on(table.slug),
+    index("ai_public_documents_topic_idx").on(table.canonicalTopic),
+  ],
+);
+
+export const aiPublicDocumentVersions = pgTable(
+  "ai_public_document_versions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => aiPublicDocuments.id, { onDelete: "cascade" }),
+    language: localeEnum("language").notNull(),
+    title: varchar("title", { length: 240 }).notNull(),
+    markdown: text("markdown").notNull(),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    versionNumber: integer("version_number").notNull(),
+    status: aiDocumentStatusEnum("status").notNull().default("DRAFT"),
+    indexStatus: aiIndexStatusEnum("index_status")
+      .notNull()
+      .default("UNINDEXED"),
+    indexError: text("index_error"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    publishedBy: uuid("published_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    createdBy: uuid("created_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    updatedBy: uuid("updated_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("ai_public_document_versions_unique_idx").on(
+      table.documentId,
+      table.language,
+      table.versionNumber,
+    ),
+    uniqueIndex("ai_public_document_versions_one_published_idx")
+      .on(table.documentId, table.language)
+      .where(sql`${table.status} = 'PUBLISHED'`),
+    index("ai_public_document_versions_public_idx").on(
+      table.documentId,
+      table.language,
+      table.status,
+      table.publishedAt,
+    ),
+    index("ai_public_document_versions_hash_idx").on(table.contentHash),
+  ],
+);
+
+export const aiPublicChunks = pgTable(
+  "ai_public_chunks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    documentVersionId: uuid("document_version_id")
+      .notNull()
+      .references(() => aiPublicDocumentVersions.id, { onDelete: "cascade" }),
+    language: localeEnum("language").notNull(),
+    category: varchar("category", { length: 80 }).notNull(),
+    sourceType: varchar("source_type", { length: 40 }).notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    headingPath: text("heading_path").notNull(),
+    content: text("content").notNull(),
+    embeddingText: text("embedding_text").notNull(),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    tokenCount: integer("token_count").notNull(),
+    canonicalUrl: text("canonical_url"),
+    publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
+    embedding: vector1024("embedding"),
+    fts: tsvector("fts"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("ai_public_chunks_version_index_idx").on(
+      table.documentVersionId,
+      table.chunkIndex,
+    ),
+    index("ai_public_chunks_locale_category_idx").on(
+      table.language,
+      table.category,
+    ),
+    index("ai_public_chunks_version_id_idx").on(table.documentVersionId),
+  ],
+);
+
+export const aiIndexJobs = pgTable(
+  "ai_index_jobs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    documentVersionId: uuid("document_version_id")
+      .notNull()
+      .references(() => aiPublicDocumentVersions.id, { onDelete: "cascade" }),
+    requestedBy: uuid("requested_by").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    status: varchar("status", { length: 20 }).notNull().default("QUEUED"),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("ai_index_jobs_version_idx").on(table.documentVersionId),
+    index("ai_index_jobs_status_created_idx").on(table.status, table.createdAt),
+  ],
+);
+
+export const aiRequestLogs = pgTable(
+  "ai_request_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    requestId: uuid("request_id").notNull(),
+    assistant: varchar("assistant", { length: 20 }).notNull(),
+    locale: localeEnum("locale"),
+    intent: varchar("intent", { length: 80 }),
+    retrievalMs: integer("retrieval_ms").notNull().default(0),
+    llmMs: integer("llm_ms").notNull().default(0),
+    sourceCount: integer("source_count").notNull().default(0),
+    model: varchar("model", { length: 160 }),
+    promptTokens: integer("prompt_tokens"),
+    completionTokens: integer("completion_tokens"),
+    success: boolean("success").notNull(),
+    failureReason: varchar("failure_reason", { length: 80 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("ai_request_logs_assistant_time_idx").on(
+      table.assistant,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const aiToolExecutionLogs = pgTable(
+  "ai_tool_execution_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    adminUserId: uuid("admin_user_id").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    role: adminRoleEnum("role").notNull(),
+    intakeId: integer("intake_id").references(() => intakes.id, {
+      onDelete: "set null",
+    }),
+    toolName: varchar("tool_name", { length: 100 }).notNull(),
+    capability: varchar("capability", { length: 100 }).notNull(),
+    requestHash: varchar("request_hash", { length: 64 }).notNull(),
+    resultRowCount: integer("result_row_count").notNull().default(0),
+    durationMs: integer("duration_ms").notNull().default(0),
+    status: varchar("status", { length: 20 }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("ai_tool_execution_logs_admin_time_idx").on(
+      table.adminUserId,
+      table.createdAt,
+    ),
+  ],
 );

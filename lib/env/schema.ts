@@ -26,6 +26,9 @@ export const PRODUCTION_REQUIRED_ENV_KEYS = [
   "NEWSLETTER_UNSUBSCRIBE_SECRET",
   "TURNSTILE_SECRET_KEY",
   "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+  "OPENROUTER_API_KEY",
+  "AI_PUBLIC_MODEL",
+  "AI_ADMIN_MODEL",
 ] as const;
 
 export const THRESHOLD_ENV_KEYS = [
@@ -69,7 +72,9 @@ function parseUrl(value: string): URL | null {
 }
 
 function isHttpUrl(url: URL | null): url is URL {
-  return url !== null && (url.protocol === "http:" || url.protocol === "https:");
+  return (
+    url !== null && (url.protocol === "http:" || url.protocol === "https:")
+  );
 }
 
 function isLocalHostname(hostname: string): boolean {
@@ -81,7 +86,10 @@ function isLocalHostname(hostname: string): boolean {
   );
 }
 
-export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvIssue[] {
+export function collectEnvIssues(
+  env: EnvSource,
+  options: EnvCheckOptions,
+): EnvIssue[] {
   const issues: EnvIssue[] = [];
   const push = (key: string, message: string) => {
     issues.push({ key, message });
@@ -103,7 +111,10 @@ export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvI
   }
 
   const publicBucket = read(env, "NEXT_PUBLIC_SUPABASE_STORAGE_ROOT_PATH");
-  const privateBucket = read(env, "NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH");
+  const privateBucket = read(
+    env,
+    "NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH",
+  );
   if (publicBucket && privateBucket && publicBucket === privateBucket) {
     push(
       "NEXT_PUBLIC_SUPABASE_PRIVATE_STORAGE_ROOT_PATH",
@@ -116,7 +127,10 @@ export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvI
     const parsed = parseUrl(siteUrl);
     if (!isHttpUrl(parsed)) {
       push("NEXT_PUBLIC_SITE_URL", "must be a valid http(s) URL");
-    } else if (options.production && (parsed.protocol !== "https:" || isLocalHostname(parsed.hostname))) {
+    } else if (
+      options.production &&
+      (parsed.protocol !== "https:" || isLocalHostname(parsed.hostname))
+    ) {
       push("NEXT_PUBLIC_SITE_URL", "must be a public https URL in production");
     }
   }
@@ -127,15 +141,39 @@ export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvI
     push("CRON_SECRET", `must be at least ${MIN_SECRET_LENGTH} characters`);
   }
   if (unsubscribeSecret && unsubscribeSecret.length < MIN_SECRET_LENGTH) {
-    push("NEWSLETTER_UNSUBSCRIBE_SECRET", `must be at least ${MIN_SECRET_LENGTH} characters`);
+    push(
+      "NEWSLETTER_UNSUBSCRIBE_SECRET",
+      `must be at least ${MIN_SECRET_LENGTH} characters`,
+    );
   }
   if (cronSecret && unsubscribeSecret && cronSecret === unsubscribeSecret) {
     push("NEWSLETTER_UNSUBSCRIBE_SECRET", "must differ from CRON_SECRET");
   }
 
+  const openRouterKey = read(env, "OPENROUTER_API_KEY");
+  if (openRouterKey && openRouterKey.length < MIN_SECRET_LENGTH) {
+    push(
+      "OPENROUTER_API_KEY",
+      `must be at least ${MIN_SECRET_LENGTH} characters`,
+    );
+  }
+  for (const key of [
+    "AI_PUBLIC_MODEL",
+    "AI_ADMIN_MODEL",
+    "AI_EMBEDDING_MODEL",
+  ] as const) {
+    const model = read(env, key);
+    if (model && !/^[\w.-]+\/[\w.:-]+$/u.test(model)) {
+      push(key, "must be a pinned provider/model identifier");
+    }
+  }
+
   const fromEmail = read(env, "NEXT_PUBLIC_RESEND_FROM_EMAIL");
   if (fromEmail && !FROM_EMAIL_PATTERN.test(fromEmail)) {
-    push("NEXT_PUBLIC_RESEND_FROM_EMAIL", 'must look like "Name <address@example.com>" or "address@example.com"');
+    push(
+      "NEXT_PUBLIC_RESEND_FROM_EMAIL",
+      'must look like "Name <address@example.com>" or "address@example.com"',
+    );
   }
 
   for (const key of THRESHOLD_ENV_KEYS) {
@@ -150,7 +188,10 @@ export function collectEnvIssues(env: EnvSource, options: EnvCheckOptions): EnvI
   for (const key of LIST_ENV_KEYS) {
     const raw = read(env, key);
     if (raw === undefined) continue;
-    const items = raw.split(",").map((item) => item.trim()).filter(Boolean);
+    const items = raw
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
     if (items.length === 0) {
       push(key, "must contain at least one comma-separated value");
     }

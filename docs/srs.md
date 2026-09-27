@@ -228,6 +228,24 @@ Web app built on Next.js App Router with Supabase Auth and PostgreSQL (Drizzle O
 8. System shall display claims list with status badges and empty state.
 9. System shall scope claims to the cadet's intake via `intakeId`.
 
+### 3.17 AI Assistants and Multilingual Public Knowledge
+1. Public and admin assistants shall be separate application trust boundaries; admin AI is tools-only and shall have no internal document corpus or admin RAG.
+2. Public AI shall use only published public sources and public-content projections; it shall not access private application tables, private storage, or arbitrary SQL.
+3. Public seed knowledge shall include six canonical topics in `en`, `ms`, `zh`, and `ta`. Repository Markdown is bootstrap material; database-backed Secretary CMS versions are runtime source of truth.
+4. Secretary public knowledge management is global, not intake-scoped. Draft and archived versions are not retrievable; publishing requires successful indexing.
+5. Public retrieval shall prefer the selected locale, support cross-language fallback, combine lexical and vector search, answer in the selected language, and return validated citations.
+6. Admin AI shall enforce current-admin authentication, existing module RBAC, an AI capability, and server-derived intake scope. Initial tools are explicit, read-only and field-minimized; generated SQL and writes are excluded.
+7. Admin tools shall be explicit, read-only, parameterized, row-limited, and audit metadata for successes, denials, and failures. Returned fields shall be minimized; no generated SQL or writes are permitted.
+8. Model responses shall be schema-validated; citations shall resolve to server-owned, validated sources, and provider failure shall fail safely without invented answers or sensitive error detail.
+9. Public knowledge publishing shall queue an indexing job; only successfully indexed published versions are eligible for retrieval. Request telemetry shall store operational metadata and token counts only, never raw prompts, answers, or tool results.
+10. Input bytes, question/history characters, message count, conversation turns, public context, tool calls, result rows, output tokens, provider attempts, and elapsed request time shall be bounded server-side. Client conversation limits are UX only and must not be trusted by the API.
+11. Public and admin answers shall not be exposed until the full structured response passes schema validation. Aborted requests shall cancel provider work and remove empty assistant placeholders.
+12. Current-information questions shall require a valid citation from the configured official-web allowlist; historical stories or static curated knowledge alone shall not establish current status. A validated official-web citation satisfies this requirement on its own; a corpus citation shall not additionally be required for such answers.
+13. Public scope classification and current-information detection shall be performed on the latest user question only. Earlier conversation turns may expand retrieval and provide model context, but shall never grant scope to a follow-up question.
+14. The assistant UI shall be offered only to roles that have at least one authorized read tool. Roles without one shall not be shown an assistant that could only refuse.
+15. AI chat requests shall validate the `Content-Type` header and reject non-object JSON bodies with `400` rather than raising a server error.
+16. Managed Markdown shall accept only root-relative path links and credential-free HTTPS links; bare, dotted, and scheme-relative relative destinations shall be rejected.
+
 ## 4. Data Requirements
 
 ### 4.1 Core Entities
@@ -246,6 +264,7 @@ System data model shall include at minimum:
 - Academic years, sessions, exams, results.
 - Newsletter subscribers.
 - Homepage managed content (FAQ, see-more links, Best Cadet honours, webapp_contents).
+- AI public knowledge articles, immutable localized versions and chunks; public indexing jobs; metadata-only AI request telemetry; metadata-only admin tool execution audit logs. There is no admin RAG corpus.
 - Treasury accounts, collections, collection payments (Treasurer module).
 - Cadet accounts (one-to-one by memberId: bank name, account number, DuitNow ID, QR code path) for pre-filling claim bank details.
 - Claims (reimbursement claims: title, amount, description, receipt path, QR code path, status, intake-scoped).
@@ -320,7 +339,7 @@ System data model shall include at minimum:
 - Theme infrastructure (light/dark/system).
 - Public shell/header with language switcher and theme toggle.
 - Admin auth skeleton and server RBAC helpers.
-- Baseline schema and migration structure (6 migrations).
+- Baseline schema and migration structure through AI closure migration (10 migrations; forward migration 0010 removes the already-applied admin RAG tables and adds public indexing jobs/request telemetry).
 - Landing page with hero, stats, FAQs, Best Cadet honours, see-more links.
 - Intakes list and detail pages.
 - Stories list, detail, and tag pages.
@@ -345,6 +364,7 @@ System data model shall include at minimum:
 - Phase 1 hardening: environment schema and validation script, private-bucket storage routing with object migration, fail-closed intake scope with inactive-cadet blocking, and seed script safety guard.
 - Academic modules: Courses (cadet course assignment + course/program management with completion years, supported flags, and enrolled-count deletion guard), Results (per-session GPA/CGPA with tier-colored pills, inline row editing synced to `cadets.cgpa`, PDF result slips), Timetables (per-cadet 60-minute slot editor for Sunday–Thursday 8:00 AM–6:00 PM with locked 1:00–2:00 PM lunch break, drag-range selection, timetable PDFs). Session provisioning via pg_cron function, sessions trigger, seed script, and on-demand sync.
 - Placeholder pages for remaining admin modules across other role groups (Academic placeholders replaced by real modules).
+- AI assistant: multilingual public retrieval and Secretary CMS, tools-only admin assistant, server-derived intake scope, structured output and validated citations, queued indexing, metadata-only telemetry, bounded tools, and security fixtures.
 
 ### 7.2 Pending
 - Per-page canonical/hreflang audit.
@@ -354,6 +374,9 @@ System data model shall include at minimum:
 - Schema additions: application status enum, role audit log table.
 - Seasonal intake application workflow: form, document upload, status state machine, Secretary review UI, physical assessment email trigger.
 - Email templates: application confirmation, application status update.
+- Apply forward AI migration 0010 and seed/index the 24-document corpus in non-production; run retrieval/security evaluation against configured live services. Migrations 0007–0009 are already applied and remain immutable history.
+- Verify live official-web citation handling and full build/provider behavior; complete staged production rollout hardening.
+- Human-verify seed corpus programme-specific age and BMI claims against authoritative ROTU sources before public rollout.
 
 ## 8. Assumptions and Open Items
 ### 8.1 Confirmed Decisions
@@ -372,5 +395,5 @@ System data model shall include at minimum:
 1. Detailed document upload implementation (file size limits, formats, storage paths).
 2. Email template copy/design for application confirmation and status update.
 3. Admin invitation lifecycle details beyond baseline auth mapping.
-4. RAG requirement (listed in tasks) is out-of-scope for current baseline and needs separate requirements definition.
+4. Initial AI boundaries and requirements are specified in §3.17. Live provider/database provisioning and production rollout remain operational work.
 5. Locale-specific font fallbacks for Mandarin Chinese (Noto Sans SC) and Tamil (Noto Sans Tamil) may need review for glyph coverage and visual consistency.

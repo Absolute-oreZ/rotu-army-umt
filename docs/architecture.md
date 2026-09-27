@@ -20,6 +20,11 @@ Core platform choices:
 - Identity: Supabase Auth (Google OAuth for admin sign-in).
 - Storage: Supabase Storage paths/URLs for media assets.
 
+## 2.1 AI Assistant Trust Boundaries
+The public and administrator assistants are separate trust boundaries. Public AI reads only published, successfully indexed public knowledge and bounded published-content projections; it cannot query private tables or storage. Admin AI is tools-only: it authenticates the current admin, checks module RBAC plus an AI capability, derives intake scope server-side, and calls explicit read-only, field-minimized tools. No internal AI corpus, document ACL, or `/admin/ai-knowledge` CMS exists. Both assistants use schema-validated structured output with citations mapped to server-owned sources. The server validates every history message, caps six user turns and total request bytes, and applies DB rate limits independently of client UX.
+
+Public knowledge is multilingual and CMS-managed. The six canonical seed topics (`joining`, `benefits`, `what-to-expect`, `cadet-journey`, `activities`, `training`) each have `en`, `ms`, `zh`, and `ta` Markdown seed documents under `content/ai/public/`. The files are bootstrap content; PostgreSQL-backed Secretary CMS versions are the runtime source of truth. Public knowledge management is a global CMS capability, not an intake-scoped operation.
+
 ## 3. High-Level Component View
 ### 3.1 Presentation Layer
 - Route groups and layouts:
@@ -357,6 +362,16 @@ Helper functions are organized by domain. **Always check here before writing inl
 
 **Adding a new helper**: create it in the most specific file that fits its domain, then either (a) run the `update-helpers-doc` skill to refresh this catalog, or (b) manually add a one-line bullet here with signature and purpose.
 
+**AI helpers**:
+- `lib/ai/core/{errors,limits,structured-output,request,telemetry}.ts` — shared safe errors, enforced limits, model-output validation, metadata-only request telemetry, and bounded request parsing.
+- `lib/ai/core/request.ts` — `readBoundedJson(request)` streams and caps the JSON body at `AI_LIMITS.maxRequestBytes` (throws `RangeError` for 413, `SyntaxError` for 400); `validateConversation(value, question)` validates untrusted history into strictly alternating `user`/`assistant` messages capped at `AI_LIMITS.conversationTurns` and `conversationMessageCharacters`.
+- `lib/ai/core/errors.ts` — `safeAIErrorMessage(error, fallback)` maps provider failures to user-safe copy; `describeAIError(error)` reduces any error to a bounded telemetry category so raw exception text is never persisted.
+- `lib/ai/provider/openrouter.ts` — server-only adapter for structured chat, allowlisted web search, and multilingual BGE-M3 embeddings. Non-streaming calls use an 18s timeout; streaming uses a separate 45s budget so a full generation plus a web-search round-trip is not cut short.
+- `lib/ai/knowledge/{markdown-chunker,chunker,validation,indexer,translation-checks}.ts` — shared Markdown chunking, hashes, publication validation, queued indexing, and non-blocking translation QA warnings. `safeMarkdownHref` allows only root-relative paths and credential-free HTTPS URLs; bare or dotted relative paths are rejected rather than resolved against a placeholder origin.
+- `lib/ai/public/{policy,web-policy,prompts,citations,retrieval,orchestrator}.ts` — public scope/refusal policy, domain allowlist, locale-first hybrid retrieval, validated source mapping, and structured answers.
+- `lib/ai/admin/{capabilities,scope,prompts,redaction,audit,orchestrator}.ts` — RBAC capability checks, server-derived intake scope, sensitive-query guard, tool audit, and tools-only answer orchestration. `adminAICapabilitiesForRole(role)` / `hasAdminAICapability(role)` drive the panel gate, so roles with no readable tool (currently MULTIMEDIA) are not offered the assistant.
+- `lib/ai/admin/tools/{registry,cadets,academics,intakes,sports,welfare,treasurer,officers,shared,selection}.ts` — explicit read-only queries, domain-separated, scoped, field-minimized, and capped by `AI_LIMITS.maxRows`.
+
 ## 4. Route Architecture
 ### 4.1 Public Routes (Localized)
 Current implemented routes:
@@ -367,6 +382,7 @@ Current implemented routes:
 - `/<locale>/stories/[slug]` (story detail)
 - `/<locale>/stories/tags/[slug]` (stories by tag)
 - `/<locale>/contact` (contact page with newsletter subscription)
+- `/<locale>/knowledge/[slug]` (published, indexed public knowledge article)
 - `/<locale>/newsletter/confirm/[token]` (newsletter confirmation)
 - `/<locale>/newsletter/unsubscribe/[token]` (newsletter unsubscribe)
 
@@ -377,6 +393,7 @@ Current implemented routes:
 - `/admin/secretary/rank-holders` (Secretary: cadet admin user management)
 - `/admin/secretary/intakes` (Secretary: intake management)
 - `/admin/secretary/cadets` (Secretary: cadet management)
+- `/admin/secretary/ai-knowledge` (Secretary, Officer, Instructor: global public knowledge CMS)
 - `/admin/treasurer/accounts` (Treasurer: bank account & QR management)
 - `/admin/treasurer/collections` (Treasurer: collection event management)
 - `/admin/treasurer/payments` (Treasurer: payment ledger and records)
@@ -581,8 +598,18 @@ Publication status — not a stored consent flag — is the public-data boundary
 - Public routes read only the public read models in `lib/public/content.ts` (`getHomePageContent`, `getPublishedIntakeList`, `getPublishedIntakeDetail`, `getPublishedStoriesByYear`, `getPublishedStoryDetail`, `getSimilarStories`, `getPublishedStoriesByTag`, `getContactPageContent`).
 - Public projections apply publication status filters (`intakes.status`, `events.status`, `bestCadets.status` all require `PUBLISHED`).
 - Public cadet projections filter `cadets.isActive = true` and `members.role = "CADET"`; inactive cadets never reach public output.
-- Any future public AI / RAG layer must consume the same public read model or another explicit public projection. It must not query `members`, `cadets`, admin tables, or private storage objects.
+- Public AI may query only explicit public projections and the published/indexed knowledge corpus. It must not query private member/cadet/admin records or private storage objects.
 - Private cadet fields (army number, emails, phone, address, birthdate, IC), academic results, health metrics, attendance, payments, religious activities, accommodations, and bank details are AI-ineligible.
+- Public AI uses only the `ai_public_*` corpus plus existing public projections. It joins only `PUBLISHED` and `INDEXED` versions, combines PostgreSQL full-text and pgvector cosine retrieval, prefers the requested locale, and falls back across locales when same-language results are sparse. Admin AI has no document corpus and operates through authorized database tools only.
+- Secretary manages locale-specific Markdown at `/admin/secretary/ai-knowledge`; this is a global knowledge capability with no intake foreign key. Publishing queues an `ai_index_jobs` record; the secured `/api/cron/ai-index` worker marks a version searchable only after chunking and embedding succeed. Failed jobs remain visible and may be retried by publishing the draft again.
+- The six-topic/four-locale files in `content/ai/public/` are idempotent import input, not mutable runtime files. `npm run ai:seed-public-knowledge` requires `ALLOW_AI_KNOWLEDGE_SEED=1`; production additionally requires `AI_KNOWLEDGE_SEED_ALLOW_PRODUCTION=1`. Run and verify in non-production first.
+- Public and admin endpoints are `/api/ai/public/chat` and `/api/ai/admin/chat`. Both validate `Content-Type`, stream the body under a hard byte cap, and return SSE streams only after the complete structured answer passes validation; public sources or admin scope/tool metadata follow the answer. Public citation identifiers map only to server-validated sources; URLs are never accepted from the model as final sources. Current-information questions require an allowed official-web citation; static or historical CMS content alone is insufficient. For a current-information question, an accepted official-web citation satisfies the grounding requirement on its own — a corpus citation is not additionally demanded, because the model is instructed not to emit web source ids.
+- Public scope and current-information classification run on the latest user question only. Earlier turns are passed to the model and used to expand retrieval, but they never grant scope: a follow-up is classified on its own text.
+- OpenRouter configuration uses `OPENROUTER_API_KEY`, `AI_PUBLIC_MODEL`, `AI_ADMIN_MODEL`, and `AI_EMBEDDING_MODEL` (defaults to `baai/bge-m3`). The public/admin defaults are `google/gemma-4-31b-it:free`; declare capabilities in `lib/ai/provider/model-capabilities.ts` before configuring another chat model. The free endpoint may be rate limited. Request metadata is logged in `ai_request_logs` (intent, latency, source counts, model, token counts, success); raw prompts, answers, and result content are not stored. Tool metadata remains in `ai_tool_execution_logs`.
+- `AI_LIMITS` caps input characters, server-validated conversation turns/messages, request bytes, provider attempts, public context chunks, one deterministic admin tool call per turn, query rows, and output tokens. `maxRequestBytes` is a defense-in-depth ceiling and must stay above the worst-case conversation payload (`conversationTurns * 2 * conversationMessageCharacters` in UTF-8 bytes). Provider calls share a 52-second request deadline within the 60-second route runtime; non-streaming calls use an 18s timeout and streaming uses 45s, with bounded retry windows.
+- Public AI IP rate limiting reads Vercel's `x-forwarded-for`, which Vercel overwrites at its edge. Deployments behind another proxy must authenticate that proxy's client-IP header before trusting it.
+- AI request and tool audit telemetry is metadata-only and removed after 90 days by the authenticated AI indexing cron. Housekeeping failures are caught per-cleanup and reported as `-1` so they can never mask the indexing outcome.
+- `vercel.json` schedules newsletter delivery and public AI indexing every five minutes through GET cron routes. Vercel Pro/Enterprise is required for that frequency; Hobby supports daily cron schedules only. The AI index route also performs expired rate-limit row cleanup; cleanup is housekeeping, while limiter correctness comes from its atomic expired-window upsert.
 - Newsletter subscription consent (double opt-in, unsubscribe) is unrelated to public cadet data and stays in `lib/newsletter/*` and `lib/rate-limit.ts`.
 - Historical migration files under `db/migrations` referencing the dropped `best_cadets.public_consent_confirmed_at` column are retained as migration history and are not a current requirement.
 
@@ -596,6 +623,8 @@ Publication status — not a stored consent flag — is the public-data boundary
   - `npm run db:migrate`
   - `npm run db:seed` (requires `ALLOW_SEED=1` in the shell; refuses production and non-local `NEXT_PUBLIC_SITE_URL`; truncates every table)
   - `npm run env:check` (`scripts/check-env.ts`; add `--production` for production rules)
+  - `npm run ai:seed-public-knowledge` (requires `ALLOW_AI_KNOWLEDGE_SEED=1`; production additionally requires `AI_KNOWLEDGE_SEED_ALLOW_PRODUCTION=1`)
+  - `npm run ai:evaluate-public-retrieval` (requires configured database and embedding provider)
   - `npm run storage:migrate-private` (`scripts/migrate-private-objects.ts`; add `--apply` to copy, `--delete-source` after production verification)
 - Environment separation:
   - Env rules live in `lib/env/schema.ts`; `scripts/check-env.ts` validates them (`npm run env:check`; add `--production` for production rules).

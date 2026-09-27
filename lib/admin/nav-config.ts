@@ -24,12 +24,10 @@ import {
   ChurchIcon,
   ClipboardCheckIcon,
   CalendarXIcon,
+  BrainCircuitIcon,
 } from "lucide-react";
 import type { AdminModule, AdminRole } from "@/lib/admin/roles";
-import {
-  canAccessAdminModule,
-  isFullAccessAdminRole,
-} from "@/lib/admin/roles";
+import { canAccessAdminModule, isFullAccessAdminRole } from "@/lib/admin/roles";
 
 export type AdminNavGroupKey =
   | "dashboard"
@@ -89,6 +87,12 @@ const NAV_GROUPS: NavGroupDefinition[] = [
         href: "/admin/secretary/cadets",
         icon: UserPlusIcon,
         module: "cadets",
+      },
+      {
+        title: "Public AI Knowledge",
+        href: "/admin/secretary/ai-knowledge",
+        icon: BrainCircuitIcon,
+        module: "ai-knowledge",
       },
     ],
   },
@@ -291,7 +295,9 @@ export function getActiveNavLocation(role: AdminRole, pathname: string) {
   const groups = getNavConfig(role);
 
   for (const group of groups) {
-    const activeItem = group.items.find((item) => isPathActive(pathname, item.href));
+    const activeItem = group.items.find((item) =>
+      isPathActive(pathname, item.href),
+    );
 
     if (activeItem) {
       return { group, item: activeItem };

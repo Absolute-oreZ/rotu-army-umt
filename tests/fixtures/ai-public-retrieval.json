@@ -1,0 +1,30 @@
+[
+  { "locale": "en", "topic": "joining", "question": "How can I apply to ROTU Army UMT?" },
+  { "locale": "ms", "topic": "joining", "question": "Bagaimanakah cara memohon untuk menyertai ROTU Army UMT?" },
+  { "locale": "zh", "topic": "joining", "question": "如何申请加入 ROTU Army UMT？" },
+  { "locale": "ta", "topic": "joining", "question": "ROTU Army UMT-இல் சேர எப்படி விண்ணப்பிப்பது?" },
+  { "locale": "en", "topic": "benefits", "question": "What skills may cadets develop through ROTU Army UMT?" },
+  { "locale": "ms", "topic": "benefits", "question": "ROTU Army UMT மூலம் kadet என்ன திறன்களை வளர்க்கலாம்?" },
+  { "locale": "zh", "topic": "benefits", "question": "参加 ROTU Army UMT 可以培养哪些能力？" },
+  { "locale": "ta", "topic": "benefits", "question": "ROTU Army UMT மூலம் என்ன திறன்களை வளர்க்கலாம்?" },
+  { "locale": "en", "topic": "what-to-expect", "question": "What should a new ROTU Army UMT cadet expect?" },
+  { "locale": "ms", "topic": "what-to-expect", "question": "ROTU Army UMT kadet baharu patut menjangkakan apa?" },
+  { "locale": "zh", "topic": "what-to-expect", "question": "ROTU Army UMT 新学员可以期待什么？" },
+  { "locale": "ta", "topic": "what-to-expect", "question": "ROTU Army UMT புதிய கேடட் என்ன எதிர்பார்க்கலாம்?" },
+  { "locale": "en", "topic": "cadet-journey", "question": "How does the cadet journey progress over time?" },
+  { "locale": "ms", "topic": "cadet-journey", "question": "Bagaimanakah perjalanan kadet berkembang dari semasa ke semasa?" },
+  { "locale": "zh", "topic": "cadet-journey", "question": "学员在项目期间如何逐步成长？" },
+  { "locale": "ta", "topic": "cadet-journey", "question": "திட்டத்தின் போது கேடட் பயணம் எப்படி முன்னேறுகிறது?" },
+  { "locale": "en", "topic": "activities", "question": "What activities are part of the ROTU Army UMT programme?" },
+  { "locale": "ms", "topic": "activities", "question": "Apakah aktiviti dalam program ROTU Army UMT?" },
+  { "locale": "zh", "topic": "activities", "question": "ROTU Army UMT 项目有哪些活动？" },
+  { "locale": "ta", "topic": "activities", "question": "ROTU Army UMT திட்டத்தில் என்ன நடவடிக்கைகள் உள்ளன?" },
+  { "locale": "en", "topic": "training", "question": "What are the general ROTU Army UMT training themes?" },
+  { "locale": "ms", "topic": "training", "question": "Apakah tema umum latihan ROTU Army UMT?" },
+  { "locale": "zh", "topic": "training", "question": "ROTU Army UMT 的一般训练主题有哪些？" },
+  { "locale": "ta", "topic": "training", "question": "ROTU Army UMT பயிற்சியின் பொதுவான கருப்பொருள்கள் என்ன?" }
+  ,{ "locale": "ms", "topic": "joining", "question": "What are the current application dates for ROTU Army UMT?" }
+  ,{ "locale": "zh", "topic": "activities", "question": "请问 ROTU Army UMT 最近有哪些活动？" }
+  ,{ "locale": "ta", "topic": "training", "question": "ROTU Army UMT பயிற்சியில் என்ன எதிர்பார்க்கலாம்?" }
+  ,{ "locale": "en", "topic": "joining", "question": "Can students join, and what is the application process?" }
+]

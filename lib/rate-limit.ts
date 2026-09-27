@@ -27,11 +27,11 @@ const DEFAULT_CONFIG: RateLimitConfig = {
 export async function checkRateLimit(
   identifier: string,
   action: string,
-  config: Partial<RateLimitConfig> = {}
+  config: Partial<RateLimitConfig> = {},
 ): Promise<RateLimitResult> {
   const { maxRequests, windowMs } = { ...DEFAULT_CONFIG, ...config };
   const now = new Date();
-  const windowStart = new Date(now.getTime() - windowMs);
+  const windowStart = now;
   const expiresAt = new Date(now.getTime() + windowMs);
 
   const [row] = await db
@@ -46,11 +46,15 @@ export async function checkRateLimit(
     .onConflictDoUpdate({
       target: [rateLimitEntries.identifier, rateLimitEntries.action],
       set: {
-        count: sql`${rateLimitEntries.count} + 1`,
-        expiresAt,
+        count: sql`CASE WHEN ${rateLimitEntries.expiresAt} <= ${now} THEN 1 ELSE ${rateLimitEntries.count} + 1 END`,
+        windowStart: sql`CASE WHEN ${rateLimitEntries.expiresAt} <= ${now} THEN ${windowStart} ELSE ${rateLimitEntries.windowStart} END`,
+        expiresAt: sql`CASE WHEN ${rateLimitEntries.expiresAt} <= ${now} THEN ${expiresAt} ELSE ${rateLimitEntries.expiresAt} END`,
       },
     })
-    .returning({ count: rateLimitEntries.count, windowStart: rateLimitEntries.windowStart });
+    .returning({
+      count: rateLimitEntries.count,
+      windowStart: rateLimitEntries.windowStart,
+    });
 
   if (!row) {
     // Should only happen if the unique constraint is changed; fail closed.
@@ -91,7 +95,9 @@ export async function cleanupRateLimitEntries(): Promise<number> {
  * Falls back to a default if not available.
  */
 export function getClientIp(headers: Headers): string {
-  // Check common proxy headers
+  // Production traffic terminates at Vercel, which overwrites x-forwarded-for
+  // with the connecting client IP. Do not deploy this assumption behind an
+  // additional proxy unless that proxy's client-IP header is authenticated.
   const forwarded = headers.get("x-forwarded-for");
   if (forwarded) {
     return forwarded.split(",")[0].trim();

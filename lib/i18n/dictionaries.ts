@@ -24,6 +24,31 @@ export type Dictionary = {
     viewStory: string;
     externalLink: string;
   };
+  aiAssistant: {
+    open: string;
+    name: string;
+    role: string;
+    title: string;
+    greeting: string;
+    adminGreeting: string;
+    suggestions: string[];
+    adminSuggestions: Record<string, string[]>;
+    newChat: string;
+    jumpToLatest: string;
+    unreadCount: string;
+    assistantLabel: string;
+    scopeAll: string;
+    scopeAssigned: string;
+    placeholder: string;
+    send: string;
+    close: string;
+    thinking: string;
+    error: string;
+    turnLimit: string;
+    sourceTitle: string;
+    crossLanguage: string;
+    sourceTypes: Record<string, string>;
+  };
   recordMarkers: {
     home: string;
     intakes: string;

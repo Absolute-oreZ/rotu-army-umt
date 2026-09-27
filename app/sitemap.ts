@@ -1,7 +1,12 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { events, intakes } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
+import {
+  aiPublicDocumentVersions,
+  aiPublicDocuments,
+  events,
+  intakes,
+} from "@/db/schema";
 import { locales } from "@/lib/i18n/config";
 import { getSiteUrl } from "@/lib/env/public";
 
@@ -12,7 +17,7 @@ const DEFAULT_PATHS = ["", "intakes", "stories", "contact"];
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const SITE_URL = getSiteUrl();
 
-  const [intakeRows, storyRows] = await Promise.all([
+  const [intakeRows, storyRows, knowledgeRows] = await Promise.all([
     db
       .select({ slug: intakes.slug, updatedAt: intakes.updatedAt })
       .from(intakes)
@@ -21,6 +26,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select({ slug: events.slug, updatedAt: events.updatedAt })
       .from(events)
       .where(eq(events.status, "PUBLISHED")),
+    db
+      .select({
+        slug: aiPublicDocuments.slug,
+        locale: aiPublicDocumentVersions.language,
+        publishedAt: aiPublicDocumentVersions.publishedAt,
+      })
+      .from(aiPublicDocumentVersions)
+      .innerJoin(
+        aiPublicDocuments,
+        eq(aiPublicDocuments.id, aiPublicDocumentVersions.documentId),
+      )
+      .where(
+        and(
+          eq(aiPublicDocumentVersions.status, "PUBLISHED"),
+          eq(aiPublicDocumentVersions.indexStatus, "INDEXED"),
+        ),
+      ),
   ]);
 
   const entries: MetadataRoute.Sitemap = [];
@@ -68,6 +90,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             ]),
           ),
         },
+      });
+    }
+  }
+
+  const knowledgeBySlug = new Map<string, typeof knowledgeRows>();
+  for (const row of knowledgeRows) {
+    if (row.publishedAt === null) continue;
+    knowledgeBySlug.set(row.slug, [
+      ...(knowledgeBySlug.get(row.slug) ?? []),
+      row,
+    ]);
+  }
+  for (const [slug, versions] of knowledgeBySlug) {
+    const languages = Object.fromEntries(
+      versions.map((version) => [
+        version.locale,
+        `${SITE_URL}/${version.locale}/knowledge/${encodeURIComponent(slug)}`,
+      ]),
+    );
+    for (const version of versions) {
+      entries.push({
+        url: `${SITE_URL}/${version.locale}/knowledge/${encodeURIComponent(slug)}`,
+        lastModified: version.publishedAt ?? undefined,
+        alternates: { languages },
       });
     }
   }

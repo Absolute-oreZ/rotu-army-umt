@@ -21,7 +21,7 @@ Do not fabricate ROTU-specific facts, historical data, people, ranks, event deta
 
 ## Tech Stack
 
-- Next.js `16.2.6`
+- Next.js `16.3.6`
 - React `19.2.4`
 - TypeScript `^5`
 - Tailwind CSS `^4`
@@ -29,7 +29,7 @@ Do not fabricate ROTU-specific facts, historical data, people, ranks, event deta
 - Supabase Auth, PostgreSQL, and Storage
 - Drizzle ORM for schema, queries, and migrations
 
-Next.js `16.2.6` may differ from older App Router knowledge. Before implementing framework-sensitive code, check the relevant local documentation in `node_modules/next/dist/docs/` and follow deprecation notices.
+Next.js `16.3.6` may differ from older App Router knowledge. Before implementing framework-sensitive code, check the relevant local documentation in `node_modules/next/dist/docs/` and follow deprecation notices.
 
 Use `npm` only.
 
@@ -80,6 +80,7 @@ Canonical environment variables:
 - The 14 `NEXT_PUBLIC_SPORTS_*` thresholds (see `.env.example`)
 - `NEXT_PUBLIC_WELFARE_ATTEND_SOURCES`
 - `NEXT_PUBLIC_WELFARE_REGLIGIOUS_ACTIVITIES_TYPES`
+- AI provider settings: `OPENROUTER_API_KEY`, `AI_PUBLIC_MODEL`, `AI_ADMIN_MODEL`, `AI_EMBEDDING_MODEL` (see `.env.example`). Never expose provider secrets or send infrastructure credentials to a model.
 
 `NEXT_PUBLIC_*` variables are inlined at build time; always read them as literal `process.env.NEXT_PUBLIC_X`.
 
@@ -438,11 +439,13 @@ Each admin user has exactly one role.
 
 - Full access.
 - Default: bento dashboard.
+- Manage the global Public AI Knowledge CMS and use authorized read-only AI tools.
 
 ### Instructor
 
 - Full access.
 - Default: bento dashboard.
+- Manage the global Public AI Knowledge CMS and use authorized read-only AI tools.
 
 ### Secretary
 
@@ -452,6 +455,7 @@ Each admin user has exactly one role.
   - Intakes (global)
   - Cadets
   - Admin invitations/user management (cadets only)
+  - Public AI Knowledge (global programme knowledge; not intake-scoped)
 
 ### Treasurer
 
@@ -532,6 +536,8 @@ Baseline entities discussed:
 - Officers and instructors
 - Admin invitation
 - Admin role audit log
+- Public AI knowledge articles, immutable localized versions and chunks, plus async indexing jobs.
+- Metadata-only AI request logs and Admin AI tool-execution logs. There is no internal Admin AI knowledge corpus.
 - Newsletter subscriber
 - Event
 - Event summaries
@@ -657,6 +663,18 @@ Important modeling notes:
 ---
 
 ## Architecture And Code Conventions
+
+### AI Assistant Boundaries
+
+- Public AI and Admin AI are separate trust boundaries. Public AI retrieves only published/indexed public knowledge and the existing public content projection; it must not query private cadet/admin tables or private storage. Admin AI is tools-only and has no internal knowledge corpus, RAG, CMS, or document ACL system.
+- Seed Markdown lives at `content/ai/public/<topic>/<locale>.md` for `en`, `ms`, `zh`, and `ta`. These files are bootstrap content; database-backed Secretary CMS versions are the runtime source of truth.
+- Public knowledge is global programme content. Do not add an intake scope to these records. Server-side Secretary authorization and an explicit capability protect the CMS.
+- Draft/archived versions must never enter public retrieval. A version is eligible only after successful indexing and citations must resolve to server-validated sources.
+- Admin AI must authenticate the current admin, enforce existing module RBAC plus an AI capability, and derive intake scope server-side. Use explicit parameterized read-only tools; do not implement model-generated SQL or writes. Minimize returned fields and audit tool metadata without persisting PII-filled results by default.
+- Public publication queues `ai_index_jobs`; only successfully indexed published versions enter retrieval. `ai_request_logs` and `ai_tool_execution_logs` store operational metadata only, not prompts, answers, or PII-filled results.
+- All model completions use validated structured output, and citation IDs resolve through server-owned source records. `AI_LIMITS` bounds request characters, public context chunks, tool calls, rows, output tokens, and the client-side conversation UX; the six-turn counter is not a server security control because APIs are stateless.
+- Admin AI must authenticate the current admin, enforce existing module RBAC plus an AI capability, and derive intake scope server-side. Use explicit parameterized read-only tools; do not implement model-generated SQL or writes. Minimize returned fields and audit tool metadata without persisting PII-filled results by default.
+- Public/admin chat routes are `app/api/ai/public/chat/route.ts` and `app/api/ai/admin/chat/route.ts`; business logic belongs in `lib/ai/`.
 
 Preferred route groups:
 

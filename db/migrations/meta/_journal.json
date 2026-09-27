@@ -50,6 +50,48 @@
       "when": 1790346476268,
       "tag": "0006_premium_bucky",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790424703314,
+      "tag": "0007_overrated_hex",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790426275902,
+      "tag": "0008_round_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790427448907,
+      "tag": "0009_thick_red_wolf",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790442934714,
+      "tag": "0010_flashy_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790484906185,
+      "tag": "0011_demonic_skaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790515491027,
+      "tag": "0012_clumsy_wild_pack",
+      "breakpoints": true
     }
   ]
 }

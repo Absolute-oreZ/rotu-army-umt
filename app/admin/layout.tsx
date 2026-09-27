@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { getCurrentAdmin } from "@/lib/admin/rbac";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default async function AdminLayout({
   children,
@@ -14,5 +15,10 @@ export default async function AdminLayout({
     return children;
   }
 
-  return <AdminShell admin={admin}>{children}</AdminShell>;
+  const dictionary = await getDictionary("en");
+  return (
+    <AdminShell admin={admin} assistantCopy={dictionary.aiAssistant}>
+      {children}
+    </AdminShell>
+  );
 }

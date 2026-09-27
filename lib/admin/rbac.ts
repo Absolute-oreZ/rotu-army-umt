@@ -14,6 +14,7 @@ import {
   type AdminModule,
   type AdminRole,
 } from "@/lib/admin/roles";
+import { resolveToolScope } from "@/lib/ai/admin/scope";
 
 export type CurrentAdmin = {
   authUserId: string;
@@ -33,7 +34,9 @@ export type AdminAccess =
   | { status: "inactive-cadet" }
   | { status: "missing-intake" };
 
-export async function resolveAdminAccess(authUserId: string): Promise<AdminAccess> {
+export async function resolveAdminAccess(
+  authUserId: string,
+): Promise<AdminAccess> {
   const [row] = await db
     .select({
       authUserId: adminUsers.authUserId,
@@ -64,7 +67,9 @@ export async function resolveAdminAccess(authUserId: string): Promise<AdminAcces
   const scoped = isIntakeScopedRole(row.role);
 
   if (scoped && row.intakeId === null) {
-    console.error(`Admin ${row.id} (${row.role}) is intake-scoped but has no intake assigned; access denied.`);
+    console.error(
+      `Admin ${row.id} (${row.role}) is intake-scoped but has no intake assigned; access denied.`,
+    );
     return { status: "missing-intake" };
   }
 
@@ -108,7 +113,10 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
 }
 
 function adminLoginPath(access: AdminAccess): string {
-  if (access.status === "inactive-cadet" || access.status === "missing-intake") {
+  if (
+    access.status === "inactive-cadet" ||
+    access.status === "missing-intake"
+  ) {
     return `/admin/login?error=${access.status}`;
   }
 
@@ -150,7 +158,9 @@ export type RoleGroupResult = {
   authorized: boolean;
 };
 
-export async function requireRoleGroup(group: string): Promise<RoleGroupResult> {
+export async function requireRoleGroup(
+  group: string,
+): Promise<RoleGroupResult> {
   const admin = await requireCurrentAdmin();
 
   if (!canAccessRoleGroup(admin.role, group)) {
@@ -161,14 +171,5 @@ export async function requireRoleGroup(group: string): Promise<RoleGroupResult> 
 }
 
 export function getIntakeScope(admin: CurrentAdmin): number | null {
-  if (!isIntakeScopedRole(admin.role)) {
-    return null;
-  }
-
-  if (admin.intakeId === null) {
-    throw new Error(`Invariant violated: intake-scoped admin ${admin.id} has no intake assignment.`);
-  }
-
-  return admin.intakeId;
+  return resolveToolScope(admin);
 }
-
